@@ -1,0 +1,109 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/pause_menu.gd" id="1"]
+[ext_resource type="Theme" path="res://resources/themes/gravity.tres" id="2"]
+
+[node name="PauseMenu" type="CanvasLayer"]
+script = ExtResource("1")
+theme = ExtResource("2")
+
+[node name="Panel" type="Panel" parent="."]
+offset_left = 380.0
+offset_top = 80.0
+offset_right = 772.0
+offset_bottom = 568.0
+
+[node name="Menu" type="VBoxContainer" parent="Panel"]
+offset_left = 36.0
+offset_top = 32.0
+offset_right = 356.0
+offset_bottom = 456.0
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Panel/Menu"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "PAUSED"
+horizontal_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="Panel/Menu"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "RESUME"
+
+[node name="RestartButton" type="Button" parent="Panel/Menu"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "RESTART"
+
+[node name="OptionsButton" type="Button" parent="Panel/Menu"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "OPTIONS"
+
+[node name="MainMenuButton" type="Button" parent="Panel/Menu"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "MAIN MENU"
+
+[node name="EndButton" type="Button" parent="Panel/Menu"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "END SCENE"
+
+[node name="ExitButton" type="Button" parent="Panel/Menu"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "EXIT GAME"
+
+[node name="OptionsPanel" type="Panel" parent="Panel"]
+visible = false
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 372.0
+offset_bottom = 468.0
+
+[node name="Title" type="Label" parent="Panel/OptionsPanel"]
+offset_left = 20.0
+offset_top = 18.0
+offset_right = 332.0
+offset_bottom = 52.0
+theme_override_font_sizes/font_size = 26
+text = "OPTIONS"
+horizontal_alignment = 1
+
+[node name="VolumeLabel" type="Label" parent="Panel/OptionsPanel"]
+offset_left = 28.0
+offset_top = 82.0
+offset_right = 324.0
+offset_bottom = 108.0
+text = "MASTER VOLUME"
+
+[node name="VolumeSlider" type="HSlider" parent="Panel/OptionsPanel"]
+offset_left = 28.0
+offset_top = 116.0
+offset_right = 324.0
+offset_bottom = 148.0
+value = 1.0
+
+[node name="FullscreenCheck" type="CheckButton" parent="Panel/OptionsPanel"]
+offset_left = 28.0
+offset_top = 176.0
+offset_right = 324.0
+offset_bottom = 216.0
+text = "Fullscreen"
+
+[node name="VsyncCheck" type="CheckButton" parent="Panel/OptionsPanel"]
+offset_left = 28.0
+offset_top = 228.0
+offset_right = 324.0
+offset_bottom = 268.0
+button_pressed = true
+text = "VSync"
+
+[node name="BackButton" type="Button" parent="Panel/OptionsPanel"]
+offset_left = 28.0
+offset_top = 344.0
+offset_right = 324.0
+offset_bottom = 386.0
+text = "BACK"
