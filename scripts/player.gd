@@ -17,6 +17,10 @@ var direction: float = 0.0
 var rise_gravity: float
 var fall_gravity: float
 var jump_velocity: float
+var facing_right := true
+var animation_name: StringName = &"idle_right"
+
+@onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 
 
 func _ready() -> void:
@@ -38,6 +42,30 @@ func _physics_process(delta: float) -> void:
 	_handle_input(delta)
 	_apply_movement(delta)
 	move_and_slide()
+	_update_animation()
+
+
+func _process(_delta: float) -> void:
+	if animated_sprite.animation != animation_name:
+		animated_sprite.play(animation_name)
+
+
+func _update_animation() -> void:
+	if direction != 0.0:
+		facing_right = direction > 0.0
+
+	var facing := "right" if facing_right else "left"
+	var next_animation: StringName
+	if not is_on_floor():
+		next_animation = StringName("jump_" + facing)
+	elif direction != 0.0:
+		next_animation = StringName("walk_" + facing)
+	else:
+		next_animation = StringName("idle_" + facing)
+
+	if animation_name != next_animation:
+		animation_name = next_animation
+		animated_sprite.play(animation_name)
 
 
 func _handle_input(delta: float) -> void:
