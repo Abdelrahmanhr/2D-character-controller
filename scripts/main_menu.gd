@@ -1,6 +1,7 @@
 extends Control
 
 const EMPTY_LEVEL_SCENE := "res://scenes/empty_level.tscn"
+const LOBBY_SCENE := "res://scenes/lobby.tscn"
 const END_SCENE := "res://scenes/end.tscn"
 const CREDITS_SCENE := "res://scenes/credits.tscn"
 
@@ -11,7 +12,7 @@ func _ready() -> void:
 	$Menu/ExitButton.pressed.connect(_on_exit_pressed)
 
 func _on_start_pressed() -> void:
-	get_tree().change_scene_to_file(EMPTY_LEVEL_SCENE)
+	get_tree().change_scene_to_file(LOBBY_SCENE)
 
 func _on_credits_pressed() -> void:
 	get_tree().change_scene_to_file(CREDITS_SCENE)

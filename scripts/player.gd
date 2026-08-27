@@ -22,6 +22,8 @@ var jump_velocity: float
 func _ready() -> void:
 	_recalculate_jump_physics()
 
+func _enter_tree() -> void:
+	set_multiplayer_authority(name.to_int())
 
 func _recalculate_jump_physics() -> void:
 	rise_gravity = (2.0 * jump_height) / (time_to_peak * time_to_peak)
@@ -30,6 +32,9 @@ func _recalculate_jump_physics() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# First check if we have authority over this player
+	if not is_multiplayer_authority():
+		return
 	_handle_input(delta)
 	_apply_movement(delta)
 	move_and_slide()
