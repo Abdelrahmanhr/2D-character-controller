@@ -2,6 +2,10 @@
 
 [ext_resource type="Script" uid="uid://b8xod8ibb371m" path="res://scripts/empty_level.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/pause_menu.tscn" id="2"]
+[ext_resource type="Texture2D" uid="uid://dv54d2a8lk2kc" path="res://icon.svg" id="3_68w0a"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_icigo"]
+size = Vector2(524, 20)
 
 [node name="EmptyLevel" type="Node2D" unique_id=2122088302]
 script = ExtResource("1")
@@ -14,16 +18,22 @@ color = Color(0.08, 0.1, 0.14, 1)
 [node name="PauseMenu" parent="." unique_id=699686374 instance=ExtResource("2")]
 visible = false
 
-[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=2095291805]
-
-[node name="host" type="Button" parent="CanvasLayer" unique_id=833171269]
-offset_right = 32.0
-offset_bottom = 8.0
-text = "host"
-
 [node name="spawn point" type="Node2D" parent="." unique_id=47199142]
 position = Vector2(405, 223)
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=1874139806]
 _spawnable_scenes = PackedStringArray("uid://dg4t5o3xnmwxn")
 spawn_path = NodePath("..")
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=974563149]
+position = Vector2(0, 512)
+scale = Vector2(2.225, 2.225)
+
+[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D" unique_id=5702308]
+position = Vector2(251.99998, 2)
+scale = Vector2(4.09375, 0.12499999)
+texture = ExtResource("3_68w0a")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=2042056856]
+position = Vector2(252, 0)
+shape = SubResource("RectangleShape2D_icigo")

@@ -40,6 +40,7 @@ func _on_peer_disconnected(peer_id: int) -> void:
 	if player:
 		players.erase(player)
 		player.queue_free()
+		print("Removed disconnected player %s" % peer_id)
 
 
 func _on_host_pressed() -> void:
