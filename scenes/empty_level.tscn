@@ -11,21 +11,19 @@ offset_right = 1152.0
 offset_bottom = 648.0
 color = Color(0.08, 0.1, 0.14, 1)
 
-[node name="Label" type="Label" parent="." unique_id=657067930]
-offset_left = 400.0
-offset_top = 270.0
-offset_right = 752.0
-offset_bottom = 320.0
-theme_override_font_sizes/font_size = 24
-text = "EMPTY LEVEL"
-horizontal_alignment = 1
-
-[node name="Hint" type="Label" parent="." unique_id=528506872]
-offset_left = 300.0
-offset_top = 330.0
-offset_right = 852.0
-offset_bottom = 365.0
-text = "Press Escape to open the pause menu"
-horizontal_alignment = 1
-
 [node name="PauseMenu" parent="." unique_id=699686374 instance=ExtResource("2")]
+visible = false
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=2095291805]
+
+[node name="host" type="Button" parent="CanvasLayer" unique_id=833171269]
+offset_right = 32.0
+offset_bottom = 8.0
+text = "host"
+
+[node name="spawn point" type="Node2D" parent="." unique_id=47199142]
+position = Vector2(405, 223)
+
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=1874139806]
+_spawnable_scenes = PackedStringArray("uid://dg4t5o3xnmwxn")
+spawn_path = NodePath("..")

@@ -17,6 +17,11 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_k0quf"]
 size = Vector2(116, 116)
 
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_g2els"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
 [node name="Player" type="CharacterBody2D" unique_id=1169704896]
 script = ExtResource("1_g2els")
 
@@ -27,3 +32,6 @@ autoplay = "Idle"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=461499085]
 shape = SubResource("RectangleShape2D_k0quf")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1799110205]
+replication_config = SubResource("SceneReplicationConfig_g2els")

@@ -1,0 +1,42 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/lobby.gd" id="1_lobby"]
+[ext_resource type="Theme" path="res://resources/themes/gravity.tres" id="2_theme"]
+
+[node name="Lobby" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_lobby")
+
+[node name="Panel" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 376.0
+offset_top = 210.0
+offset_right = 776.0
+offset_bottom = 430.0
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="Panel"]
+layout_mode = 2
+text = "ONLINE LOBBY"
+horizontal_alignment = 1
+
+[node name="HostButton" type="Button" parent="Panel"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "HOST LOBBY"
+
+[node name="StartButton" type="Button" parent="Panel"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "START GAME"
+
+[node name="Status" type="Label" parent="Panel"]
+layout_mode = 2
+text = "Create a lobby to begin."
+horizontal_alignment = 1
