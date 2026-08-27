@@ -2,18 +2,31 @@
 
 [ext_resource type="Script" uid="uid://b8xod8ibb371m" path="res://scripts/empty_level.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/pause_menu.tscn" id="2"]
-[ext_resource type="Texture2D" uid="uid://dv54d2a8lk2kc" path="res://icon.svg" id="3_68w0a"]
+[ext_resource type="Texture2D" uid="uid://dimxobbok5jjd" path="res://resources/Tiny Adventure-Cyberpunk City Background02.png" id="2_icigo"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_icigo"]
-size = Vector2(524, 20)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gsd86"]
+size = Vector2(430, 199.5)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_75cn0"]
+size = Vector2(429, 270)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pyv3o"]
+size = Vector2(374, 23.5)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5d6vn"]
+size = Vector2(33, 65)
 
 [node name="EmptyLevel" type="Node2D" unique_id=2122088302]
 script = ExtResource("1")
 
-[node name="Background" type="ColorRect" parent="." unique_id=1128967204]
-offset_right = 1152.0
-offset_bottom = 648.0
-color = Color(0.08, 0.1, 0.14, 1)
+[node name="background" type="Node2D" parent="." unique_id=1051009932]
+
+[node name="Sprite2D" type="Sprite2D" parent="background" unique_id=1554958056]
+z_index = -10
+texture_filter = 1
+position = Vector2(576, 324)
+scale = Vector2(0.285, 0.285)
+texture = ExtResource("2_icigo")
 
 [node name="PauseMenu" parent="." unique_id=699686374 instance=ExtResource("2")]
 visible = false
@@ -25,15 +38,20 @@ position = Vector2(405, 223)
 _spawnable_scenes = PackedStringArray("uid://dg4t5o3xnmwxn")
 spawn_path = NodePath("..")
 
-[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=974563149]
-position = Vector2(0, 512)
-scale = Vector2(2.225, 2.225)
+[node name="floor" type="StaticBody2D" parent="." unique_id=392391409]
 
-[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D" unique_id=5702308]
-position = Vector2(251.99998, 2)
-scale = Vector2(4.09375, 0.12499999)
-texture = ExtResource("3_68w0a")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="floor" unique_id=676199106]
+position = Vector2(963, 571.25)
+shape = SubResource("RectangleShape2D_gsd86")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=2042056856]
-position = Vector2(252, 0)
-shape = SubResource("RectangleShape2D_icigo")
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="floor" unique_id=837752866]
+position = Vector2(19, 637)
+shape = SubResource("RectangleShape2D_75cn0")
+
+[node name="CollisionShape2D3" type="CollisionShape2D" parent="floor" unique_id=1135078366]
+position = Vector2(412, 576.25)
+shape = SubResource("RectangleShape2D_pyv3o")
+
+[node name="CollisionShape2D4" type="CollisionShape2D" parent="floor" unique_id=478081842]
+position = Vector2(598, 669)
+shape = SubResource("RectangleShape2D_5d6vn")
