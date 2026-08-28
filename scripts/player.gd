@@ -17,6 +17,7 @@ var direction: float = 0.0
 var rise_gravity: float
 var fall_gravity: float
 var jump_velocity: float
+
 var facing_right := true
 var animation_name: StringName = &"idle_right"
 
@@ -37,8 +38,8 @@ func _recalculate_jump_physics() -> void:
 
 func _physics_process(delta: float) -> void:
 	# First check if we have authority over this player
-	if not is_multiplayer_authority():
-		return
+	#if not is_multiplayer_authority():
+		#return
 	_handle_input(delta)
 	_apply_movement(delta)
 	move_and_slide()
@@ -66,7 +67,6 @@ func _update_animation() -> void:
 	if animation_name != next_animation:
 		animation_name = next_animation
 		animated_sprite.play(animation_name)
-
 
 func _handle_input(delta: float) -> void:
 	direction = Input.get_axis("move_left", "move_right")

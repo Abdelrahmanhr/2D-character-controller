@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://cc34fg7sje1yl" path="res://resources/idle_left.png" id="2_dqkch"]
 [ext_resource type="Texture2D" uid="uid://bm44rrre56pew" path="res://resources/character.png" id="2_g2els"]
 [ext_resource type="Texture2D" uid="uid://dchn5fp7q0rsl" path="res://resources/idle_right.png" id="3_qlg0r"]
+[ext_resource type="Script" uid="uid://b0ruex0dunyys" path="res://scripts/bomb_controller.gd" id="5_qlg0r"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_tuyoq"]
 atlas = ExtResource("2_dqkch")
@@ -206,3 +207,17 @@ shape = SubResource("RectangleShape2D_k0quf")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1799110205]
 replication_config = SubResource("SceneReplicationConfig_g2els")
+
+[node name="BombController" type="Node" parent="." unique_id=1813107372]
+script = ExtResource("5_qlg0r")
+
+[node name="Minigamelayer" type="Control" parent="BombController" unique_id=2025939438]
+layout_mode = 3
+offset_left = -100.0
+offset_top = -150.0
+offset_right = 100.0
+offset_bottom = -50.0
+
+[node name="BombTimerUI" type="Label" parent="BombController" unique_id=277684671]
+offset_right = 40.0
+offset_bottom = 23.0
