@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://byb0b07om1f3l"]
+
+[ext_resource type="Script" uid="uid://kxlhx4wv3ttm" path="res://scripts/input_sequence_minigame.gd" id="1_532o6"]
+
+[node name="InputSequenceMinigame" type="Control" unique_id=204754098]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_532o6")
+round_duration = 15.0
+arrow_spacing = 25.0
+slide_duration = 0.1
+
+[node name="ArrowContainer" type="Control" parent="." unique_id=1723190828]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="TimeBar" type="ProgressBar" parent="." unique_id=849051477]
+layout_mode = 0
+offset_right = 4.0
+offset_bottom = 27.0

@@ -1,7 +1,8 @@
 extends Control
 class_name MathMinigame
 
-signal correct_answer(bonus_time: float)  
+signal bomb_time_delta(seconds: float)
+ 
 signal round_finished                       
 
 var _round_finished: bool = false
@@ -81,7 +82,7 @@ func _submit_answer(side: int) -> void:
 	_answered = true
 	if side == _current_answer:
 		_equations_solved += 1
-		correct_answer.emit(bonus_per_correct)
+		bomb_time_delta.emit(bonus_per_correct)
 	_advance_to_next_equation()
 
 func _advance_to_next_equation() -> void:

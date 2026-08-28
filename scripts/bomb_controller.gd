@@ -67,7 +67,7 @@ func play_minigame(scene: PackedScene) -> void:
 	_active_minigame = scene.instantiate()
 	_minigame_layer.add_child(_active_minigame)
 	_active_minigame.setup(_player)
-	_active_minigame.correct_answer.connect(_on_correct_answer)
+	_active_minigame.bomb_time_delta.connect(_on_bomb_time_delta)
 	_active_minigame.round_finished.connect(_on_minigame_finished)
 
 func stop_minigame() -> void:
@@ -75,8 +75,6 @@ func stop_minigame() -> void:
 		_active_minigame.queue_free()
 		_active_minigame = null
 
-func _on_correct_answer(bonus_time: float) -> void:
-	_time_left += bonus_time
 
 func _on_minigame_finished() -> void:
 	if _active_minigame == null:
@@ -84,3 +82,6 @@ func _on_minigame_finished() -> void:
 	_active_minigame.queue_free()
 	_active_minigame = null
 	player_finished_round.emit()
+
+func _on_bomb_time_delta(seconds: float) -> void:
+	_time_left += seconds
