@@ -41,8 +41,8 @@ func _recalculate_jump_physics() -> void:
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
-	#if not is_multiplayer_authority():
-		#return
+	if not is_multiplayer_authority():
+		return
 	_handle_input(delta)
 	_apply_movement(delta)
 	move_and_slide()
