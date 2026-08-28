@@ -8,13 +8,16 @@
 size = Vector2(430, 199.5)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_75cn0"]
-size = Vector2(429, 270)
+size = Vector2(256.5, 270)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_pyv3o"]
 size = Vector2(374, 23.5)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_5d6vn"]
 size = Vector2(33, 65)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_80rik"]
+size = Vector2(1479, 202.5)
 
 [node name="EmptyLevel" type="Node2D" unique_id=2122088302]
 script = ExtResource("1")
@@ -29,7 +32,6 @@ scale = Vector2(0.285, 0.285)
 texture = ExtResource("2_icigo")
 
 [node name="PauseMenu" parent="." unique_id=699686374 instance=ExtResource("2")]
-visible = false
 
 [node name="spawn point" type="Node2D" parent="." unique_id=47199142]
 position = Vector2(405, 223)
@@ -45,7 +47,7 @@ position = Vector2(963, 571.25)
 shape = SubResource("RectangleShape2D_gsd86")
 
 [node name="CollisionShape2D2" type="CollisionShape2D" parent="floor" unique_id=837752866]
-position = Vector2(19, 637)
+position = Vector2(105.25, 637)
 shape = SubResource("RectangleShape2D_75cn0")
 
 [node name="CollisionShape2D3" type="CollisionShape2D" parent="floor" unique_id=1135078366]
@@ -55,3 +57,9 @@ shape = SubResource("RectangleShape2D_pyv3o")
 [node name="CollisionShape2D4" type="CollisionShape2D" parent="floor" unique_id=478081842]
 position = Vector2(598, 669)
 shape = SubResource("RectangleShape2D_5d6vn")
+
+[node name="DeathZone" type="Area2D" parent="." unique_id=200323669]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DeathZone" unique_id=235409424]
+position = Vector2(586.5, 762.75)
+shape = SubResource("RectangleShape2D_80rik")

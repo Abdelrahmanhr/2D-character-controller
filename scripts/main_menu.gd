@@ -7,11 +7,15 @@ const CREDITS_SCENE := "res://scenes/credits.tscn"
 
 func _ready() -> void:
 	$Menu/StartButton.pressed.connect(_on_start_pressed)
+	$Menu/MultiplayerButton.pressed.connect(_on_multiplayer_pressed)
 	$Menu/CreditsButton.pressed.connect(_on_credits_pressed)
 	$Menu/EndButton.pressed.connect(_on_end_pressed)
 	$Menu/ExitButton.pressed.connect(_on_exit_pressed)
 
 func _on_start_pressed() -> void:
+	get_tree().change_scene_to_file(EMPTY_LEVEL_SCENE)
+
+func _on_multiplayer_pressed() -> void:
 	get_tree().change_scene_to_file(LOBBY_SCENE)
 
 func _on_credits_pressed() -> void:

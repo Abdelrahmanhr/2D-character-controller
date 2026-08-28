@@ -34,7 +34,12 @@ theme_override_constants/separation = 14
 [node name="StartButton" type="Button" parent="Menu" unique_id=309370713]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
-text = "START"
+text = "SINGLE PLAYER"
+
+[node name="MultiplayerButton" type="Button" parent="Menu"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "MULTIPLAYER"
 
 [node name="CreditsButton" type="Button" parent="Menu" unique_id=1877803053]
 custom_minimum_size = Vector2(0, 44)

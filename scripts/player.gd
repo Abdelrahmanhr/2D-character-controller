@@ -21,6 +21,8 @@ var jump_velocity: float
 var facing_right := true
 var animation_name: StringName = &"idle_right"
 
+var is_dead := false
+
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 
 
@@ -37,9 +39,10 @@ func _recalculate_jump_physics() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	# First check if we have authority over this player
-	#if not is_multiplayer_authority():
-		#return
+	if is_dead:
+		return
+	if not is_multiplayer_authority():
+		return
 	_handle_input(delta)
 	_apply_movement(delta)
 	move_and_slide()
@@ -47,9 +50,23 @@ func _physics_process(delta: float) -> void:
 
 
 func _process(_delta: float) -> void:
+	if is_dead:
+		return
 	if animated_sprite.animation != animation_name:
 		animated_sprite.play(animation_name)
 
+func play_death_animation() -> void:
+	if is_dead:
+		return
+	is_dead = true
+	velocity = Vector2.ZERO
+	var facing := "right" if facing_right else "left"
+	animation_name = StringName("die_" + facing)
+	animated_sprite.sprite_frames.set_animation_loop(animation_name, false)
+	animated_sprite.play(animation_name)
+	await animated_sprite.animation_finished
+	animated_sprite.stop()
+	animated_sprite.frame = animated_sprite.sprite_frames.get_frame_count(animation_name) - 1
 
 func _update_animation() -> void:
 	if direction != 0.0:

@@ -65,13 +65,17 @@ func _load_equation(index: int) -> void:
 func _handle_input(event: InputEvent) -> void:
 	if _answered:
 		return
-	if not (event is InputEventJoypadButton and event.pressed):
-		return
-	
-	if event.button_index == JOY_BUTTON_DPAD_LEFT:
-		_submit_answer(0)
-	elif event.button_index == JOY_BUTTON_DPAD_RIGHT:
-		_submit_answer(1)
+
+	if event is InputEventJoypadButton and event.pressed:
+		if event.button_index == JOY_BUTTON_DPAD_LEFT:
+			_submit_answer(0)
+		elif event.button_index == JOY_BUTTON_DPAD_RIGHT:
+			_submit_answer(1)
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_LEFT:
+			_submit_answer(0)
+		elif event.keycode == KEY_RIGHT:
+			_submit_answer(1)
 
 func _submit_answer(side: int) -> void:
 	_answered = true
