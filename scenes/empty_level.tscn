@@ -2,22 +2,26 @@
 
 [ext_resource type="Script" uid="uid://b8xod8ibb371m" path="res://scripts/empty_level.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/pause_menu.tscn" id="2"]
-[ext_resource type="Texture2D" uid="uid://dimxobbok5jjd" path="res://resources/Tiny Adventure-Cyberpunk City Background02.png" id="2_icigo"]
+[ext_resource type="Texture2D" uid="uid://2ro002b1cdeu" path="res://resources/Tiny Adventure-Cyberpunk City Background01.png" id="2_rtppl"]
+[ext_resource type="Texture2D" uid="uid://l0yb0syj8l6s" path="res://resources/platform.png" id="4_usonc"]
+[ext_resource type="Texture2D" uid="uid://crgk3ot4gcutv" path="res://resources/platform_long.png" id="5_po38m"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gsd86"]
-size = Vector2(430, 199.5)
+size = Vector2(211, 27.75)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_75cn0"]
-size = Vector2(256.5, 270)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_pyv3o"]
-size = Vector2(374, 23.5)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_5d6vn"]
-size = Vector2(33, 65)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_h1t8h"]
+size = Vector2(326, 27.75)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_80rik"]
 size = Vector2(1479, 202.5)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_minigame"]
+bg_color = Color(1, 0.95, 0, 0.35)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.95, 0, 0.95)
 
 [node name="EmptyLevel" type="Node2D" unique_id=2122088302]
 script = ExtResource("1")
@@ -29,9 +33,10 @@ z_index = -10
 texture_filter = 1
 position = Vector2(576, 324)
 scale = Vector2(0.285, 0.285)
-texture = ExtResource("2_icigo")
+texture = ExtResource("2_rtppl")
 
 [node name="PauseMenu" parent="." unique_id=699686374 instance=ExtResource("2")]
+visible = false
 
 [node name="spawn point" type="Node2D" parent="." unique_id=47199142]
 position = Vector2(405, 223)
@@ -42,21 +47,76 @@ spawn_path = NodePath("..")
 
 [node name="floor" type="StaticBody2D" parent="." unique_id=392391409]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="floor" unique_id=676199106]
-position = Vector2(963, 571.25)
+[node name="platform" type="StaticBody2D" parent="floor" unique_id=499600035]
+
+[node name="Sprite2D" type="Sprite2D" parent="floor/platform" unique_id=2020600567]
+texture_filter = 1
+position = Vector2(715, 214)
+texture = ExtResource("4_usonc")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="floor/platform" unique_id=676199106]
+position = Vector2(715, 214.125)
 shape = SubResource("RectangleShape2D_gsd86")
 
-[node name="CollisionShape2D2" type="CollisionShape2D" parent="floor" unique_id=837752866]
-position = Vector2(105.25, 637)
-shape = SubResource("RectangleShape2D_75cn0")
+[node name="platform2" type="StaticBody2D" parent="floor" unique_id=756818629]
+position = Vector2(-363, 251)
 
-[node name="CollisionShape2D3" type="CollisionShape2D" parent="floor" unique_id=1135078366]
-position = Vector2(412, 576.25)
-shape = SubResource("RectangleShape2D_pyv3o")
+[node name="Sprite2D" type="Sprite2D" parent="floor/platform2" unique_id=1993137821]
+texture_filter = 1
+position = Vector2(1098, 293)
+texture = ExtResource("4_usonc")
 
-[node name="CollisionShape2D4" type="CollisionShape2D" parent="floor" unique_id=478081842]
-position = Vector2(598, 669)
-shape = SubResource("RectangleShape2D_5d6vn")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="floor/platform2" unique_id=163165063]
+position = Vector2(1098, 293.125)
+shape = SubResource("RectangleShape2D_gsd86")
+
+[node name="platform3" type="StaticBody2D" parent="floor" unique_id=1337196442]
+position = Vector2(-79, 223)
+
+[node name="Sprite2D" type="Sprite2D" parent="floor/platform3" unique_id=1969029208]
+texture_filter = 1
+position = Vector2(583, 261)
+texture = ExtResource("4_usonc")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="floor/platform3" unique_id=1729437675]
+position = Vector2(583, 261.125)
+shape = SubResource("RectangleShape2D_gsd86")
+
+[node name="platform4" type="StaticBody2D" parent="floor" unique_id=1508050019]
+position = Vector2(-476, 166)
+
+[node name="Sprite2D" type="Sprite2D" parent="floor/platform4" unique_id=1922613225]
+texture_filter = 1
+position = Vector2(759, 237)
+texture = ExtResource("4_usonc")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="floor/platform4" unique_id=1025190742]
+position = Vector2(759, 237.125)
+shape = SubResource("RectangleShape2D_gsd86")
+
+[node name="platform5" type="StaticBody2D" parent="floor" unique_id=388112272]
+position = Vector2(-279, 50)
+
+[node name="Sprite2D" type="Sprite2D" parent="floor/platform5" unique_id=125075555]
+texture_filter = 1
+position = Vector2(805.5, 256)
+texture = ExtResource("5_po38m")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="floor/platform5" unique_id=1466212467]
+position = Vector2(805.5, 256.125)
+shape = SubResource("RectangleShape2D_h1t8h")
+
+[node name="platform6" type="StaticBody2D" parent="floor" unique_id=2067481690]
+position = Vector2(-505, 74)
+
+[node name="Sprite2D" type="Sprite2D" parent="floor/platform6" unique_id=1296518442]
+texture_filter = 1
+position = Vector2(1305, 310)
+texture = ExtResource("4_usonc")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="floor/platform6" unique_id=1078468192]
+position = Vector2(1305, 310.125)
+shape = SubResource("RectangleShape2D_gsd86")
 
 [node name="DeathZone" type="Area2D" parent="." unique_id=200323669]
 
@@ -64,7 +124,7 @@ shape = SubResource("RectangleShape2D_5d6vn")
 position = Vector2(586.5, 762.75)
 shape = SubResource("RectangleShape2D_80rik")
 
-[node name="MatchResult" type="Label" parent="."]
+[node name="MatchResult" type="Label" parent="." unique_id=2050580856]
 visible = false
 offset_left = 460.0
 offset_top = 280.0
@@ -72,4 +132,63 @@ offset_right = 692.0
 offset_bottom = 330.0
 theme_override_font_sizes/font_size = 32
 text = "MATCH RESULT"
-horizontal_alignment = 1
+
+[node name="MinigameLayout" type="CanvasLayer" parent="." unique_id=93241475]
+layer = 5
+
+[node name="Layout" type="Control" parent="MinigameLayout" unique_id=1857027782]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Slot0" type="Panel" parent="MinigameLayout/Layout" unique_id=266500927]
+visible = false
+layout_mode = 1
+offset_left = 24.0
+offset_top = 80.0
+offset_right = 304.0
+offset_bottom = 240.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_minigame")
+
+[node name="Slot1" type="Panel" parent="MinigameLayout/Layout" unique_id=388569904]
+visible = false
+layout_mode = 1
+offset_left = 24.0
+offset_top = 460.0
+offset_right = 304.0
+offset_bottom = 620.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_minigame")
+
+[node name="Slot2" type="Panel" parent="MinigameLayout/Layout" unique_id=1122928017]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -304.0
+offset_top = 80.0
+offset_right = -24.0
+offset_bottom = 240.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_minigame")
+
+[node name="Slot3" type="Panel" parent="MinigameLayout/Layout" unique_id=1023460895]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -304.0
+offset_top = 460.0
+offset_right = -24.0
+offset_bottom = 620.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_minigame")

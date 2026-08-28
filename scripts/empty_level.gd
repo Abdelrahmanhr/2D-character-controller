@@ -5,9 +5,12 @@ const PLAYER = preload("uid://dg4t5o3xnmwxn")
 var players: Array[CharacterBody2D]
 @onready var multiplayer_spawner: MultiplayerSpawner = $MultiplayerSpawner
 @onready var match_result: Label = $MatchResult
+@onready var background_sprite: Sprite2D = $background/Sprite2D
 
 func _ready() -> void:
 	$PauseMenu.process_mode = Node.PROCESS_MODE_ALWAYS
+	get_viewport().size_changed.connect(_layout_viewport_content)
+	_layout_viewport_content()
 	MinigameDirector.reset_match()
 	MinigameDirector.match_finished.connect(_on_match_finished)
 	multiplayer_spawner.spawn_function = _spawn_player
@@ -21,6 +24,13 @@ func _ready() -> void:
 		for peer_id in multiplayer.get_peers():
 			_spawn_player_for_peer(peer_id)
 		_spawn_player_for_peer(multiplayer.get_unique_id())
+
+func _layout_viewport_content() -> void:
+	var viewport_size := get_viewport_rect().size
+	var texture_size := background_sprite.texture.get_size()
+	background_sprite.position = viewport_size / 2.0
+	background_sprite.scale = Vector2.ONE * max(viewport_size.x / texture_size.x, viewport_size.y / texture_size.y)
+	match_result.position = (viewport_size - match_result.size) / 2.0
 
 func _on_death_zone_body_entered(body: Node) -> void:
 	if body is CharacterBody2D and body.is_multiplayer_authority() and not body.is_dead:
@@ -53,7 +63,10 @@ func _spawn_player(peer_id: Variant) -> Node:
 	var player := PLAYER.instantiate() as CharacterBody2D
 	player.name = str(peer_id)
 	player.position = $"spawn point".position + Vector2(players.size() * 80.0, 0.0)
-	for other in players:
+	for other in players.duplicate():
+		if not is_instance_valid(other) or not other is PhysicsBody2D:
+			players.erase(other)
+			continue
 		player.add_collision_exception_with(other)
 		other.add_collision_exception_with(player)
 	players.append(player)

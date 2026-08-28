@@ -4,49 +4,48 @@
 
 [node name="MathMinigame" type="Control" unique_id=280554269]
 layout_mode = 3
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_q5oua")
 metadata/_edit_use_anchors_ = true
 
 [node name="EquationLabel" type="Label" parent="." unique_id=2038325209]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = -0.5
-anchor_top = -0.675
-anchor_right = -0.45
-anchor_bottom = -0.675
-offset_left = 95.0
-offset_top = 62.0
-offset_right = 135.0
-offset_bottom = 85.0
+layout_mode = 0
+offset_left = 32.0
+offset_top = 20.0
+offset_right = 248.0
+offset_bottom = 44.0
 text = "0 # 0 "
 horizontal_alignment = 1
 metadata/_edit_use_anchors_ = true
 
 [node name="OptionLeft" type="Label" parent="." unique_id=2130160142]
 layout_mode = 0
-offset_left = 62.0
-offset_top = 64.0
-offset_right = 102.0
-offset_bottom = 87.0
+offset_left = 48.0
+offset_top = 68.0
+offset_right = 120.0
+offset_bottom = 96.0
+theme_override_font_sizes/font_size = 16
 text = "0"
 horizontal_alignment = 1
 
 [node name="OptionRight" type="Label" parent="." unique_id=550104764]
 layout_mode = 0
-offset_left = 86.0
-offset_top = 63.0
-offset_right = 126.0
-offset_bottom = 86.0
+offset_left = 160.0
+offset_top = 68.0
+offset_right = 232.0
+offset_bottom = 96.0
+theme_override_font_sizes/font_size = 16
 text = "0"
 horizontal_alignment = 1
 
 [node name="TimeBar" type="ProgressBar" parent="." unique_id=430495410]
 layout_mode = 0
-offset_left = 55.0
-offset_top = -5.0
-offset_right = 59.0
-offset_bottom = 22.0
+offset_left = 32.0
+offset_top = 116.0
+offset_right = 248.0
+offset_bottom = 132.0
 fill_mode = 1

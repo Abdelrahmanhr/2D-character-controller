@@ -42,7 +42,7 @@ func _resume() -> void:
 
 func _restart() -> void:
 	get_tree().paused = false
-	get_tree().reload_current_scene()
+	Networking.restart_game()
 
 func _show_options() -> void:
 	$Panel/Menu.hide()

@@ -71,6 +71,23 @@ func start_game() -> void:
 	if multiplayer.is_server():
 		_start_game.rpc()
 
+func restart_game() -> void:
+	if multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		_restart_game()
+	elif multiplayer.is_server():
+		_restart_game.rpc()
+	else:
+		_request_restart.rpc_id(1)
+
+@rpc("any_peer", "reliable")
+func _request_restart() -> void:
+	if multiplayer.is_server():
+		_restart_game.rpc()
+
+@rpc("authority", "call_local", "reliable")
+func _restart_game() -> void:
+	get_tree().reload_current_scene()
+
 
 @rpc("authority", "call_local", "reliable")
 func _start_game() -> void:

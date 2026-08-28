@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://dchn5fp7q0rsl" path="res://resources/idle_right.png" id="3_qlg0r"]
 [ext_resource type="Script" uid="uid://b0ruex0dunyys" path="res://scripts/bomb_controller.gd" id="5_qlg0r"]
 [ext_resource type="Texture2D" uid="uid://dl04xmvt8e0ck" path="res://resources/character_bomb.png" id="5_tuyoq"]
+[ext_resource type="Texture2D" uid="uid://db85c0hdh1a2m" path="res://resources/Menu_ui.ux.png" id="6_tuyoq"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_qlg0r"]
 atlas = ExtResource("5_tuyoq")
@@ -227,13 +228,29 @@ properties/0/replication_mode = 1
 properties/1/path = NodePath(".:animation_name")
 properties/1/spawn = true
 properties/1/replication_mode = 1
-properties/2/path = NodePath("BombController:_time_left")
-properties/2/spawn = true
-properties/2/replication_mode = 1
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_bomb"]
+properties/0/path = NodePath(".:_time_left")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_15ncp"]
+atlas = ExtResource("6_tuyoq")
+region = Rect2(1919.3882, 171.3835, 257.4939, 37.16208)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_mynaw"]
+texture = SubResource("AtlasTexture_15ncp")
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4kmta"]
+atlas = ExtResource("6_tuyoq")
+region = Rect2(1918.1863, 210.03284, 259.31567, 41.097687)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_ijegi"]
+texture = SubResource("AtlasTexture_4kmta")
 
 [node name="Player" type="CharacterBody2D" unique_id=1169704896]
 script = ExtResource("1_g2els")
-jump_height = 100.0
+jump_height = 110.0
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=807073349]
 texture_filter = 1
@@ -259,10 +276,17 @@ offset_top = -150.0
 offset_right = 100.0
 offset_bottom = -50.0
 
-[node name="BombTimerLayer" type="CanvasLayer" parent="BombController"]
+[node name="BombTimerLayer" type="CanvasLayer" parent="BombController" unique_id=63404384]
 layer = 10
 
-[node name="BombTimerUI" type="Label" parent="BombController/BombTimerLayer" unique_id=277684671]
-custom_minimum_size = Vector2(120, 0)
-offset_right = 120.0
-offset_bottom = 23.0
+[node name="BombSynchronizer" type="MultiplayerSynchronizer" parent="BombController"]
+replication_config = SubResource("SceneReplicationConfig_bomb")
+
+[node name="BombTimerUI" type="ProgressBar" parent="BombController/BombTimerLayer" unique_id=277684671]
+texture_filter = 1
+custom_minimum_size = Vector2(180, 24)
+offset_right = 180.0
+offset_bottom = 24.0
+theme_override_styles/background = SubResource("StyleBoxTexture_mynaw")
+theme_override_styles/fill = SubResource("StyleBoxTexture_ijegi")
+show_percentage = false

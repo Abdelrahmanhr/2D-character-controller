@@ -70,7 +70,7 @@ func _start_next_round_for_player(bomb_controller: BombController) -> void:
 		next_index = 0
 	_round_indices[bomb_controller] = next_index
 	var scene: PackedScene = minigame_order[next_index]
-	bomb_controller.play_minigame(scene)
+	bomb_controller.play_minigame(scene, next_index)
 
 func _on_player_finished(bomb_controller: BombController) -> void:
 	if not _match_finished and _bomb_controllers.has(bomb_controller):
