@@ -2,6 +2,7 @@ extends Node
 
 signal countdown_tick(seconds_left: int)
 signal match_started
+signal match_finished(winner_peer_id: int)
 
 @export var expected_player_count: int = 1
 @export var countdown_duration: float = 3.0
@@ -15,11 +16,23 @@ var _counting_down: bool = false
 var _bomb_controllers: Array[BombController] = []
 var _round_indices: Dictionary = {}
 var _cooldowns: Dictionary = {}
+var _alive_peer_ids: Dictionary = {}
+var _match_finished := false
+
+func reset_match() -> void:
+	_bomb_controllers.clear()
+	_round_indices.clear()
+	_cooldowns.clear()
+	_alive_peer_ids.clear()
+	_countdown_left = 0.0
+	_counting_down = false
+	_match_finished = false
 
 func register_player(bomb_controller: BombController) -> void:
 	if _bomb_controllers.has(bomb_controller):
 		return
 	_bomb_controllers.append(bomb_controller)
+	_alive_peer_ids[bomb_controller.get_parent().name.to_int()] = bomb_controller
 	_round_indices[bomb_controller] = -1
 	_cooldowns[bomb_controller] = 0.0
 	bomb_controller.player_finished_round.connect(_on_player_finished.bind(bomb_controller))
@@ -35,6 +48,7 @@ func unregister_player(bomb_controller: BombController) -> void:
 	if not _bomb_controllers.has(bomb_controller):
 		return
 	_bomb_controllers.erase(bomb_controller)
+	_alive_peer_ids.erase(bomb_controller.get_parent().name.to_int())
 	_round_indices.erase(bomb_controller)
 	_cooldowns.erase(bomb_controller)
 	var callback := _on_player_finished.bind(bomb_controller)
@@ -49,7 +63,7 @@ func _start_rounds() -> void:
 		_start_next_round_for_player(bomb_controller)
 
 func _start_next_round_for_player(bomb_controller: BombController) -> void:
-	if minigame_order.is_empty() or not is_instance_valid(bomb_controller) or not _bomb_controllers.has(bomb_controller):
+	if _match_finished or minigame_order.is_empty() or not is_instance_valid(bomb_controller) or not _bomb_controllers.has(bomb_controller):
 		return
 	var next_index: int = int(_round_indices[bomb_controller]) + 1
 	if next_index >= minigame_order.size():
@@ -59,10 +73,55 @@ func _start_next_round_for_player(bomb_controller: BombController) -> void:
 	bomb_controller.play_minigame(scene)
 
 func _on_player_finished(bomb_controller: BombController) -> void:
-	if _bomb_controllers.has(bomb_controller):
+	if not _match_finished and _bomb_controllers.has(bomb_controller):
 		_cooldowns[bomb_controller] = spawn_cooldown
 
+func player_eliminated(peer_id: int) -> void:
+	if _match_finished:
+		return
+	if multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		_resolve_elimination(peer_id)
+	elif multiplayer.is_server():
+		_resolve_elimination(peer_id)
+	else:
+		_report_elimination.rpc_id(1, peer_id)
+
+@rpc("any_peer", "reliable")
+func _report_elimination(peer_id: int) -> void:
+	if multiplayer.is_server() and multiplayer.get_remote_sender_id() == peer_id:
+		_resolve_elimination(peer_id)
+
+func player_disconnected(peer_id: int) -> void:
+	if multiplayer.is_server():
+		_resolve_elimination(peer_id)
+
+func _resolve_elimination(peer_id: int) -> void:
+	_alive_peer_ids.erase(peer_id)
+	if _alive_peer_ids.size() > 1:
+		return
+	var winner_peer_id := 0
+	if _alive_peer_ids.size() == 1:
+		winner_peer_id = int(_alive_peer_ids.keys()[0])
+	if multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		_finish_match(winner_peer_id)
+	else:
+		_finish_match.rpc(winner_peer_id)
+
+@rpc("authority", "call_local", "reliable")
+func _finish_match(winner_peer_id: int) -> void:
+	if _match_finished:
+		return
+	_match_finished = true
+	_counting_down = false
+	_cooldowns.clear()
+	for bomb_controller in _bomb_controllers.duplicate():
+		if is_instance_valid(bomb_controller):
+			bomb_controller.stop_minigame()
+	match_finished.emit(winner_peer_id)
+
 func _process(delta: float) -> void:
+	if _match_finished:
+		return
 	if _counting_down:
 		var prev_second := ceili(_countdown_left)
 		_countdown_left -= delta

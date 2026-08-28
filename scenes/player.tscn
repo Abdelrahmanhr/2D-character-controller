@@ -259,6 +259,10 @@ offset_top = -150.0
 offset_right = 100.0
 offset_bottom = -50.0
 
-[node name="BombTimerUI" type="Label" parent="BombController" unique_id=277684671]
-offset_right = 40.0
+[node name="BombTimerLayer" type="CanvasLayer" parent="BombController"]
+layer = 10
+
+[node name="BombTimerUI" type="Label" parent="BombController/BombTimerLayer" unique_id=277684671]
+custom_minimum_size = Vector2(120, 0)
+offset_right = 120.0
 offset_bottom = 23.0
