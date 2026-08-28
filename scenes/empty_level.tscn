@@ -36,7 +36,6 @@ scale = Vector2(0.285, 0.285)
 texture = ExtResource("2_rtppl")
 
 [node name="PauseMenu" parent="." unique_id=699686374 instance=ExtResource("2")]
-visible = false
 
 [node name="spawn point" type="Node2D" parent="." unique_id=47199142]
 position = Vector2(405, 223)

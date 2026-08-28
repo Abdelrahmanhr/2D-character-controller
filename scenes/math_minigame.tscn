@@ -1,6 +1,21 @@
 [gd_scene format=3 uid="uid://bfp8yuwl46p72"]
 
 [ext_resource type="Script" uid="uid://bklcjgbpkt6mk" path="res://scripts/math_minigame.gd" id="1_q5oua"]
+[ext_resource type="Texture2D" uid="uid://db85c0hdh1a2m" path="res://resources/Menu_ui.ux.png" id="2_qyy11"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_521p4"]
+atlas = ExtResource("2_qyy11")
+region = Rect2(2303.3926, 170.62485, 256.98926, 37.677063)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_cbdxn"]
+texture = SubResource("AtlasTexture_521p4")
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hsxyc"]
+atlas = ExtResource("2_qyy11")
+region = Rect2(2307.5361, 215.98572, 248.92847, 27.990463)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_yrkki"]
+texture = SubResource("AtlasTexture_hsxyc")
 
 [node name="MathMinigame" type="Control" unique_id=280554269]
 layout_mode = 3
@@ -48,4 +63,6 @@ offset_left = 32.0
 offset_top = 116.0
 offset_right = 248.0
 offset_bottom = 132.0
+theme_override_styles/background = SubResource("StyleBoxTexture_cbdxn")
+theme_override_styles/fill = SubResource("StyleBoxTexture_yrkki")
 fill_mode = 1

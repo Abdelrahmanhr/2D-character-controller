@@ -1,12 +1,29 @@
 [gd_scene format=3 uid="uid://byb0b07om1f3l"]
 
 [ext_resource type="Script" uid="uid://kxlhx4wv3ttm" path="res://scripts/input_sequence_minigame.gd" id="1_532o6"]
+[ext_resource type="Texture2D" uid="uid://db85c0hdh1a2m" path="res://resources/Menu_ui.ux.png" id="2_i2cde"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_521p4"]
+atlas = ExtResource("2_i2cde")
+region = Rect2(2303.3926, 170.62485, 256.98926, 37.677063)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_sx0is"]
+texture = SubResource("AtlasTexture_521p4")
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hsxyc"]
+atlas = ExtResource("2_i2cde")
+region = Rect2(2307.5361, 215.98572, 248.92847, 27.990463)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_2usgg"]
+texture = SubResource("AtlasTexture_hsxyc")
 
 [node name="InputSequenceMinigame" type="Control" unique_id=204754098]
 layout_mode = 3
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_532o6")
 round_duration = 15.0
 arrow_spacing = 25.0
@@ -14,10 +31,17 @@ slide_duration = 0.1
 
 [node name="ArrowContainer" type="Control" parent="." unique_id=1723190828]
 anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
+offset_left = 40.0
+offset_top = 16.0
+offset_right = 240.0
+offset_bottom = 136.0
 
-[node name="TimeBar" type="ProgressBar" parent="." unique_id=849051477]
+[node name="TimeBar" type="ProgressBar" parent="." unique_id=1750235670]
 layout_mode = 0
-offset_right = 4.0
-offset_bottom = 27.0
+offset_left = 32.0
+offset_top = 116.0
+offset_right = 248.0
+offset_bottom = 132.0
+theme_override_styles/background = SubResource("StyleBoxTexture_sx0is")
+theme_override_styles/fill = SubResource("StyleBoxTexture_2usgg")
+fill_mode = 1

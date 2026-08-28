@@ -28,6 +28,10 @@ var _active_tweens: Dictionary = {}
 func setup(player: Node) -> void:
 	_player = player
 	_time_left = round_duration
+	_correct_count = 0
+	_round_finished = false
+	time_bar.max_value = 100.0
+	time_bar.value = 100.0
 	for i in visible_arrow_count:
 		_push_new_arrow(false)
 	_reposition_queue(false)
@@ -39,6 +43,9 @@ func _push_new_arrow(animate: bool) -> void:
 	var arrow_label := Label.new()
 	arrow_label.text = ARROW_SYMBOLS[direction]
 	arrow_label.set_meta("direction", direction)
+	arrow_label.custom_minimum_size = Vector2(40.0, 24.0)
+	arrow_label.position.x = 80.0
+	arrow_label.add_theme_font_size_override("font_size", 20)
 	arrow_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	arrow_container.add_child(arrow_label)
 	arrow_label.position.y = -arrow_spacing if animate else 0.0
@@ -71,16 +78,25 @@ func _consume_active_arrow() -> void:
 func _handle_input(event: InputEvent) -> void:
 	if _round_finished:
 		return
-	if not (event is InputEventJoypadButton and event.pressed):
+
+	var pressed_direction := ""
+	if event is InputEventJoypadButton and event.pressed:
+		match event.button_index:
+			JOY_BUTTON_DPAD_UP: pressed_direction = "up"
+			JOY_BUTTON_DPAD_DOWN: pressed_direction = "down"
+			JOY_BUTTON_DPAD_LEFT: pressed_direction = "left"
+			JOY_BUTTON_DPAD_RIGHT: pressed_direction = "right"
+			_: return
+	elif event is InputEventKey and event.pressed and not event.echo:
+		var key: int = event.keycode if event.keycode != KEY_NONE else event.physical_keycode
+		match key:
+			KEY_UP: pressed_direction = "up"
+			KEY_DOWN: pressed_direction = "down"
+			KEY_LEFT: pressed_direction = "left"
+			KEY_RIGHT: pressed_direction = "right"
+			_: return
+	else:
 		return
-	
-	var pressed_direction: String = ""
-	match event.button_index:
-		JOY_BUTTON_DPAD_UP: pressed_direction = "up"
-		JOY_BUTTON_DPAD_DOWN: pressed_direction = "down"
-		JOY_BUTTON_DPAD_LEFT: pressed_direction = "left"
-		JOY_BUTTON_DPAD_RIGHT: pressed_direction = "right"
-		_: return
 	
 	_submit_direction(pressed_direction)
 

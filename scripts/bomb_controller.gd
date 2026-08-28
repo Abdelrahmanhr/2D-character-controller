@@ -3,7 +3,7 @@ class_name BombController
 
 signal player_finished_round
 
-@export var bomb_time: float = 60.0
+@export var bomb_time: float = 40.0
 @export var device_id: int = 0  
 
 var _time_left: float
@@ -51,13 +51,15 @@ func _process(delta: float) -> void:
 	if _minigame_layer:
 		_minigame_layer.global_position = _player.global_position + Vector2(-100, -150)
 
-func _unhandled_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
 	if _active_minigame == null or not _player.is_multiplayer_authority():
 		return
 	if event is InputEventJoypadButton and event.device == device_id:
 		_active_minigame._handle_input(event)
+		get_viewport().set_input_as_handled()
 	elif event is InputEventKey:
 		_active_minigame._handle_input(event)
+		get_viewport().set_input_as_handled()
 
 func _on_bomb_expired() -> void:
 	eliminate_player()
