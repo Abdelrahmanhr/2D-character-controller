@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://xmu73o4be3vy"]
 
 [ext_resource type="Script" uid="uid://bmopkndvg4l5v" path="res://scripts/minigame_director.gd" id="1_iogug"]
-[ext_resource type="PackedScene" uid="uid://bfp8yuwl46p72" path="res://scenes/math_minigame.tscn" id="2_lmgqp"]
+[ext_resource type="PackedScene" uid="uid://byb0b07om1f3l" path="res://scenes/input_sequence_minigame.tscn" id="3_y0foh"]
 
 [node name="MinigameDirector" type="Node" unique_id=921820911]
 script = ExtResource("1_iogug")
-minigame_order = Array[PackedScene]([ExtResource("2_lmgqp")])
+minigame_order = Array[PackedScene]([ExtResource("3_y0foh")])

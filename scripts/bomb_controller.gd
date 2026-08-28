@@ -84,7 +84,7 @@ func play_minigame(scene: PackedScene, slot_index: int) -> void:
 	slot.add_child(_active_minigame)
 	_active_minigame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_active_minigame.setup(_player)
-	_active_minigame.correct_answer.connect(_on_correct_answer)
+	_active_minigame.bomb_time_delta.connect(_on_bomb_time_delta)
 	_active_minigame.round_finished.connect(_on_minigame_finished)
 
 func stop_minigame() -> void:
@@ -95,11 +95,12 @@ func stop_minigame() -> void:
 		_active_minigame_slot.visible = false
 		_active_minigame_slot = null
 
-func _on_correct_answer(bonus_time: float) -> void:
-	_time_left += bonus_time
 
 func _on_minigame_finished() -> void:
 	if _active_minigame == null:
 		return
 	stop_minigame()
 	player_finished_round.emit()
+
+func _on_bomb_time_delta(seconds: float) -> void:
+	_time_left += seconds
