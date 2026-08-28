@@ -17,7 +17,7 @@ var _round_finished: bool = false
 @onready var press_count_label: Label = $PressCountLabel
 @onready var time_bar: ProgressBar = $TimeBar
 
-func setup(player: Node) -> void:
+func setup(player: Node, _rng_seed: int = 0) -> void:
 	_player = player
 	_time_left = round_duration
 	var color := MinigameUI.player_color_for(player)
