@@ -1,0 +1,108 @@
+extends Control
+class_name ColorMatchMinigame
+
+signal bomb_time_delta(seconds: float)
+signal round_finished
+
+@export var round_duration: float = 10.0
+@export var bonus_per_correct: float = 1.0
+@export var penalty_per_wrong: float = 1.0
+@export var target_correct: int = 15
+
+const POSITIONS := ["left", "up", "right", "down"]
+const COLOR_NAMES := ["RED", "GREEN", "BLUE", "YELLOW"]
+const COLOR_VALUES := {
+	"RED": Color.RED,
+	"GREEN": Color.GREEN,
+	"BLUE": Color.BLUE,
+	"YELLOW": Color.YELLOW,
+}
+
+var _player: Node
+var _time_left: float
+var _correct_count: int = 0
+var _round_finished: bool = false
+var _position_color_name: Dictionary = {}  # position -> the color NAME its label displays
+var _target_color_name: String = ""
+
+@onready var label_left: Label = $LabelLeft
+@onready var label_up: Label = $LabelUp
+@onready var label_right: Label = $LabelRight
+@onready var label_down: Label = $LabelDown
+@onready var center_square: ColorRect = $CenterSquare
+@onready var time_bar: ProgressBar = $TimeBar
+
+func setup(player: Node) -> void:
+	_player = player
+	_time_left = round_duration
+	_next_round()
+
+func _get_label(position: String) -> Label:
+	match position:
+		"left": return label_left
+		"up": return label_up
+		"right": return label_right
+		"down": return label_down
+	return null
+
+func _next_round() -> void:
+	var shuffled_names := COLOR_NAMES.duplicate()
+	shuffled_names.shuffle()
+	
+	for i in POSITIONS.size():
+		var position: String = POSITIONS[i]
+		var color_name: String = shuffled_names[i]
+		_position_color_name[position] = color_name
+		
+		var label := _get_label(position)
+		label.text = color_name
+		var ink_color: String = COLOR_NAMES[randi() % COLOR_NAMES.size()]
+		label.add_theme_color_override("font_color", COLOR_VALUES[ink_color])
+	
+	_target_color_name = COLOR_NAMES[randi() % COLOR_NAMES.size()]
+	center_square.color = COLOR_VALUES[_target_color_name]
+
+func _handle_input(event: InputEvent) -> void:
+	if _round_finished:
+		return
+	if not (event is InputEventJoypadButton and event.pressed):
+		return
+	
+	var pressed_position: String = ""
+	match event.button_index:
+		JOY_BUTTON_DPAD_LEFT: pressed_position = "left"
+		JOY_BUTTON_DPAD_UP: pressed_position = "up"
+		JOY_BUTTON_DPAD_RIGHT: pressed_position = "right"
+		JOY_BUTTON_DPAD_DOWN: pressed_position = "down"
+		_: return
+	
+	_submit_position(pressed_position)
+
+func _submit_position(position: String) -> void:
+	var color_name_at_position: String = _position_color_name[position]
+	
+	if color_name_at_position == _target_color_name:
+		_correct_count += 1
+		bomb_time_delta.emit(bonus_per_correct)
+		if _correct_count >= target_correct:
+			_finish_round()
+			return
+	else:
+		bomb_time_delta.emit(-penalty_per_wrong)
+	
+	_next_round()
+
+func _process(delta: float) -> void:
+	if _round_finished:
+		return
+	_time_left -= delta
+	time_bar.value = (_time_left / round_duration) * 100.0
+	if _time_left <= 0.0:
+		_finish_round()
+
+func _finish_round() -> void:
+	if _round_finished:
+		return
+	_round_finished = true
+	set_process(false)
+	round_finished.emit()

@@ -1,0 +1,54 @@
+[gd_scene format=3 uid="uid://v1hn6b1fyp0k"]
+
+[ext_resource type="Script" uid="uid://bno514ux6ohax" path="res://scripts/color_match_minigame.gd" id="1_fud5r"]
+
+[node name="ColorMatchMinigame" type="Control" unique_id=320290867]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_fud5r")
+
+[node name="CenterSquare" type="ColorRect" parent="." unique_id=1712461176]
+layout_mode = 0
+offset_left = 83.0
+offset_top = 52.0
+offset_right = 152.0
+offset_bottom = 106.0
+
+[node name="LabelLeft" type="Label" parent="." unique_id=845085849]
+layout_mode = 0
+offset_left = 42.0
+offset_top = 64.0
+offset_right = 82.0
+offset_bottom = 87.0
+text = "#"
+
+[node name="LabelUp" type="Label" parent="." unique_id=532915874]
+layout_mode = 0
+offset_left = 108.0
+offset_top = 16.0
+offset_right = 148.0
+offset_bottom = 39.0
+text = "#"
+
+[node name="LabelRight" type="Label" parent="." unique_id=1999101859]
+layout_mode = 0
+offset_left = 180.0
+offset_top = 68.0
+offset_right = 220.0
+offset_bottom = 91.0
+text = "#"
+
+[node name="LabelDown" type="Label" parent="." unique_id=1110507482]
+layout_mode = 0
+offset_left = 110.0
+offset_top = 123.0
+offset_right = 150.0
+offset_bottom = 146.0
+text = "#"
+
+[node name="TimeBar" type="ProgressBar" parent="." unique_id=1152017400]
+layout_mode = 0
+offset_right = 4.0
+offset_bottom = 27.0
