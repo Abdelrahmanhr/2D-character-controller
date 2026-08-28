@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://e468yxvbaau6"]
+
+[ext_resource type="Script" uid="uid://cp7ovcmh2svs6" path="res://scripts/mash_minigame.gd" id="1_kc3fh"]
+
+[node name="MashMinigame" type="Control" unique_id=2108075365]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_kc3fh")
+max_presses = 60
+
+[node name="MashLabel" type="Label" parent="." unique_id=1559007947]
+layout_mode = 0
+offset_left = 27.0
+offset_right = 74.0
+offset_bottom = 23.0
+text = "MASH"
+
+[node name="PressCountLabel" type="Label" parent="." unique_id=2061067325]
+layout_mode = 0
+offset_left = 31.0
+offset_top = 33.0
+offset_right = 71.0
+offset_bottom = 56.0
+text = "0 / 60"
+
+[node name="TimeBar" type="ProgressBar" parent="." unique_id=2100546413]
+layout_mode = 0
+offset_left = 35.0
+offset_top = -29.0
+offset_right = 39.0
+offset_bottom = -2.0
