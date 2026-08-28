@@ -5,7 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://2ro002b1cdeu" path="res://resources/Tiny Adventure-Cyberpunk City Background01.png" id="2_rtppl"]
 [ext_resource type="Texture2D" uid="uid://l0yb0syj8l6s" path="res://resources/platform.png" id="4_usonc"]
 [ext_resource type="Texture2D" uid="uid://crgk3ot4gcutv" path="res://resources/platform_long.png" id="5_po38m"]
-[ext_resource type="PackedScene" uid="uid://bmatchhudneon01" path="res://scenes/match_hud.tscn" id="6_hud"]
+[ext_resource type="PackedScene" uid="uid://deiu510u7y2u3" path="res://scenes/match_hud.tscn" id="6_hud"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gsd86"]
 size = Vector2(211, 27.75)
@@ -16,13 +16,45 @@ size = Vector2(326, 27.75)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_80rik"]
 size = Vector2(1479, 202.5)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_minigame"]
-bg_color = Color(1, 0.95, 0, 0.35)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot0"]
+bg_color = Color(0, 0, 0, 0.88)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(1, 0.95, 0, 0.95)
+border_color = Color(1, 0.18, 0.22, 1)
+shadow_color = Color(1, 0.15, 0.2, 0.45)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot1"]
+bg_color = Color(0, 0, 0, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.95, 0.15, 1)
+shadow_color = Color(1, 0.92, 0.1, 0.45)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot2"]
+bg_color = Color(0, 0, 0, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2, 0.55, 1, 1)
+shadow_color = Color(0.15, 0.5, 1, 0.45)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot3"]
+bg_color = Color(0, 0, 0, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.15, 1, 0.4, 1)
+shadow_color = Color(0.1, 1, 0.35, 0.45)
+shadow_size = 6
 
 [node name="EmptyLevel" type="Node2D" unique_id=2122088302]
 script = ExtResource("1")
@@ -118,7 +150,7 @@ texture = ExtResource("4_usonc")
 position = Vector2(1305, 310.125)
 shape = SubResource("RectangleShape2D_gsd86")
 
-[node name="MatchHUD" parent="." instance=ExtResource("6_hud")]
+[node name="MatchHUD" parent="." unique_id=1348396075 instance=ExtResource("6_hud")]
 
 [node name="DeathZone" type="Area2D" parent="." unique_id=200323669]
 
@@ -155,7 +187,7 @@ offset_top = 80.0
 offset_right = 304.0
 offset_bottom = 240.0
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_minigame")
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot0")
 
 [node name="Slot1" type="Panel" parent="MinigameLayout/Layout" unique_id=388569904]
 visible = false
@@ -165,7 +197,7 @@ offset_top = 460.0
 offset_right = 304.0
 offset_bottom = 620.0
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_minigame")
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot1")
 
 [node name="Slot2" type="Panel" parent="MinigameLayout/Layout" unique_id=1122928017]
 visible = false
@@ -179,7 +211,7 @@ offset_right = -24.0
 offset_bottom = 240.0
 grow_horizontal = 0
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_minigame")
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot2")
 
 [node name="Slot3" type="Panel" parent="MinigameLayout/Layout" unique_id=1023460895]
 visible = false
@@ -193,4 +225,4 @@ offset_right = -24.0
 offset_bottom = 620.0
 grow_horizontal = 0
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_minigame")
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot3")

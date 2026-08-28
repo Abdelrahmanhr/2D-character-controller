@@ -13,13 +13,13 @@ signal round_finished
 @export var slide_duration: float = 0.15
 
 const ARROW_SIZE := Vector2(48.0, 22.0)
-const ACTIVE_COLOR := Color(1.0, 0.95, 0.2, 1.0)
 const INACTIVE_COLOR := Color(1.0, 1.0, 1.0, 0.55)
 
 const DIRECTIONS := ["up", "down", "left", "right"]
 const ARROW_SYMBOLS := {"up": "^", "down": "v", "left": "<", "right": ">"}
 
 var _player: Node
+var _accent: Color = Color(1, 0.95, 0.2, 1)
 var _time_left: float
 var _correct_count: int = 0
 var _round_finished: bool = false
@@ -31,9 +31,11 @@ var _active_tweens: Dictionary = {}
 
 func setup(player: Node) -> void:
 	_player = player
+	_accent = MinigameUI.player_color_for(player)
 	_time_left = round_duration
 	_correct_count = 0
 	_round_finished = false
+	MinigameUI.style_time_bar(time_bar, _accent)
 	time_bar.max_value = 100.0
 	time_bar.value = 100.0
 	for i in visible_arrow_count:
@@ -49,6 +51,7 @@ func _push_new_arrow(animate: bool) -> void:
 	arrow_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	arrow_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	arrow_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	arrow_label.add_theme_font_override("font", MinigameUI.game_font())
 	arrow_container.add_child(arrow_label)
 	arrow_label.position = Vector2(_arrow_x(), -arrow_spacing if animate else 0.0)
 	_arrow_queue.push_front(arrow_label)
@@ -81,8 +84,10 @@ func _refresh_active_style() -> void:
 	for i in _arrow_queue.size():
 		var arrow := _arrow_queue[i]
 		var is_active := i == last_index
-		arrow.add_theme_color_override("font_color", ACTIVE_COLOR if is_active else INACTIVE_COLOR)
-		arrow.add_theme_font_size_override("font_size", 26 if is_active else 18)
+		arrow.add_theme_color_override("font_color", _accent if is_active else INACTIVE_COLOR)
+		arrow.add_theme_font_size_override("font_size", 28 if is_active else 18)
+		arrow.add_theme_color_override("font_outline_color", Color(_accent.r, _accent.g, _accent.b, 0.7 if is_active else 0.25))
+		arrow.add_theme_constant_override("outline_size", 4 if is_active else 2)
 
 func _consume_active_arrow() -> void:
 	var arrow: Label = _arrow_queue.pop_back()

@@ -20,6 +20,10 @@ var _round_finished: bool = false
 func setup(player: Node) -> void:
 	_player = player
 	_time_left = round_duration
+	var color := MinigameUI.player_color_for(player)
+	MinigameUI.style_time_bar(time_bar, color)
+	MinigameUI.style_label($MashLabel, color, 28)
+	MinigameUI.style_label(press_count_label, color, 20)
 	_update_label()
 
 func _handle_input(event: InputEvent) -> void:
@@ -27,6 +31,9 @@ func _handle_input(event: InputEvent) -> void:
 		return
 	if event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_Y:
 		_register_press()
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_Y or event.physical_keycode == KEY_Y:
+			_register_press()
 
 func _register_press() -> void:
 	if _press_count >= max_presses:

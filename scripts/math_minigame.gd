@@ -39,7 +39,12 @@ var _answered: bool = false
 func setup(player: Node) -> void:
 	_player = player
 	_time_left = round_duration
-	
+	var color := MinigameUI.player_color_for(player)
+	MinigameUI.style_time_bar(time_bar, color)
+	MinigameUI.style_label(equation_label, color, 22)
+	MinigameUI.style_label(option_left, color, 20)
+	MinigameUI.style_label(option_right, color, 20)
+
 	var pool := EQUATIONS.duplicate()
 	pool.shuffle()
 	_round_equations = pool.slice(0, equation_count)

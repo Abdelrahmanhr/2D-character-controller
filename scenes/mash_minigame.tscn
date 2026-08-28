@@ -1,33 +1,62 @@
 [gd_scene format=3 uid="uid://e468yxvbaau6"]
 
 [ext_resource type="Script" uid="uid://cp7ovcmh2svs6" path="res://scripts/mash_minigame.gd" id="1_kc3fh"]
+[ext_resource type="Texture2D" uid="uid://db85c0hdh1a2m" path="res://resources/Menu_ui.ux.png" id="2_i2cde"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_521p4"]
+atlas = ExtResource("2_i2cde")
+region = Rect2(2303.3926, 170.62485, 256.98926, 37.677063)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_sx0is"]
+texture = SubResource("AtlasTexture_521p4")
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hsxyc"]
+atlas = ExtResource("2_i2cde")
+region = Rect2(2307.5361, 215.98572, 248.92847, 27.990463)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_2usgg"]
+texture = SubResource("AtlasTexture_hsxyc")
 
 [node name="MashMinigame" type="Control" unique_id=2108075365]
 layout_mode = 3
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_kc3fh")
 max_presses = 60
 
 [node name="MashLabel" type="Label" parent="." unique_id=1559007947]
 layout_mode = 0
-offset_left = 27.0
-offset_right = 74.0
-offset_bottom = 23.0
-text = "MASH"
+offset_left = 32.0
+offset_top = 20.0
+offset_right = 248.0
+offset_bottom = 52.0
+theme_override_colors/font_color = Color(1, 0.95, 0.2, 1)
+theme_override_font_sizes/font_size = 26
+text = "Y"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="PressCountLabel" type="Label" parent="." unique_id=2061067325]
 layout_mode = 0
-offset_left = 31.0
-offset_top = 33.0
-offset_right = 71.0
-offset_bottom = 56.0
+offset_left = 32.0
+offset_top = 68.0
+offset_right = 248.0
+offset_bottom = 96.0
+theme_override_colors/font_color = Color(1, 1, 1, 0.55)
+theme_override_font_sizes/font_size = 18
 text = "0 / 60"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="TimeBar" type="ProgressBar" parent="." unique_id=2100546413]
 layout_mode = 0
-offset_left = 35.0
-offset_top = -29.0
-offset_right = 39.0
-offset_bottom = -2.0
+offset_left = 32.0
+offset_top = 116.0
+offset_right = 248.0
+offset_bottom = 132.0
+theme_override_styles/background = SubResource("StyleBoxTexture_sx0is")
+theme_override_styles/fill = SubResource("StyleBoxTexture_2usgg")
+fill_mode = 1
