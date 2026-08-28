@@ -3,6 +3,7 @@ extends Node
 signal countdown_tick(seconds_left: int)
 signal match_started
 signal match_finished(winner_peer_id: int)
+signal alive_count_changed(alive: int, total: int)
 
 @export var expected_player_count: int = 1
 @export var countdown_duration: float = 3.0
@@ -17,13 +18,32 @@ var _bomb_controllers: Array[BombController] = []
 var _round_indices: Dictionary = {}
 var _cooldowns: Dictionary = {}
 var _alive_peer_ids: Dictionary = {}
+var _total_players: int = 0
 var _match_finished := false
+
+func get_alive_count() -> int:
+	return _alive_peer_ids.size()
+
+func get_total_players() -> int:
+	return _total_players
+
+func _notify_alive_count() -> void:
+	var alive := _alive_peer_ids.size()
+	alive_count_changed.emit(alive, _total_players)
+	if multiplayer.multiplayer_peer != null and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer) and multiplayer.is_server():
+		_sync_alive_count.rpc(alive, _total_players)
+
+@rpc("authority", "reliable")
+func _sync_alive_count(alive: int, total: int) -> void:
+	_total_players = total
+	alive_count_changed.emit(alive, total)
 
 func reset_match() -> void:
 	_bomb_controllers.clear()
 	_round_indices.clear()
 	_cooldowns.clear()
 	_alive_peer_ids.clear()
+	_total_players = 0
 	_countdown_left = 0.0
 	_counting_down = false
 	_match_finished = false
@@ -33,9 +53,11 @@ func register_player(bomb_controller: BombController) -> void:
 		return
 	_bomb_controllers.append(bomb_controller)
 	_alive_peer_ids[bomb_controller.get_parent().name.to_int()] = bomb_controller
+	_total_players = maxi(_total_players, _alive_peer_ids.size())
 	_round_indices[bomb_controller] = -1
 	_cooldowns[bomb_controller] = 0.0
 	bomb_controller.player_finished_round.connect(_on_player_finished.bind(bomb_controller))
+	_notify_alive_count()
 	
 	if _bomb_controllers.size() >= expected_player_count and not _counting_down:
 		_begin_countdown()
@@ -54,6 +76,7 @@ func unregister_player(bomb_controller: BombController) -> void:
 	var callback := _on_player_finished.bind(bomb_controller)
 	if bomb_controller.player_finished_round.is_connected(callback):
 		bomb_controller.player_finished_round.disconnect(callback)
+	_notify_alive_count()
 	if _bomb_controllers.is_empty():
 		_counting_down = false
 		_countdown_left = 0.0
@@ -84,6 +107,8 @@ func player_eliminated(peer_id: int) -> void:
 	elif multiplayer.is_server():
 		_resolve_elimination(peer_id)
 	else:
+		_alive_peer_ids.erase(peer_id)
+		alive_count_changed.emit(_alive_peer_ids.size(), _total_players)
 		_report_elimination.rpc_id(1, peer_id)
 
 @rpc("any_peer", "reliable")
@@ -97,6 +122,7 @@ func player_disconnected(peer_id: int) -> void:
 
 func _resolve_elimination(peer_id: int) -> void:
 	_alive_peer_ids.erase(peer_id)
+	_notify_alive_count()
 	if _alive_peer_ids.size() > 1:
 		return
 	var winner_peer_id := 0

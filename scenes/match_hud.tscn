@@ -1,0 +1,162 @@
+[gd_scene format=3 uid="uid://deiu510u7y2u3"]
+
+[ext_resource type="Script" path="res://scripts/match_hud.gd" id="1_hud"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_header"]
+bg_color = Color(0.04, 0.035, 0.01, 0.82)
+border_width_bottom = 2
+border_color = Color(1, 0.95, 0.15, 0.95)
+shadow_color = Color(1, 0.92, 0.1, 0.35)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_bg"]
+bg_color = Color(0.08, 0.07, 0.02, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.95, 0.2, 0.7)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_fill"]
+bg_color = Color(1, 0.95, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 0.65, 0.9)
+corner_radius_top_left = 1
+corner_radius_top_right = 1
+corner_radius_bottom_right = 1
+corner_radius_bottom_left = 1
+shadow_color = Color(1, 0.92, 0.15, 0.55)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_alive"]
+bg_color = Color(1, 0.95, 0, 0.12)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.95, 0.15, 0.95)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+content_margin_left = 14
+content_margin_top = 4
+content_margin_right = 14
+content_margin_bottom = 4
+
+[node name="MatchHUD" type="CanvasLayer"]
+layer = 8
+script = ExtResource("1_hud")
+
+[node name="Header" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 64.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="Backdrop" type="Panel" parent="Header"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_header")
+
+[node name="TimerBlock" type="Control" parent="Header"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 20.0
+offset_top = -18.0
+offset_right = 420.0
+offset_bottom = 18.0
+mouse_filter = 2
+
+[node name="BombCaption" type="Label" parent="Header/TimerBlock"]
+layout_mode = 0
+offset_right = 72.0
+offset_bottom = 36.0
+theme_override_colors/font_color = Color(1, 0.95, 0.25, 1)
+theme_override_colors/font_shadow_color = Color(1, 0.8, 0, 0.45)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 0
+theme_override_constants/shadow_outline_size = 4
+theme_override_font_sizes/font_size = 13
+text = "BOMB"
+vertical_alignment = 1
+
+[node name="BombBar" type="ProgressBar" parent="Header/TimerBlock"]
+layout_mode = 0
+offset_left = 72.0
+offset_top = 8.0
+offset_right = 332.0
+offset_bottom = 28.0
+theme_override_styles/background = SubResource("StyleBoxFlat_bar_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_bar_fill")
+max_value = 40.0
+value = 40.0
+show_percentage = false
+
+[node name="BombTime" type="Label" parent="Header/TimerBlock"]
+layout_mode = 0
+offset_left = 340.0
+offset_right = 420.0
+offset_bottom = 36.0
+theme_override_colors/font_color = Color(1, 0.97, 0.45, 1)
+theme_override_colors/font_shadow_color = Color(1, 0.85, 0.1, 0.5)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 0
+theme_override_constants/shadow_outline_size = 6
+theme_override_font_sizes/font_size = 22
+text = "40.0"
+vertical_alignment = 1
+
+[node name="AliveBlock" type="PanelContainer" parent="Header"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -188.0
+offset_top = -24.0
+offset_right = -20.0
+offset_bottom = 24.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_alive")
+
+[node name="AliveRow" type="VBoxContainer" parent="Header/AliveBlock"]
+layout_mode = 2
+theme_override_constants/separation = -2
+
+[node name="AliveCaption" type="Label" parent="Header/AliveBlock/AliveRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.3, 0.9)
+theme_override_colors/font_shadow_color = Color(1, 0.8, 0, 0.4)
+theme_override_constants/shadow_outline_size = 4
+theme_override_font_sizes/font_size = 10
+text = "ALIVE"
+horizontal_alignment = 2
+
+[node name="AliveCount" type="Label" parent="Header/AliveBlock/AliveRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.97, 0.4, 1)
+theme_override_colors/font_shadow_color = Color(1, 0.85, 0.1, 0.55)
+theme_override_constants/shadow_outline_size = 8
+theme_override_font_sizes/font_size = 22
+text = "1 / 1"
+horizontal_alignment = 2

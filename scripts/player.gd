@@ -27,6 +27,7 @@ var is_dead := false
 
 
 func _ready() -> void:
+	add_to_group("players")
 	_recalculate_jump_physics()
 
 func _enter_tree() -> void:

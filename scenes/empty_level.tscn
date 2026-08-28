@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://2ro002b1cdeu" path="res://resources/Tiny Adventure-Cyberpunk City Background01.png" id="2_rtppl"]
 [ext_resource type="Texture2D" uid="uid://l0yb0syj8l6s" path="res://resources/platform.png" id="4_usonc"]
 [ext_resource type="Texture2D" uid="uid://crgk3ot4gcutv" path="res://resources/platform_long.png" id="5_po38m"]
+[ext_resource type="PackedScene" uid="uid://bmatchhudneon01" path="res://scenes/match_hud.tscn" id="6_hud"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_gsd86"]
 size = Vector2(211, 27.75)
@@ -116,6 +117,8 @@ texture = ExtResource("4_usonc")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="floor/platform6" unique_id=1078468192]
 position = Vector2(1305, 310.125)
 shape = SubResource("RectangleShape2D_gsd86")
+
+[node name="MatchHUD" parent="." instance=ExtResource("6_hud")]
 
 [node name="DeathZone" type="Area2D" parent="." unique_id=200323669]
 
