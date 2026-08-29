@@ -8,4 +8,5 @@
 
 [node name="MinigameDirector" type="Node" unique_id=921820911]
 script = ExtResource("1_iogug")
+expected_player_count = 3
 minigame_order = Array[PackedScene]([ExtResource("2_math"), ExtResource("3_y0foh"), ExtResource("4_4ybhr"), ExtResource("5_os3jr")])
