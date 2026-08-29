@@ -42,10 +42,10 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		if event.pressed:
 			_try_replicate_input(false, event.button_index)
-	elif event is InputEventKey:
+	elif event is InputEventKey and not event.echo:
 		_active_minigame._handle_input(event)
 		get_viewport().set_input_as_handled()
-		if event.pressed and not event.echo:
+		if event.pressed:
 			var key: int = event.keycode if event.keycode != KEY_NONE else event.physical_keycode
 			_try_replicate_input(true, key)
 

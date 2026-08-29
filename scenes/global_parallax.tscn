@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/parallax_bg.tscn" id="1_parallax"]
+
+[node name="GlobalParallax" type="CanvasLayer"]
+layer = -10
+
+[node name="ParallaxBG" parent="." instance=ExtResource("1_parallax")]

@@ -24,6 +24,8 @@ SteamManager="*res://scripts/steam_manager.gd"
 Networking="*uid://biey2tmy4kxep"
 MinigameDirector="*uid://xmu73o4be3vy"
 SfxManager="*uid://cj7thjw7nipac"
+GlobalParallax="*res://scenes/global_parallax.tscn"
+SceneTransition="*res://scenes/scene_transition.tscn"
 
 [display]
 
