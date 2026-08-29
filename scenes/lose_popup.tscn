@@ -1,0 +1,65 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Theme" path="res://resources/themes/gravity.tres" id="1_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.02, 0.05, 0.07, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.18, 0.22, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(1, 0.18, 0.22, 0.35)
+shadow_size = 10
+
+[node name="LosePopup" type="CanvasLayer"]
+layer = 15
+
+[node name="Panel" type="Panel" parent="."]
+theme = ExtResource("1_theme")
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -130.0
+offset_top = -40.0
+offset_right = 130.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Box" type="VBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 10.0
+offset_right = -12.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Title" type="Label" parent="Panel/Box"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+theme_override_colors/font_color = Color(1, 1, 1, 0.97)
+theme_override_colors/font_outline_color = Color(1, 0.18, 0.22, 1)
+theme_override_constants/outline_size = 5
+text = "YOU LOSE"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Panel/Box"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.75, 0.95, 1, 0.85)
+text = "Spectating..."
+horizontal_alignment = 1

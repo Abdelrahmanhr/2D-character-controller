@@ -9,6 +9,10 @@ func _ready() -> void:
 	$Menu/MultiplayerButton.pressed.connect(_on_multiplayer_pressed)
 	$Menu/CreditsButton.pressed.connect(_on_credits_pressed)
 	$Menu/ExitButton.pressed.connect(_on_exit_pressed)
+	Networking.client_joined.connect(_on_client_joined)
+
+func _on_client_joined() -> void:
+	get_tree().change_scene_to_file(LOBBY_SCENE)
 
 func _on_start_pressed() -> void:
 	SceneTransition.circle_to(EMPTY_LEVEL_SCENE)

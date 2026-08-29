@@ -2,7 +2,12 @@ extends Node2D
 
 const PLAYER = preload("uid://dg4t5o3xnmwxn")
 
+const LOSE_POPUP := preload("res://scenes/lose_popup.tscn")
+const END_MENU := preload("res://scenes/end_menu.tscn")
+
 var players: Array[CharacterBody2D]
+var _spectate_overlay: CanvasLayer
+var _end_menu: CanvasLayer
 @onready var multiplayer_spawner: MultiplayerSpawner = $MultiplayerSpawner
 @onready var match_result: Label = $MatchResult
 @onready var background_sprite: Sprite2D = $background/Sprite2D
@@ -37,15 +42,32 @@ func _on_death_zone_body_entered(body: Node) -> void:
 		body.get_node("BombController").eliminate_player()
 		print("Player fell!")
 
+func show_lose_popup() -> void:
+	if _spectate_overlay or _end_menu:
+		return
+	_spectate_overlay = LOSE_POPUP.instantiate()
+	add_child(_spectate_overlay)
+
 func _on_match_finished(winner_peer_id: int) -> void:
+	if _spectate_overlay:
+		_spectate_overlay.queue_free()
+		_spectate_overlay = null
 	var local_peer_id := multiplayer.get_unique_id()
+	var title: String
+	var color: Color
 	if winner_peer_id == 0:
-		match_result.text = "DRAW"
+		title = "DRAW"
+		color = Color(1, 0.95, 0.15, 1)
 	elif winner_peer_id == local_peer_id:
-		match_result.text = "YOU WIN"
+		title = "YOU WIN"
+		color = Color(0.15, 1, 0.4, 1)
 	else:
-		match_result.text = "YOU LOSE"
-	match_result.visible = true
+		title = "YOU LOSE"
+		color = Color(1, 0.18, 0.22, 1)
+	get_tree().paused = true
+	_end_menu = END_MENU.instantiate()
+	add_child(_end_menu)
+	_end_menu.set_result(title, color)
 
 func _spawn_local_player() -> void:
 	var player := PLAYER.instantiate() as CharacterBody2D
