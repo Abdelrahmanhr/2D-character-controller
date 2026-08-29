@@ -2,7 +2,12 @@
 
 [ext_resource type="Script" uid="uid://dpwa156pfmo1t" path="res://scripts/player.gd" id="1_g2els"]
 [ext_resource type="Texture2D" uid="uid://cc34fg7sje1yl" path="res://resources/idle_left.png" id="2_dqkch"]
+[ext_resource type="AudioStream" uid="uid://cdgi3bh0n25r3" path="res://resources/audio/Dash Sound.wav" id="2_fjrip"]
 [ext_resource type="Texture2D" uid="uid://dchn5fp7q0rsl" path="res://resources/idle_right.png" id="3_qlg0r"]
+[ext_resource type="AudioStream" uid="uid://v85eit05b1wl" path="res://resources/audio/Footstep.wav" id="3_smehm"]
+[ext_resource type="AudioStream" uid="uid://by5cpkbyyu6ag" path="res://resources/audio/Land.wav" id="3_ur7pv"]
+[ext_resource type="AudioStream" uid="uid://ttodt4l3udy8" path="res://resources/audio/Jump.wav" id="4_y4r1p"]
+[ext_resource type="AudioStream" uid="uid://25ky8v0paci4" path="res://resources/audio/Stunned.wav" id="5_d2wvv"]
 [ext_resource type="Script" uid="uid://b0ruex0dunyys" path="res://scripts/bomb_controller.gd" id="5_qlg0r"]
 [ext_resource type="Texture2D" uid="uid://dl04xmvt8e0ck" path="res://resources/character_bomb.png" id="5_tuyoq"]
 [ext_resource type="Texture2D" uid="uid://db85c0hdh1a2m" path="res://resources/Menu_ui.ux.png" id="6_tuyoq"]
@@ -79,13 +84,13 @@ region = Rect2(0, 16, 16, 16)
 atlas = ExtResource("5_tuyoq")
 region = Rect2(16, 16, 16, 16)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_gl8cc"]
-atlas = ExtResource("5_tuyoq")
-region = Rect2(32, 16, 16, 16)
-
 [sub_resource type="AtlasTexture" id="AtlasTexture_487ah"]
 atlas = ExtResource("5_tuyoq")
 region = Rect2(48, 16, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gl8cc"]
+atlas = ExtResource("5_tuyoq")
+region = Rect2(32, 16, 16, 16)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_md1ol"]
 atlas = ExtResource("5_tuyoq")
@@ -191,14 +196,14 @@ animations = [{
 "texture": SubResource("AtlasTexture_wnwbv")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_gl8cc")
+"texture": SubResource("AtlasTexture_487ah")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_487ah")
+"texture": SubResource("AtlasTexture_gl8cc")
 }],
 "loop": 1,
 "name": &"walk_left",
-"speed": 5.0
+"speed": 7.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -215,7 +220,7 @@ animations = [{
 }],
 "loop": 1,
 "name": &"walk_right",
-"speed": 5.0
+"speed": 7.0
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_k0quf"]
@@ -258,6 +263,11 @@ properties/0/replication_mode = 1
 script = ExtResource("1_g2els")
 jump_height = 110.0
 dash_end_momentum_retention = 0.5
+dash_sound = ExtResource("2_fjrip")
+land_sound = ExtResource("3_ur7pv")
+jump_sound = ExtResource("4_y4r1p")
+slam_sound = ExtResource("5_d2wvv")
+footstep_sound = ExtResource("3_smehm")
 
 [node name="Glow" type="Sprite2D" parent="." unique_id=1253636982]
 z_index = -1

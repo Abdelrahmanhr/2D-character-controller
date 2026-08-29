@@ -14,6 +14,19 @@ extends CharacterBody2D
 @export var knockback_speed: float = 500.0
 @export var knockback_friction: float = 1200.0
 @export var hitstop_duration: float = 0.08
+@export var dash_sound: AudioStream
+@export var land_sound: AudioStream
+@export var jump_sound: AudioStream  
+@export var slam_sound: AudioStream  
+@export var footstep_sound: AudioStream
+@export var footstep_frames: Array[int] = [0,2]
+@export var footstep_pitch_variance: float = 0.15
+@export var footstep_debounce: float = 0.1
+
+var _was_on_floor: bool = true
+
+var _was_walking: bool = false
+var _last_footstep_time: float = -999.0
 
 var is_frozen: bool = false
 var freeze_time_left: float = 0.0
@@ -53,6 +66,7 @@ var _identity_slot: int = -1
 
 func _ready() -> void:
 	dash_hitbox.body_entered.connect(_on_dash_hitbox_body_entered)
+	animated_sprite.frame_changed.connect(_on_animation_frame_changed)
 	dash_hitbox.monitoring = false
 	add_to_group("players")
 	_recalculate_jump_physics()
@@ -92,6 +106,7 @@ func _physics_process(delta: float) -> void:
 	_handle_input(delta)
 	_apply_movement(delta)
 	move_and_slide()
+	_check_landing()
 	_update_animation()
 	
 
@@ -160,6 +175,8 @@ func play_death_animation() -> void:
 	animated_sprite.stop()
 	animated_sprite.frame = animated_sprite.sprite_frames.get_frame_count(animation_name) - 1
 
+
+
 func _update_animation() -> void:
 	if direction != 0.0:
 		facing_right = direction > 0.0
@@ -172,6 +189,11 @@ func _update_animation() -> void:
 		next_animation = StringName("walk_" + facing)
 	else:
 		next_animation = StringName("idle_" + facing)
+
+	var is_walking_now := next_animation.begins_with("walk_")
+	if is_walking_now and not _was_walking:
+		_play_footstep()
+	_was_walking = is_walking_now
 
 	if animation_name != next_animation:
 		animation_name = next_animation
@@ -222,6 +244,7 @@ func _apply_movement(delta: float) -> void:
 	if jump_pressed:
 		velocity.y = jump_velocity
 		jump_pressed = false
+		SfxManager.play(jump_sound,-10.0,0.1) 
 	
 	if cut_jump:
 		velocity.y *= jump_cut_off
@@ -250,6 +273,7 @@ func _start_dash() -> void:
 	dash_direction = _get_dash_direction()
 	velocity = dash_direction * dash_speed
 	dash_hitbox.monitoring = true
+	SfxManager.play(dash_sound,-15.0)
 
 func _on_dash_hitbox_body_entered(body: Node) -> void:
 	if body == self:
@@ -274,6 +298,7 @@ func _do_apply_stun(from_direction: Vector2) -> void:
 	is_stunned = true
 	stun_time_left = stun_duration
 	velocity = from_direction * knockback_speed
+	SfxManager.play(slam_sound, -10.0, 0.1)
 	
 
 func apply_hitstop(duration: float) -> void:
@@ -287,3 +312,24 @@ func _do_apply_hitstop(duration: float) -> void:
 	is_frozen = true
 	freeze_time_left = duration
 	animated_sprite.speed_scale = 0.0
+
+
+func _on_animation_frame_changed() -> void:
+	if not animation_name.begins_with("walk_"):
+		return
+	if animated_sprite.frame in footstep_frames:
+		_play_footstep()
+
+func _play_footstep() -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	if now - _last_footstep_time < footstep_debounce:
+		return
+	_last_footstep_time = now
+	SfxManager.play(footstep_sound, -4.0 + randf_range(-2.0, 2.0), footstep_pitch_variance)
+
+
+func _check_landing() -> void:  # NEW
+	var on_floor_now := is_on_floor()
+	if on_floor_now and not _was_on_floor:
+		SfxManager.play(land_sound,-20.0,0.2)
+	_was_on_floor = on_floor_now

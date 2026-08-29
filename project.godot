@@ -14,11 +14,16 @@ config/name="untitled"
 run/main_scene="res://scenes/main_menu.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
+[audio]
+
+buses/default_bus_layout="uid://dlo5inop6ahho"
+
 [autoload]
 
 SteamManager="*res://scripts/steam_manager.gd"
 Networking="*uid://biey2tmy4kxep"
 MinigameDirector="*uid://xmu73o4be3vy"
+SfxManager="*uid://cj7thjw7nipac"
 
 [display]
 
