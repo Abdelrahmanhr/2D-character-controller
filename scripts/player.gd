@@ -6,6 +6,21 @@ extends CharacterBody2D
 @export var jump_cut_off: float = 0.5
 @export var coyote_time: float = 0.15
 @export var jump_buffer_time: float = 0.1
+@export var dash_speed: float = 900.0
+@export var dash_duration: float = 0.15
+@export var dash_cooldown: float = 0.6
+@export var dash_end_momentum_retention: float = 0.35 
+@export var stun_duration: float = 0.8
+@export var knockback_speed: float = 500.0
+@export var knockback_friction: float = 1200.0
+
+var is_stunned: bool = false
+var stun_time_left: float = 0.0
+
+var is_dashing: bool = false
+var dash_time_left: float = 0.0
+var dash_cooldown_left: float = 0.0
+var dash_direction: Vector2 = Vector2.ZERO
 
 var coyote_time_counter: float = 0.0
 var jump_buffer_counter: float = 0.0
@@ -27,11 +42,14 @@ var is_dead := false
 @onready var player_tag: Label = $PlayerTag
 @onready var glow: Sprite2D = $Glow
 @onready var bomb_controller: BombController = $BombController
+@onready var dash_hitbox: Area2D = $DashHitbox
 
 var _identity_slot: int = -1
 
 
 func _ready() -> void:
+	dash_hitbox.body_entered.connect(_on_dash_hitbox_body_entered)
+	dash_hitbox.monitoring = false
 	add_to_group("players")
 	_recalculate_jump_physics()
 	_setup_glow_texture()
@@ -51,10 +69,27 @@ func _physics_process(delta: float) -> void:
 		return
 	if not is_multiplayer_authority():
 		return
+	
+	if is_stunned:
+		_apply_stun_physics(delta)
+		move_and_slide()
+		_update_animation()
+		return
+	
 	_handle_input(delta)
 	_apply_movement(delta)
 	move_and_slide()
 	_update_animation()
+	
+
+func _apply_stun_physics(delta: float) -> void:
+	stun_time_left -= delta
+	if stun_time_left <= 0.0:
+		is_stunned = false
+	
+	var gravity: float = rise_gravity if velocity.y < 0.0 else fall_gravity
+	velocity.y += gravity * delta
+	velocity.x = move_toward(velocity.x, 0.0, knockback_friction * delta)
 
 
 func _process(_delta: float) -> void:
@@ -130,28 +165,43 @@ func _update_animation() -> void:
 		animated_sprite.play(animation_name)
 
 func _handle_input(delta: float) -> void:
+	
+	if Input.is_action_just_pressed("dash") and not is_dashing and dash_cooldown_left <= 0.0:
+		_start_dash()
+	
 	direction = Input.get_axis("move_left", "move_right")
 	if is_on_floor():
 		coyote_time_counter = coyote_time
 	else:
 		coyote_time_counter -= delta
-		
+	
 	if Input.is_action_just_pressed("jump"):
 		jump_buffer_counter = jump_buffer_time
-		
 	else:
 		jump_buffer_counter -= delta
-		
+	
 	if jump_buffer_counter > 0.0 and (is_on_floor() or coyote_time_counter > 0.0):
 		jump_pressed = true
 		jump_buffer_counter = 0.0
 		coyote_time_counter = 0.0
+
 	if Input.is_action_just_released("jump") and velocity.y < 0.0:
 		cut_jump = true
 
 
 
 func _apply_movement(delta: float) -> void:
+	if dash_cooldown_left > 0.0:
+		dash_cooldown_left -= delta
+	
+	if is_dashing:
+		dash_time_left -= delta
+		if dash_time_left <= 0.0:
+			is_dashing = false
+			dash_hitbox.monitoring = false
+			velocity = dash_direction * dash_speed * dash_end_momentum_retention
+		return
+	
 	velocity.x = direction * speed
 	if is_on_floor() and not jump_pressed:
 		velocity.y = 0.0
@@ -166,3 +216,45 @@ func _apply_movement(delta: float) -> void:
 	
 	var gravity: float = rise_gravity if velocity.y < 0.0 else fall_gravity
 	velocity.y += gravity * delta
+
+func _get_dash_direction() -> Vector2:
+	var raw := Vector2(
+		Input.get_axis("move_left", "move_right"),
+		Input.get_axis("move_up", "move_down")
+	)
+	if raw.length() < 0.2:
+		raw = Vector2.RIGHT if facing_right else Vector2.LEFT
+	
+	var angle := raw.angle()
+	var snapped_angle: float = round(angle / (PI / 4.0)) * (PI / 4.0)
+	return Vector2.RIGHT.rotated(snapped_angle)
+
+
+func _start_dash() -> void:
+	is_dashing = true
+	dash_time_left = dash_duration
+	dash_cooldown_left = dash_cooldown
+	dash_direction = _get_dash_direction()
+	velocity = dash_direction * dash_speed
+	dash_hitbox.monitoring = true
+
+func _on_dash_hitbox_body_entered(body: Node) -> void:
+	if body == self:
+		return
+	if not body.is_in_group("players"):
+		return
+	if body.has_method("apply_stun"):
+		body.apply_stun(dash_direction)
+
+
+func apply_stun(from_direction: Vector2) -> void:
+	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		_do_apply_stun(from_direction)
+	else:
+		_do_apply_stun.rpc(from_direction)
+
+@rpc("any_peer", "call_local", "reliable")
+func _do_apply_stun(from_direction: Vector2) -> void:
+	is_stunned = true
+	stun_time_left = stun_duration
+	velocity = from_direction * knockback_speed

@@ -35,7 +35,7 @@ func _process(delta: float) -> void:
 		_minigame_layer.global_position = _player.global_position + Vector2(-100, -150)
 
 func _input(event: InputEvent) -> void:
-	if _active_minigame == null or not _player.is_multiplayer_authority():
+	if _active_minigame == null or not _player.is_multiplayer_authority() or _player.is_stunned:
 		return
 	if event is InputEventJoypadButton and event.device == device_id:
 		_active_minigame._handle_input(event)
@@ -127,7 +127,7 @@ func _try_replicate_input(is_key: bool, code: int) -> void:
 func _replicate_minigame_input(is_key: bool, code: int) -> void:
 	if multiplayer.get_remote_sender_id() != _player.name.to_int():
 		return
-	if _active_minigame == null or _player.is_multiplayer_authority():
+	if _active_minigame == null or _player.is_multiplayer_authority() or _player.is_stunned:
 		return
 	if is_key:
 		var key_event := InputEventKey.new()

@@ -221,6 +221,12 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_k0quf"]
 size = Vector2(45, 48)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_7avdm"]
+size = Vector2(28, 55.5)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_6clqr"]
+size = Vector2(21, 4)
+
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_g2els"]
 properties/0/path = NodePath(".:position")
 properties/0/spawn = true
@@ -228,11 +234,6 @@ properties/0/replication_mode = 1
 properties/1/path = NodePath(".:animation_name")
 properties/1/spawn = true
 properties/1/replication_mode = 1
-
-[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_bomb"]
-properties/0/path = NodePath(".:_time_left")
-properties/0/spawn = true
-properties/0/replication_mode = 1
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_15ncp"]
 atlas = ExtResource("6_tuyoq")
@@ -248,11 +249,17 @@ region = Rect2(1918.1863, 210.03284, 259.31567, 41.097687)
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_ijegi"]
 texture = SubResource("AtlasTexture_4kmta")
 
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_bomb"]
+properties/0/path = NodePath(".:_time_left")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
 [node name="Player" type="CharacterBody2D" unique_id=1169704896]
 script = ExtResource("1_g2els")
 jump_height = 110.0
+dash_end_momentum_retention = 0.5
 
-[node name="Glow" type="Sprite2D" parent="."]
+[node name="Glow" type="Sprite2D" parent="." unique_id=1253636982]
 z_index = -1
 texture_filter = 1
 scale = Vector2(2.4, 2.4)
@@ -261,9 +268,9 @@ scale = Vector2(2.4, 2.4)
 texture_filter = 1
 scale = Vector2(3, 3)
 sprite_frames = SubResource("SpriteFrames_7ptiw")
-animation = &"die_left"
+animation = &"walk_right"
 
-[node name="PlayerTag" type="Label" parent="."]
+[node name="PlayerTag" type="Label" parent="." unique_id=83131420]
 offset_left = -28.0
 offset_top = -52.0
 offset_right = 28.0
@@ -281,6 +288,20 @@ vertical_alignment = 1
 position = Vector2(1.499999, 0)
 shape = SubResource("RectangleShape2D_k0quf")
 
+[node name="DashHitbox" type="Area2D" parent="." unique_id=197582232]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DashHitbox" unique_id=2012752958]
+position = Vector2(14, 0.25)
+shape = SubResource("RectangleShape2D_7avdm")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="DashHitbox" unique_id=105277460]
+position = Vector2(-10.5, 26)
+shape = SubResource("RectangleShape2D_6clqr")
+
+[node name="CollisionShape2D3" type="CollisionShape2D" parent="DashHitbox" unique_id=2033016196]
+position = Vector2(-10.5, -25.75)
+shape = SubResource("RectangleShape2D_6clqr")
+
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=1799110205]
 replication_config = SubResource("SceneReplicationConfig_g2els")
 
@@ -296,11 +317,8 @@ offset_right = 100.0
 offset_bottom = -50.0
 
 [node name="BombTimerLayer" type="CanvasLayer" parent="BombController" unique_id=63404384]
-visible = false
 layer = 10
-
-[node name="BombSynchronizer" type="MultiplayerSynchronizer" parent="BombController"]
-replication_config = SubResource("SceneReplicationConfig_bomb")
+visible = false
 
 [node name="BombTimerUI" type="ProgressBar" parent="BombController/BombTimerLayer" unique_id=277684671]
 texture_filter = 1
@@ -310,3 +328,6 @@ offset_bottom = 24.0
 theme_override_styles/background = SubResource("StyleBoxTexture_mynaw")
 theme_override_styles/fill = SubResource("StyleBoxTexture_ijegi")
 show_percentage = false
+
+[node name="BombSynchronizer" type="MultiplayerSynchronizer" parent="BombController" unique_id=149651899]
+replication_config = SubResource("SceneReplicationConfig_bomb")
