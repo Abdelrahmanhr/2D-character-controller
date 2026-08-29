@@ -40,9 +40,14 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventJoypadButton and event.device == device_id:
 		_active_minigame._handle_input(event)
 		get_viewport().set_input_as_handled()
+		if event.pressed:
+			_try_replicate_input(false, event.button_index)
 	elif event is InputEventKey:
 		_active_minigame._handle_input(event)
 		get_viewport().set_input_as_handled()
+		if event.pressed and not event.echo:
+			var key: int = event.keycode if event.keycode != KEY_NONE else event.physical_keycode
+			_try_replicate_input(true, key)
 
 func _on_bomb_expired() -> void:
 	eliminate_player()
@@ -80,10 +85,13 @@ func play_minigame(scene: PackedScene, slot_index: int) -> void:
 	var scene_index: int = MinigameDirector.minigame_order.find(scene)
 	if scene_index < 0:
 		return
+	var rng_seed: int = randi()
+	if rng_seed == 0:
+		rng_seed = 1
 	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
-		_show_minigame(slot_index, scene_index)
+		_show_minigame(slot_index, scene_index, rng_seed)
 	else:
-		_show_minigame.rpc(slot_index, scene_index)
+		_show_minigame.rpc(slot_index, scene_index, rng_seed)
 
 func stop_minigame() -> void:
 	if _player.is_multiplayer_authority() and multiplayer.multiplayer_peer != null and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer):
@@ -92,7 +100,7 @@ func stop_minigame() -> void:
 		_clear_minigame()
 
 @rpc("any_peer", "call_local", "reliable")
-func _show_minigame(slot_index: int, scene_index: int) -> void:
+func _show_minigame(slot_index: int, scene_index: int, rng_seed: int = 0) -> void:
 	_clear_minigame()
 	if _expired or scene_index < 0 or scene_index >= MinigameDirector.minigame_order.size():
 		return
@@ -105,10 +113,32 @@ func _show_minigame(slot_index: int, scene_index: int) -> void:
 	_active_minigame_slot.visible = true
 	slot.add_child(_active_minigame)
 	_active_minigame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_active_minigame.setup(_player)
+	_active_minigame.setup(_player, rng_seed)
 	if _player.is_multiplayer_authority():
 		_active_minigame.bomb_time_delta.connect(_on_bomb_time_delta)
 		_active_minigame.round_finished.connect(_on_minigame_finished)
+
+func _try_replicate_input(is_key: bool, code: int) -> void:
+	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		return
+	_replicate_minigame_input.rpc(is_key, code)
+
+@rpc("any_peer", "reliable")
+func _replicate_minigame_input(is_key: bool, code: int) -> void:
+	if multiplayer.get_remote_sender_id() != _player.name.to_int():
+		return
+	if _active_minigame == null or _player.is_multiplayer_authority():
+		return
+	if is_key:
+		var key_event := InputEventKey.new()
+		key_event.pressed = true
+		key_event.keycode = code as Key
+		_active_minigame._handle_input(key_event)
+	else:
+		var pad_event := InputEventJoypadButton.new()
+		pad_event.pressed = true
+		pad_event.button_index = code as JoyButton
+		_active_minigame._handle_input(pad_event)
 
 @rpc("any_peer", "call_local", "reliable")
 func _clear_minigame() -> void:

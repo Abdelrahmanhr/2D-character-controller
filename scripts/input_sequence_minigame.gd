@@ -19,6 +19,7 @@ const DIRECTIONS := ["up", "down", "left", "right"]
 const ARROW_SYMBOLS := {"up": "^", "down": "v", "left": "<", "right": ">"}
 
 var _player: Node
+var _rng: RandomNumberGenerator
 var _accent: Color = Color(1, 0.95, 0.2, 1)
 var _time_left: float
 var _correct_count: int = 0
@@ -29,8 +30,9 @@ var _active_tweens: Dictionary = {}
 @onready var arrow_container: Control = $ArrowContainer
 @onready var time_bar: ProgressBar = $TimeBar
 
-func setup(player: Node) -> void:
+func setup(player: Node, rng_seed: int = 0) -> void:
 	_player = player
+	_rng = MinigameUI.make_rng(rng_seed)
 	_accent = MinigameUI.player_color_for(player)
 	_time_left = round_duration
 	_correct_count = 0
@@ -43,7 +45,7 @@ func setup(player: Node) -> void:
 	_reposition_queue(false)
 
 func _push_new_arrow(animate: bool) -> void:
-	var direction: String = DIRECTIONS[randi() % DIRECTIONS.size()]
+	var direction: String = DIRECTIONS[_rng.randi() % DIRECTIONS.size()]
 	var arrow_label := Label.new()
 	arrow_label.text = ARROW_SYMBOLS[direction]
 	arrow_label.set_meta("direction", direction)

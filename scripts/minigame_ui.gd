@@ -31,6 +31,21 @@ static func style_time_bar(bar: ProgressBar, color: Color) -> void:
 	bar.add_theme_stylebox_override("fill", fill)
 	bar.show_percentage = false
 
+static func make_rng(rng_seed: int = 0) -> RandomNumberGenerator:
+	var rng := RandomNumberGenerator.new()
+	if rng_seed == 0:
+		rng.randomize()
+	else:
+		rng.seed = rng_seed
+	return rng
+
+static func shuffle(values: Array, rng: RandomNumberGenerator) -> void:
+	for i in range(values.size() - 1, 0, -1):
+		var j: int = rng.randi() % (i + 1)
+		var temp: Variant = values[i]
+		values[i] = values[j]
+		values[j] = temp
+
 static func style_label(label: Label, color: Color, font_size: int = 20) -> void:
 	label.add_theme_font_override("font", game_font())
 	label.add_theme_font_size_override("font_size", font_size)

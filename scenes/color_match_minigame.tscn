@@ -1,54 +1,89 @@
 [gd_scene format=3 uid="uid://v1hn6b1fyp0k"]
 
 [ext_resource type="Script" uid="uid://bno514ux6ohax" path="res://scripts/color_match_minigame.gd" id="1_fud5r"]
+[ext_resource type="Texture2D" uid="uid://db85c0hdh1a2m" path="res://resources/Menu_ui.ux.png" id="2_bar"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_521p4"]
+atlas = ExtResource("2_bar")
+region = Rect2(2303.3926, 170.62485, 256.98926, 37.677063)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_bar_bg"]
+texture = SubResource("AtlasTexture_521p4")
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hsxyc"]
+atlas = ExtResource("2_bar")
+region = Rect2(2307.5361, 215.98572, 248.92847, 27.990463)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_bar_fill"]
+texture = SubResource("AtlasTexture_hsxyc")
 
 [node name="ColorMatchMinigame" type="Control" unique_id=320290867]
 layout_mode = 3
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_fud5r")
 
 [node name="CenterSquare" type="ColorRect" parent="." unique_id=1712461176]
 layout_mode = 0
-offset_left = 83.0
-offset_top = 52.0
-offset_right = 152.0
-offset_bottom = 106.0
+offset_left = 114.0
+offset_top = 40.0
+offset_right = 166.0
+offset_bottom = 84.0
 
 [node name="LabelLeft" type="Label" parent="." unique_id=845085849]
 layout_mode = 0
-offset_left = 42.0
-offset_top = 64.0
-offset_right = 82.0
-offset_bottom = 87.0
-text = "#"
+offset_left = 8.0
+offset_top = 44.0
+offset_right = 108.0
+offset_bottom = 80.0
+theme_override_font_sizes/font_size = 14
+text = "YELLOW"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="LabelUp" type="Label" parent="." unique_id=532915874]
 layout_mode = 0
-offset_left = 108.0
-offset_top = 16.0
-offset_right = 148.0
-offset_bottom = 39.0
-text = "#"
+offset_left = 80.0
+offset_top = 8.0
+offset_right = 200.0
+offset_bottom = 36.0
+theme_override_font_sizes/font_size = 14
+text = "YELLOW"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="LabelRight" type="Label" parent="." unique_id=1999101859]
 layout_mode = 0
-offset_left = 180.0
-offset_top = 68.0
-offset_right = 220.0
-offset_bottom = 91.0
-text = "#"
+offset_left = 172.0
+offset_top = 44.0
+offset_right = 272.0
+offset_bottom = 80.0
+theme_override_font_sizes/font_size = 14
+text = "YELLOW"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="LabelDown" type="Label" parent="." unique_id=1110507482]
 layout_mode = 0
-offset_left = 110.0
-offset_top = 123.0
-offset_right = 150.0
-offset_bottom = 146.0
-text = "#"
+offset_left = 80.0
+offset_top = 88.0
+offset_right = 200.0
+offset_bottom = 116.0
+theme_override_font_sizes/font_size = 14
+text = "YELLOW"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="TimeBar" type="ProgressBar" parent="." unique_id=1152017400]
 layout_mode = 0
-offset_right = 4.0
-offset_bottom = 27.0
+offset_left = 32.0
+offset_top = 124.0
+offset_right = 248.0
+offset_bottom = 140.0
+theme_override_styles/background = SubResource("StyleBoxTexture_bar_bg")
+theme_override_styles/fill = SubResource("StyleBoxTexture_bar_fill")
+fill_mode = 1
+show_percentage = false

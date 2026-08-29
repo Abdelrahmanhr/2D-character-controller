@@ -19,6 +19,7 @@ const COLOR_VALUES := {
 }
 
 var _player: Node
+var _rng: RandomNumberGenerator
 var _time_left: float
 var _correct_count: int = 0
 var _round_finished: bool = false
@@ -32,9 +33,14 @@ var _target_color_name: String = ""
 @onready var center_square: ColorRect = $CenterSquare
 @onready var time_bar: ProgressBar = $TimeBar
 
-func setup(player: Node) -> void:
+func setup(player: Node, rng_seed: int = 0) -> void:
 	_player = player
+	_rng = MinigameUI.make_rng(rng_seed)
 	_time_left = round_duration
+	var accent := MinigameUI.player_color_for(player)
+	MinigameUI.style_time_bar(time_bar, accent)
+	for label in [label_left, label_up, label_right, label_down]:
+		MinigameUI.style_label(label, accent, 14)
 	_next_round()
 
 func _get_label(position: String) -> Label:
@@ -47,7 +53,7 @@ func _get_label(position: String) -> Label:
 
 func _next_round() -> void:
 	var shuffled_names := COLOR_NAMES.duplicate()
-	shuffled_names.shuffle()
+	MinigameUI.shuffle(shuffled_names, _rng)
 	
 	for i in POSITIONS.size():
 		var position: String = POSITIONS[i]
@@ -56,26 +62,33 @@ func _next_round() -> void:
 		
 		var label := _get_label(position)
 		label.text = color_name
-		var ink_color: String = COLOR_NAMES[randi() % COLOR_NAMES.size()]
+		var ink_color: String = COLOR_NAMES[_rng.randi() % COLOR_NAMES.size()]
 		label.add_theme_color_override("font_color", COLOR_VALUES[ink_color])
 	
-	_target_color_name = COLOR_NAMES[randi() % COLOR_NAMES.size()]
+	_target_color_name = COLOR_NAMES[_rng.randi() % COLOR_NAMES.size()]
 	center_square.color = COLOR_VALUES[_target_color_name]
 
 func _handle_input(event: InputEvent) -> void:
 	if _round_finished:
 		return
-	if not (event is InputEventJoypadButton and event.pressed):
+	var pressed_position := ""
+	if event is InputEventJoypadButton and event.pressed:
+		match event.button_index:
+			JOY_BUTTON_DPAD_LEFT: pressed_position = "left"
+			JOY_BUTTON_DPAD_UP: pressed_position = "up"
+			JOY_BUTTON_DPAD_RIGHT: pressed_position = "right"
+			JOY_BUTTON_DPAD_DOWN: pressed_position = "down"
+			_: return
+	elif event is InputEventKey and event.pressed and not event.echo:
+		var key: int = event.keycode if event.keycode != KEY_NONE else event.physical_keycode
+		match key:
+			KEY_LEFT: pressed_position = "left"
+			KEY_UP: pressed_position = "up"
+			KEY_RIGHT: pressed_position = "right"
+			KEY_DOWN: pressed_position = "down"
+			_: return
+	else:
 		return
-	
-	var pressed_position: String = ""
-	match event.button_index:
-		JOY_BUTTON_DPAD_LEFT: pressed_position = "left"
-		JOY_BUTTON_DPAD_UP: pressed_position = "up"
-		JOY_BUTTON_DPAD_RIGHT: pressed_position = "right"
-		JOY_BUTTON_DPAD_DOWN: pressed_position = "down"
-		_: return
-	
 	_submit_position(pressed_position)
 
 func _submit_position(position: String) -> void:

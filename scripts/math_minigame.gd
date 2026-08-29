@@ -12,6 +12,7 @@ var _round_finished: bool = false
 @export var equation_count: int = 5
 
 var _player: Node
+var _rng: RandomNumberGenerator
 var _time_left: float
 var _equations_solved: int = 0
 var _current_answer: int  # 0 = left is correct, 1 = right is correct
@@ -36,8 +37,9 @@ var _round_equations: Array = []
 var _equation_index: int = 0
 var _answered: bool = false
 
-func setup(player: Node) -> void:
+func setup(player: Node, rng_seed: int = 0) -> void:
 	_player = player
+	_rng = MinigameUI.make_rng(rng_seed)
 	_time_left = round_duration
 	var color := MinigameUI.player_color_for(player)
 	MinigameUI.style_time_bar(time_bar, color)
@@ -46,7 +48,7 @@ func setup(player: Node) -> void:
 	MinigameUI.style_label(option_right, color, 20)
 
 	var pool := EQUATIONS.duplicate()
-	pool.shuffle()
+	MinigameUI.shuffle(pool, _rng)
 	_round_equations = pool.slice(0, equation_count)
 	
 	_equation_index = 0
@@ -59,7 +61,7 @@ func _load_equation(index: int) -> void:
 	equation_label.text = eq["text"] + " ="
 	
 	# Randomize which side the correct answer lands on
-	if randi() % 2 == 0:
+	if _rng.randi() % 2 == 0:
 		_current_answer = 0  # left
 		option_left.text = str(eq["correct"])
 		option_right.text = str(eq["wrong"])

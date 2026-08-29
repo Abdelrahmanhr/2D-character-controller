@@ -252,11 +252,30 @@ texture = SubResource("AtlasTexture_4kmta")
 script = ExtResource("1_g2els")
 jump_height = 110.0
 
+[node name="Glow" type="Sprite2D" parent="."]
+z_index = -1
+texture_filter = 1
+scale = Vector2(2.4, 2.4)
+
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=807073349]
 texture_filter = 1
 scale = Vector2(3, 3)
 sprite_frames = SubResource("SpriteFrames_7ptiw")
 animation = &"die_left"
+
+[node name="PlayerTag" type="Label" parent="."]
+offset_left = -28.0
+offset_top = -52.0
+offset_right = 28.0
+offset_bottom = -32.0
+theme_override_colors/font_shadow_color = Color(1, 0.85, 0.2, 0.35)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 0
+theme_override_constants/shadow_outline_size = 3
+theme_override_font_sizes/font_size = 13
+text = "P1"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=461499085]
 position = Vector2(1.499999, 0)

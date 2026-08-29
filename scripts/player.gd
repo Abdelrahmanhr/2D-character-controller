@@ -24,11 +24,18 @@ var animation_name: StringName = &"idle_right"
 var is_dead := false
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var player_tag: Label = $PlayerTag
+@onready var glow: Sprite2D = $Glow
+@onready var bomb_controller: BombController = $BombController
+
+var _identity_slot: int = -1
 
 
 func _ready() -> void:
 	add_to_group("players")
 	_recalculate_jump_physics()
+	_setup_glow_texture()
+	_update_identity()
 
 func _enter_tree() -> void:
 	set_multiplayer_authority(name.to_int())
@@ -51,10 +58,46 @@ func _physics_process(delta: float) -> void:
 
 
 func _process(_delta: float) -> void:
+	_update_identity()
 	if is_dead:
 		return
 	if animated_sprite.animation != animation_name:
 		animated_sprite.play(animation_name)
+
+func _setup_glow_texture() -> void:
+	var gradient := Gradient.new()
+	gradient.offsets = PackedFloat32Array([0.0, 0.45, 1.0])
+	gradient.colors = PackedColorArray([
+		Color(1, 1, 1, 0.55),
+		Color(1, 1, 1, 0.18),
+		Color(1, 1, 1, 0.0),
+	])
+	var texture := GradientTexture2D.new()
+	texture.gradient = gradient
+	texture.width = 64
+	texture.height = 64
+	texture.fill = GradientTexture2D.FILL_RADIAL
+	texture.fill_from = Vector2(0.5, 0.5)
+	texture.fill_to = Vector2(0.5, 0.0)
+	glow.texture = texture
+
+func _update_identity() -> void:
+	if bomb_controller == null:
+		return
+	var slot := bomb_controller.get_slot_index()
+	if slot == _identity_slot:
+		return
+	_identity_slot = slot
+	var color := bomb_controller.get_player_color()
+	player_tag.text = "P%d" % (slot + 1)
+	player_tag.add_theme_color_override("font_color", color)
+	player_tag.add_theme_color_override("font_shadow_color", Color(color.r, color.g, color.b, 0.35))
+	player_tag.add_theme_constant_override("shadow_offset_x", 0)
+	player_tag.add_theme_constant_override("shadow_offset_y", 0)
+	player_tag.add_theme_constant_override("shadow_outline_size", 3)
+	player_tag.add_theme_font_size_override("font_size", 13)
+	glow.modulate = Color(color.r, color.g, color.b, 0.7)
+	animated_sprite.modulate = Color.WHITE.lerp(color, 0.28)
 
 func play_death_animation() -> void:
 	if is_dead:
