@@ -267,6 +267,7 @@ properties/0/replication_mode = 1
 script = ExtResource("1_g2els")
 jump_height = 110.0
 dash_speed = 700.0
+dash_cooldown = 1.0
 dash_end_momentum_retention = 0.5
 dash_sound = ExtResource("2_fjrip")
 land_sound = ExtResource("3_ur7pv")
