@@ -98,6 +98,8 @@ func _physics_process(delta: float) -> void:
 	
 	
 	if is_stunned:
+		if is_dashing:
+			_end_dash_immediately()
 		_apply_stun_physics(delta)
 		move_and_slide()
 		_update_animation()
@@ -274,6 +276,11 @@ func _start_dash() -> void:
 	velocity = dash_direction * dash_speed
 	dash_hitbox.monitoring = true
 	SfxManager.play(dash_sound,-15.0)
+
+func _end_dash_immediately() -> void:
+	is_dashing = false
+	dash_hitbox.monitoring = false
+	velocity = dash_direction * dash_speed * dash_end_momentum_retention
 
 func _on_dash_hitbox_body_entered(body: Node) -> void:
 	if body == self:

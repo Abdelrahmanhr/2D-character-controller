@@ -53,7 +53,7 @@ func _hide_options() -> void:
 
 func _exit_game() -> void:
 	get_tree().paused = false
-	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+	SceneTransition.circle_to("res://scenes/main_menu.tscn")
 
 func _set_volume(value: float) -> void:
 	AudioServer.set_bus_volume_db(0, linear_to_db(value))
