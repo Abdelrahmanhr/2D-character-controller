@@ -25,6 +25,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_q5oua")
+bonus_per_correct = 2.0
+penalty_per_wrong = 4.0
 metadata/_edit_use_anchors_ = true
 
 [node name="EquationLabel" type="Label" parent="." unique_id=2038325209]

@@ -24,14 +24,17 @@ func setup(player: Node, _rng_seed: int = 0) -> void:
 	time_bar.value = 0.0
 	_update_label()
 
-func _handle_input(event: InputEvent) -> void:
+func _handle_input(event: InputEvent) -> bool:  
 	if _round_finished:
-		return
+		return false  
 	if event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_Y:
 		_register_press()
+		return true 
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_Y or event.physical_keycode == KEY_Y:
 			_register_press()
+			return true  
+	return false 
 
 func _register_press() -> void:
 	if _press_count >= max_presses:

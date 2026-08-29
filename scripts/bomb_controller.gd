@@ -5,6 +5,11 @@ signal player_finished_round
 
 @export var bomb_time: float = 40.0
 @export var device_id: int = 0  
+@export var bonus_sounds: Array[AudioStream] = [] 
+@export var bonus_pitch_variance: float = 0.15  
+@export var input_sound: AudioStream
+@export var penalty_sound: AudioStream  
+@export var minigame_complete_sound: AudioStream
 
 var _time_left: float
 var _active_minigame: Control = null
@@ -38,14 +43,18 @@ func _input(event: InputEvent) -> void:
 	if _active_minigame == null or not _player.is_multiplayer_authority() or _player.is_stunned:
 		return
 	if event is InputEventJoypadButton and event.device == device_id:
-		_active_minigame._handle_input(event)
+		var handled: bool = _active_minigame._handle_input(event)
 		get_viewport().set_input_as_handled()
 		if event.pressed:
+			if handled:
+				SfxManager.play(input_sound,-13.0,0.1)
 			_try_replicate_input(false, event.button_index)
 	elif event is InputEventKey:
-		_active_minigame._handle_input(event)
+		var handled: bool = _active_minigame._handle_input(event)
 		get_viewport().set_input_as_handled()
 		if event.pressed and not event.echo:
+			if handled:
+				SfxManager.play(input_sound,-13.0,0.1)
 			var key: int = event.keycode if event.keycode != KEY_NONE else event.physical_keycode
 			_try_replicate_input(true, key)
 
@@ -153,8 +162,19 @@ func _clear_minigame() -> void:
 func _on_minigame_finished() -> void:
 	if _active_minigame == null:
 		return
+	SfxManager.play(minigame_complete_sound,-10.0,0.2)
 	stop_minigame()
 	player_finished_round.emit()
 
 func _on_bomb_time_delta(seconds: float) -> void:
+	if seconds > 0.0:
+		_play_bonus_sound()
+	elif seconds < 0.0: 
+		SfxManager.play(penalty_sound,-15.0,0.2) 
 	_time_left += seconds
+
+func _play_bonus_sound() -> void:  # NEW
+	if bonus_sounds.is_empty():
+		return
+	var sound: AudioStream = bonus_sounds[randi() % bonus_sounds.size()]
+	SfxManager.play(sound, -10.0, bonus_pitch_variance)

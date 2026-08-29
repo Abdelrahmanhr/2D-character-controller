@@ -11,6 +11,10 @@
 [ext_resource type="Script" uid="uid://b0ruex0dunyys" path="res://scripts/bomb_controller.gd" id="5_qlg0r"]
 [ext_resource type="Texture2D" uid="uid://dl04xmvt8e0ck" path="res://resources/character_bomb.png" id="5_tuyoq"]
 [ext_resource type="Texture2D" uid="uid://db85c0hdh1a2m" path="res://resources/Menu_ui.ux.png" id="6_tuyoq"]
+[ext_resource type="AudioStream" uid="uid://b78akjm2qis1q" path="res://resources/audio/Bonus Time.wav" id="11_3v2ag"]
+[ext_resource type="AudioStream" uid="uid://cdq8igrt5el1p" path="res://resources/audio/Clock Tick OR Press .wav" id="12_oprun"]
+[ext_resource type="AudioStream" uid="uid://bxpemw6a5q1sh" path="res://resources/audio/Time Penalty.wav" id="13_f1ej7"]
+[ext_resource type="AudioStream" uid="uid://de26hwehtwo0h" path="res://resources/audio/Minigame Complete .wav" id="14_oprun"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_qlg0r"]
 atlas = ExtResource("5_tuyoq")
@@ -262,6 +266,7 @@ properties/0/replication_mode = 1
 [node name="Player" type="CharacterBody2D" unique_id=1169704896]
 script = ExtResource("1_g2els")
 jump_height = 110.0
+dash_speed = 700.0
 dash_end_momentum_retention = 0.5
 dash_sound = ExtResource("2_fjrip")
 land_sound = ExtResource("3_ur7pv")
@@ -317,6 +322,10 @@ replication_config = SubResource("SceneReplicationConfig_g2els")
 
 [node name="BombController" type="Node" parent="." unique_id=1813107372]
 script = ExtResource("5_qlg0r")
+bonus_sounds = Array[AudioStream]([ExtResource("11_3v2ag")])
+input_sound = ExtResource("12_oprun")
+penalty_sound = ExtResource("13_f1ej7")
+minigame_complete_sound = ExtResource("14_oprun")
 
 [node name="Minigamelayer" type="Control" parent="BombController" unique_id=2025939438]
 layout_mode = 3

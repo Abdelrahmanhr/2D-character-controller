@@ -84,19 +84,24 @@ func _load_new_equation() -> void:
 	
 	time_bar.value = (float(_correct_count) / float(target_correct)) * 100.0
 
-func _handle_input(event: InputEvent) -> void:
+func _handle_input(event: InputEvent) -> bool: 
 	if _answered:
-		return
+		return false  
 	if event is InputEventJoypadButton and event.pressed:
 		if event.button_index == JOY_BUTTON_DPAD_LEFT:
 			_submit_answer(0)
+			return true  
 		elif event.button_index == JOY_BUTTON_DPAD_RIGHT:
 			_submit_answer(1)
+			return true  
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_LEFT:
 			_submit_answer(0)
+			return true  
 		elif event.keycode == KEY_RIGHT:
 			_submit_answer(1)
+			return true  
+	return false  
 
 func _submit_answer(side: int) -> void:
 	_answered = true
