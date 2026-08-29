@@ -143,6 +143,7 @@ func _finish_match(winner_peer_id: int) -> void:
 	for bomb_controller in _bomb_controllers.duplicate():
 		if is_instance_valid(bomb_controller):
 			bomb_controller.stop_minigame()
+			bomb_controller.stop_timer()
 	match_finished.emit(winner_peer_id)
 
 func _process(delta: float) -> void:

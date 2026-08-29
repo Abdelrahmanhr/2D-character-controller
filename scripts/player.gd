@@ -84,6 +84,9 @@ func _recalculate_jump_physics() -> void:
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
+		var gravity: float = rise_gravity if velocity.y < 0.0 else fall_gravity
+		velocity.y += gravity * delta
+		move_and_slide()
 		return
 	if not is_multiplayer_authority():
 		return
@@ -176,6 +179,10 @@ func play_death_animation() -> void:
 	await animated_sprite.animation_finished
 	animated_sprite.stop()
 	animated_sprite.frame = animated_sprite.sprite_frames.get_frame_count(animation_name) - 1
+	var elapsed := 0.0
+	while not is_on_floor() and elapsed < 3.0:
+		await get_tree().physics_frame
+		elapsed += get_physics_process_delta_time()
 
 
 

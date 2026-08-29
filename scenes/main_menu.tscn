@@ -2,6 +2,18 @@
 
 [ext_resource type="Script" uid="uid://dqfpv8fwmyv8d" path="res://scripts/main_menu.gd" id="1"]
 [ext_resource type="Theme" uid="uid://doxgt2jeresa3" path="res://resources/themes/gravity.tres" id="2"]
+[ext_resource type="Script" uid="uid://cbsjdhl8vx0rl" path="res://scripts/title_glow.gd" id="3_glow"]
+[ext_resource type="AudioStream" uid="uid://cihodc8aynwdg" path="res://resources/audio/Light Flicker.mp3" id="5_8ln24"]
+[ext_resource type="FontFile" uid="uid://dgkg43ipmagnn" path="res://resources/fonts/Neonsign-Regular.otf" id="neon_light_font"]
+
+[sub_resource type="Environment" id="Environment_wu84c"]
+glow_enabled = true
+glow_intensity = 2.7
+glow_bloom = 0.26
+
+[sub_resource type="FontVariation" id="FontVariation_title"]
+base_font = ExtResource("neon_light_font")
+spacing_glyph = 5
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
 bg_color = Color(0.02, 0.06, 0.08, 0.3)
@@ -63,6 +75,9 @@ grow_vertical = 2
 theme = ExtResource("2")
 script = ExtResource("1")
 
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=955711601]
+environment = SubResource("Environment_wu84c")
+
 [node name="Title" type="Label" parent="." unique_id=662121332]
 layout_mode = 1
 anchors_preset = 10
@@ -70,16 +85,24 @@ anchor_right = 1.0
 offset_top = 128.0
 offset_bottom = 192.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(1, 1, 1, 0.97)
-theme_override_colors/font_shadow_color = Color(0.2, 0.95, 1, 0.45)
-theme_override_colors/font_outline_color = Color(0.2, 0.95, 1, 0.9)
+theme_override_colors/font_color = Color(0.5, 2.4, 3, 1)
+theme_override_colors/font_shadow_color = Color(0.2, 0.95, 1, 0.85)
+theme_override_colors/font_outline_color = Color(0.2, 0.95, 1, 1)
 theme_override_constants/shadow_offset_x = 0
 theme_override_constants/shadow_offset_y = 0
-theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 46
-text = "Unnamed For Now"
+theme_override_constants/outline_size = 10
+theme_override_constants/shadow_outline_size = 24
+theme_override_fonts/font = SubResource("FontVariation_title")
+theme_override_font_sizes/font_size = 115
+text = "Meltdown"
 horizontal_alignment = 1
 vertical_alignment = 1
+script = ExtResource("3_glow")
+base_alpha = 0.815
+double_flicker_chance = 0.12
+flicker_sound = ExtResource("5_8ln24")
+flicker_sound_volume = -14.715
+flicker_sound_pitch_variance = 0.095
 
 [node name="Menu" type="VBoxContainer" parent="." unique_id=652719526]
 layout_mode = 1

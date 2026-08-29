@@ -68,6 +68,12 @@ func _update_slot(slot: Dictionary, bomb: BombController) -> void:
 	_apply_neon_label(caption, color)
 	bar.max_value = max_time
 	bar.value = time_left
+	var bg_style := StyleBoxFlat.new()
+	bg_style.bg_color = Color(0.05, 0.05, 0.05, 0.95)
+	bg_style.set_border_width_all(1)
+	bg_style.border_color = Color(color.r, color.g, color.b, 0.55)
+	bg_style.set_corner_radius_all(2)
+	bar.add_theme_stylebox_override("background", bg_style)
 	time_label.text = "%.1f" % time_left
 	_apply_neon_label(time_label, color)
 	var urgency := clampf(time_left / max_time, 0.0, 1.0)
@@ -76,7 +82,12 @@ func _update_slot(slot: Dictionary, bomb: BombController) -> void:
 		bar_color = color.lerp(Color(1.0, 0.25, 0.08, 1.0), 0.65)
 	elif urgency < 0.5:
 		bar_color = color.lerp(Color(1.0, 0.55, 0.1, 1.0), 0.4)
-	bar.modulate = bar_color
+	var fill_style := StyleBoxFlat.new()
+	fill_style.bg_color = bar_color
+	fill_style.set_corner_radius_all(1)
+	fill_style.shadow_color = Color(bar_color.r, bar_color.g, bar_color.b, 0.35)
+	fill_style.shadow_size = 2
+	bar.add_theme_stylebox_override("fill", fill_style)
 	var player := bomb.get_parent()
 	var eliminated := false
 	if player is CharacterBody2D:

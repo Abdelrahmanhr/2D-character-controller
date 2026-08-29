@@ -62,14 +62,21 @@ func _on_bomb_expired() -> void:
 	eliminate_player()
 	print("Player exploded!")
 
+func stop_timer() -> void:
+	set_process(false)
+
 func eliminate_player() -> void:
 	if _expired:
 		return
 	_expired = true
 	set_process(false)
 	stop_minigame()
-	_player.play_death_animation()
+	await _player.play_death_animation()
 	MinigameDirector.player_eliminated(_player.name.to_int())
+	if _player.is_multiplayer_authority():
+		var scene := get_tree().current_scene
+		if scene.has_method("show_lose_popup"):
+			scene.show_lose_popup()
 
 const PLAYER_COLORS: Array[Color] = [
 	Color(1, 0.18, 0.22, 1),
