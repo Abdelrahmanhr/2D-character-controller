@@ -20,6 +20,19 @@ texture = ExtResource("1_paw1w")
 position = Vector2(252, 0)
 shape = SubResource("RectangleShape2D_7ptiw")
 
+[node name="StaticBody2D2" type="StaticBody2D" parent="." unique_id=1083184824]
+position = Vector2(0, 512)
+rotation = -1.5666187
+
+[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D2" unique_id=852032580]
+position = Vector2(251.99998, 2)
+scale = Vector2(4.09375, 0.12499999)
+texture = ExtResource("1_paw1w")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D2" unique_id=1481429963]
+position = Vector2(252, 0)
+shape = SubResource("RectangleShape2D_7ptiw")
+
 [node name="Player" parent="." unique_id=1169704896 instance=ExtResource("1_2venv")]
 position = Vector2(216, 329)
 speed = 500.0

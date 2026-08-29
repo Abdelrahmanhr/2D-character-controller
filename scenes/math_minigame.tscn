@@ -65,4 +65,3 @@ offset_right = 248.0
 offset_bottom = 132.0
 theme_override_styles/background = SubResource("StyleBoxTexture_cbdxn")
 theme_override_styles/fill = SubResource("StyleBoxTexture_yrkki")
-fill_mode = 1

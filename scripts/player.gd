@@ -13,6 +13,10 @@ extends CharacterBody2D
 @export var stun_duration: float = 0.8
 @export var knockback_speed: float = 500.0
 @export var knockback_friction: float = 1200.0
+@export var hitstop_duration: float = 0.08
+
+var is_frozen: bool = false
+var freeze_time_left: float = 0.0
 
 var is_stunned: bool = false
 var stun_time_left: float = 0.0
@@ -69,6 +73,15 @@ func _physics_process(delta: float) -> void:
 		return
 	if not is_multiplayer_authority():
 		return
+	
+	
+	if is_frozen:
+		freeze_time_left -= delta
+		if freeze_time_left <= 0.0:
+			is_frozen = false
+			animated_sprite.speed_scale = 1.0
+		return
+	
 	
 	if is_stunned:
 		_apply_stun_physics(delta)
@@ -245,6 +258,9 @@ func _on_dash_hitbox_body_entered(body: Node) -> void:
 		return
 	if body.has_method("apply_stun"):
 		body.apply_stun(dash_direction)
+	apply_hitstop(hitstop_duration)
+	if body.has_method("apply_hitstop"):
+		body.apply_hitstop(hitstop_duration)
 
 
 func apply_stun(from_direction: Vector2) -> void:
@@ -258,3 +274,16 @@ func _do_apply_stun(from_direction: Vector2) -> void:
 	is_stunned = true
 	stun_time_left = stun_duration
 	velocity = from_direction * knockback_speed
+	
+
+func apply_hitstop(duration: float) -> void:
+	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		_do_apply_hitstop(duration)
+	else:
+		_do_apply_hitstop.rpc(duration)
+
+@rpc("any_peer", "call_local", "reliable")
+func _do_apply_hitstop(duration: float) -> void:
+	is_frozen = true
+	freeze_time_left = duration
+	animated_sprite.speed_scale = 0.0

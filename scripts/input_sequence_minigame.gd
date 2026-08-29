@@ -4,7 +4,6 @@ class_name InputSequenceMinigame
 signal bomb_time_delta(seconds: float)
 signal round_finished
 
-@export var round_duration: float = 10.0
 @export var bonus_per_correct: float = 0.5
 @export var penalty_per_wrong: float = 1.0
 @export var target_correct: int = 30
@@ -21,7 +20,6 @@ const ARROW_SYMBOLS := {"up": "^", "down": "v", "left": "<", "right": ">"}
 var _player: Node
 var _rng: RandomNumberGenerator
 var _accent: Color = Color(1, 0.95, 0.2, 1)
-var _time_left: float
 var _correct_count: int = 0
 var _round_finished: bool = false
 var _arrow_queue: Array[Label] = []
@@ -34,12 +32,11 @@ func setup(player: Node, rng_seed: int = 0) -> void:
 	_player = player
 	_rng = MinigameUI.make_rng(rng_seed)
 	_accent = MinigameUI.player_color_for(player)
-	_time_left = round_duration
 	_correct_count = 0
 	_round_finished = false
 	MinigameUI.style_time_bar(time_bar, _accent)
 	time_bar.max_value = 100.0
-	time_bar.value = 100.0
+	time_bar.value = 0.0
 	for i in visible_arrow_count:
 		_push_new_arrow(false)
 	_reposition_queue(false)
@@ -97,6 +94,7 @@ func _consume_active_arrow() -> void:
 	arrow.queue_free()
 	_push_new_arrow(true)
 	_reposition_queue(true)
+	time_bar.value = (float(_correct_count) / float(target_correct)) * 100.0
 
 func _handle_input(event: InputEvent) -> void:
 	if _round_finished:
@@ -137,17 +135,8 @@ func _submit_direction(direction: String) -> void:
 	else:
 		bomb_time_delta.emit(-penalty_per_wrong)
 
-func _process(delta: float) -> void:
-	if _round_finished:
-		return
-	_time_left -= delta
-	time_bar.value = (_time_left / round_duration) * 100.0
-	if _time_left <= 0.0:
-		_finish_round()
-
 func _finish_round() -> void:
 	if _round_finished:
 		return
 	_round_finished = true
-	set_process(false)
 	round_finished.emit()

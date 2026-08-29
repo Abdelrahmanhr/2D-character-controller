@@ -25,9 +25,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_532o6")
-round_duration = 15.0
-visible_arrow_count = 4
-arrow_spacing = 22.0
 slide_duration = 0.1
 
 [node name="ArrowContainer" type="Control" parent="." unique_id=1723190828]
@@ -45,4 +42,3 @@ offset_right = 248.0
 offset_bottom = 132.0
 theme_override_styles/background = SubResource("StyleBoxTexture_sx0is")
 theme_override_styles/fill = SubResource("StyleBoxTexture_2usgg")
-fill_mode = 1

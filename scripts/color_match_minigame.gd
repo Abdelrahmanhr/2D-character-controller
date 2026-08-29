@@ -4,7 +4,6 @@ class_name ColorMatchMinigame
 signal bomb_time_delta(seconds: float)
 signal round_finished
 
-@export var round_duration: float = 10.0
 @export var bonus_per_correct: float = 1.0
 @export var penalty_per_wrong: float = 1.0
 @export var target_correct: int = 15
@@ -20,10 +19,9 @@ const COLOR_VALUES := {
 
 var _player: Node
 var _rng: RandomNumberGenerator
-var _time_left: float
 var _correct_count: int = 0
 var _round_finished: bool = false
-var _position_color_name: Dictionary = {}  # position -> the color NAME its label displays
+var _position_color_name: Dictionary = {}
 var _target_color_name: String = ""
 
 @onready var label_left: Label = $LabelLeft
@@ -36,9 +34,9 @@ var _target_color_name: String = ""
 func setup(player: Node, rng_seed: int = 0) -> void:
 	_player = player
 	_rng = MinigameUI.make_rng(rng_seed)
-	_time_left = round_duration
 	var accent := MinigameUI.player_color_for(player)
 	MinigameUI.style_time_bar(time_bar, accent)
+	time_bar.value = 0.0
 	for label in [label_left, label_up, label_right, label_down]:
 		MinigameUI.style_label(label, accent, 14)
 	_next_round()
@@ -97,6 +95,7 @@ func _submit_position(position: String) -> void:
 	if color_name_at_position == _target_color_name:
 		_correct_count += 1
 		bomb_time_delta.emit(bonus_per_correct)
+		time_bar.value = (float(_correct_count) / float(target_correct)) * 100.0
 		if _correct_count >= target_correct:
 			_finish_round()
 			return
@@ -105,17 +104,8 @@ func _submit_position(position: String) -> void:
 	
 	_next_round()
 
-func _process(delta: float) -> void:
-	if _round_finished:
-		return
-	_time_left -= delta
-	time_bar.value = (_time_left / round_duration) * 100.0
-	if _time_left <= 0.0:
-		_finish_round()
-
 func _finish_round() -> void:
 	if _round_finished:
 		return
 	_round_finished = true
-	set_process(false)
 	round_finished.emit()

@@ -85,5 +85,4 @@ offset_right = 248.0
 offset_bottom = 140.0
 theme_override_styles/background = SubResource("StyleBoxTexture_bar_bg")
 theme_override_styles/fill = SubResource("StyleBoxTexture_bar_fill")
-fill_mode = 1
 show_percentage = false
