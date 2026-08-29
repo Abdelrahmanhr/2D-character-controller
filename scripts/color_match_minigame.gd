@@ -66,9 +66,9 @@ func _next_round() -> void:
 	_target_color_name = COLOR_NAMES[_rng.randi() % COLOR_NAMES.size()]
 	center_square.color = COLOR_VALUES[_target_color_name]
 
-func _handle_input(event: InputEvent) -> void:
+func _handle_input(event: InputEvent) -> bool: 
 	if _round_finished:
-		return
+		return false  
 	var pressed_position := ""
 	if event is InputEventJoypadButton and event.pressed:
 		match event.button_index:
@@ -76,7 +76,7 @@ func _handle_input(event: InputEvent) -> void:
 			JOY_BUTTON_DPAD_UP: pressed_position = "up"
 			JOY_BUTTON_DPAD_RIGHT: pressed_position = "right"
 			JOY_BUTTON_DPAD_DOWN: pressed_position = "down"
-			_: return
+			_: return false  
 	elif event is InputEventKey and event.pressed and not event.echo:
 		var key: int = event.keycode if event.keycode != KEY_NONE else event.physical_keycode
 		match key:
@@ -84,10 +84,11 @@ func _handle_input(event: InputEvent) -> void:
 			KEY_UP: pressed_position = "up"
 			KEY_RIGHT: pressed_position = "right"
 			KEY_DOWN: pressed_position = "down"
-			_: return
+			_: return false  
 	else:
-		return
+		return false  
 	_submit_position(pressed_position)
+	return true 
 
 func _submit_position(position: String) -> void:
 	var color_name_at_position: String = _position_color_name[position]

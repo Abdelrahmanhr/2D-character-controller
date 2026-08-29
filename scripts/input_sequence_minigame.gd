@@ -96,10 +96,9 @@ func _consume_active_arrow() -> void:
 	_reposition_queue(true)
 	time_bar.value = (float(_correct_count) / float(target_correct)) * 100.0
 
-func _handle_input(event: InputEvent) -> void:
+func _handle_input(event: InputEvent) -> bool:  
 	if _round_finished:
-		return
-
+		return false  
 	var pressed_direction := ""
 	if event is InputEventJoypadButton and event.pressed:
 		match event.button_index:
@@ -107,7 +106,7 @@ func _handle_input(event: InputEvent) -> void:
 			JOY_BUTTON_DPAD_DOWN: pressed_direction = "down"
 			JOY_BUTTON_DPAD_LEFT: pressed_direction = "left"
 			JOY_BUTTON_DPAD_RIGHT: pressed_direction = "right"
-			_: return
+			_: return false  
 	elif event is InputEventKey and event.pressed and not event.echo:
 		var key: int = event.keycode if event.keycode != KEY_NONE else event.physical_keycode
 		match key:
@@ -115,11 +114,12 @@ func _handle_input(event: InputEvent) -> void:
 			KEY_DOWN: pressed_direction = "down"
 			KEY_LEFT: pressed_direction = "left"
 			KEY_RIGHT: pressed_direction = "right"
-			_: return
+			_: return false
 	else:
-		return
+		return false  
 
 	_submit_direction(pressed_direction)
+	return true 
 
 func _submit_direction(direction: String) -> void:
 	if _arrow_queue.is_empty():

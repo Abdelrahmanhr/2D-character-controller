@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://b78akjm2qis1q"
+path="res://.godot/imported/Bonus Time.wav-978831600e5d38c59c6dbe6aff79f609.sample"
+
+[deps]
+
+source_file="res://resources/audio/Bonus Time.wav"
+dest_files=["res://.godot/imported/Bonus Time.wav-978831600e5d38c59c6dbe6aff79f609.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2
