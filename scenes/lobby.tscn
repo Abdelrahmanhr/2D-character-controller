@@ -53,6 +53,56 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5gu6x"]
+bg_color = Color(0.02, 0.06, 0.08, 0.3)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.95, 1, 0.45)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q60fs"]
+bg_color = Color(0.2, 0.95, 1, 0.25)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.75, 1, 1, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nqcc7"]
+bg_color = Color(0.04, 0.13, 0.16, 0.55)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.95, 1, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.2, 0.95, 1, 0.4)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pc087"]
+bg_color = Color(0.03, 0.05, 0.06, 0.2)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.4, 0.42, 0.35)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
 [node name="Lobby" type="Control" unique_id=345892580]
 layout_mode = 3
 anchors_preset = 15
@@ -88,9 +138,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -140.0
-offset_top = -8.0
+offset_top = -54.0
 offset_right = 140.0
-offset_bottom = 140.0
+offset_bottom = 94.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 16
@@ -132,3 +182,28 @@ theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 15
 text = "Create a lobby to begin."
 horizontal_alignment = 1
+
+[node name="BackButton" type="Button" parent="." unique_id=1872234920]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -140.0
+offset_top = -179.0
+offset_right = 140.0
+offset_bottom = -135.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 1, 1, 0.96)
+theme_override_colors/font_hover_color = Color(0.2, 0.95, 1, 1)
+theme_override_colors/font_outline_color = Color(0.2, 0.95, 1, 0.7)
+theme_override_constants/outline_size = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_5gu6x")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_q60fs")
+theme_override_styles/hover = SubResource("StyleBoxFlat_nqcc7")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_pc087")
+theme_override_styles/focus = SubResource("StyleBoxFlat_nqcc7")
+text = "BACK TO MAIN MENU"
