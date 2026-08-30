@@ -19,13 +19,13 @@ func _on_host_pressed() -> void:
 	Networking.host_lobby()
 
 func _on_start_pressed() -> void:
-	var total_players: int = multiplayer.get_peers().size() + 1  # NEW
-	_sync_expected_players.rpc(total_players)  # NEW
+	var total_players: int = multiplayer.get_peers().size() + 1
+	_sync_expected_players.rpc(total_players)
 	Networking.start_game()
 
-@rpc("authority", "call_local", "reliable")  # NEW
-func _sync_expected_players(count: int) -> void:  # NEW
-	MinigameDirector.set_expected_player_count(count)  # NEW
+@rpc("authority", "call_local", "reliable")
+func _sync_expected_players(count: int) -> void:
+	MinigameDirector.set_expected_player_count(count)
 
 func _exit_game() -> void:
 	get_tree().paused = false

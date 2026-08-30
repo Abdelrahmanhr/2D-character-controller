@@ -59,7 +59,7 @@ func register_player(bomb_controller: BombController) -> void:
 	bomb_controller.player_finished_round.connect(_on_player_finished.bind(bomb_controller))
 	_notify_alive_count()
 	
-	if _bomb_controllers.size() >= expected_player_count and not _counting_down:
+	if _bomb_controllers.size() >= expected_player_count and not _counting_down and not _match_finished:
 		_begin_countdown()
 
 func _begin_countdown() -> void:
@@ -174,5 +174,9 @@ func _process(delta: float) -> void:
 			_start_next_round_for_player(bomb_controller)
 
 
-func set_expected_player_count(count: int) -> void:  # NEW
+func set_expected_player_count(count: int) -> void:
 	expected_player_count = maxi(count, 1)
+
+func force_start() -> void:
+	if not _counting_down and not _match_finished:
+		_begin_countdown()

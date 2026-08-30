@@ -23,16 +23,17 @@ func _ready() -> void:
 	var death_zone := $DeathZone
 	death_zone.body_entered.connect(_on_death_zone_body_entered)
 	if multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
-		if LocalPlayers.joined_devices.size() > 0:  # NEW
-			_spawn_local_players()  # NEW: multiple local players from the lobby
-		else:  # NEW
-			_spawn_local_player()  # unchanged: fallback for solo testing without going through the lobby
+		if LocalPlayers.joined_devices.size() > 0:
+			_spawn_local_players()
+		else:
+			_spawn_local_player()
 	elif multiplayer.is_server():
 		multiplayer.peer_connected.connect(_on_peer_connected)
 		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 		for peer_id in multiplayer.get_peers():
 			_spawn_player_for_peer(peer_id)
 		_spawn_player_for_peer(multiplayer.get_unique_id())
+		MinigameDirector.force_start()
 
 func _layout_viewport_content() -> void:
 	var viewport_size := get_viewport_rect().size
@@ -45,7 +46,7 @@ func _is_networked() -> bool:
 	return multiplayer.multiplayer_peer != null and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer)
 
 func _on_death_zone_body_entered(body: Node) -> void:
-	if body is CharacterBody2D and (not _is_networked() or body.is_multiplayer_authority()) and not body.is_dead:  # CHANGED
+	if body is CharacterBody2D and (not _is_networked() or body.is_multiplayer_authority()) and not body.is_dead:
 		body.get_node("BombController").eliminate_player()
 		print("Player fell!")
 
@@ -65,13 +66,13 @@ func _on_match_finished(winner_peer_id: int) -> void:
 	if winner_peer_id == 0:
 		title = "DRAW"
 		color = Color(1, 0.95, 0.15, 1)
-	elif multiplayer.multiplayer_peer is OfflineMultiplayerPeer:  # NEW: local multiplayer branch
-		var winner_slot: int = winner_peer_id - 1  # NEW: player names are "1".."4" matching slot index+1
-		var winner_color: Color = BombController.PLAYER_COLORS[clampi(winner_slot, 0, 3)]  # NEW
-		title = "PLAYER %d WINS!" % winner_peer_id  # NEW
-		color = winner_color  # NEW
+	elif multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		var winner_slot: int = winner_peer_id - 1
+		var winner_color: Color = BombController.PLAYER_COLORS[clampi(winner_slot, 0, 3)]
+		title = "PLAYER %d WINS!" % winner_peer_id
+		color = winner_color
 	else:
-		var local_peer_id := multiplayer.get_unique_id()  # CHANGED: moved inside this branch, only relevant for online
+		var local_peer_id := multiplayer.get_unique_id()
 		if winner_peer_id == local_peer_id:
 			title = "YOU WIN"
 			color = Color(0.15, 1, 0.4, 1)
@@ -126,7 +127,7 @@ func _on_peer_disconnected(peer_id: int) -> void:
 func _on_host_pressed() -> void:
 	Networking.host_lobby()
 
-func _spawn_local_players() -> void:  # NEW
+func _spawn_local_players() -> void:
 	var devices := LocalPlayers.joined_devices
 	for i in devices.size():
 		var device_id: int = devices[i]
