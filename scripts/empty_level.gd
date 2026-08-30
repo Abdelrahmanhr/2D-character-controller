@@ -22,7 +22,10 @@ func _ready() -> void:
 	var death_zone := $DeathZone
 	death_zone.body_entered.connect(_on_death_zone_body_entered)
 	if multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
-		_spawn_local_player()
+		if LocalPlayers.joined_devices.size() > 0:  # NEW
+			_spawn_local_players()  # NEW: multiple local players from the lobby
+		else:  # NEW
+			_spawn_local_player()  # unchanged: fallback for solo testing without going through the lobby
 	elif multiplayer.is_server():
 		multiplayer.peer_connected.connect(_on_peer_connected)
 		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
@@ -37,8 +40,11 @@ func _layout_viewport_content() -> void:
 	background_sprite.scale = Vector2.ONE * max(viewport_size.x / texture_size.x, viewport_size.y / texture_size.y)
 	match_result.position = (viewport_size - match_result.size) / 2.0
 
+func _is_networked() -> bool: 
+	return multiplayer.multiplayer_peer != null and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer)
+
 func _on_death_zone_body_entered(body: Node) -> void:
-	if body is CharacterBody2D and body.is_multiplayer_authority() and not body.is_dead:
+	if body is CharacterBody2D and (not _is_networked() or body.is_multiplayer_authority()) and not body.is_dead:  # CHANGED
 		body.get_node("BombController").eliminate_player()
 		print("Player fell!")
 
@@ -52,18 +58,26 @@ func _on_match_finished(winner_peer_id: int) -> void:
 	if _spectate_overlay:
 		_spectate_overlay.queue_free()
 		_spectate_overlay = null
-	var local_peer_id := multiplayer.get_unique_id()
 	var title: String
 	var color: Color
+	
 	if winner_peer_id == 0:
 		title = "DRAW"
 		color = Color(1, 0.95, 0.15, 1)
-	elif winner_peer_id == local_peer_id:
-		title = "YOU WIN"
-		color = Color(0.15, 1, 0.4, 1)
+	elif multiplayer.multiplayer_peer is OfflineMultiplayerPeer:  # NEW: local multiplayer branch
+		var winner_slot: int = winner_peer_id - 1  # NEW: player names are "1".."4" matching slot index+1
+		var winner_color: Color = BombController.PLAYER_COLORS[clampi(winner_slot, 0, 3)]  # NEW
+		title = "PLAYER %d WINS!" % winner_peer_id  # NEW
+		color = winner_color  # NEW
 	else:
-		title = "YOU LOSE"
-		color = Color(1, 0.18, 0.22, 1)
+		var local_peer_id := multiplayer.get_unique_id()  # CHANGED: moved inside this branch, only relevant for online
+		if winner_peer_id == local_peer_id:
+			title = "YOU WIN"
+			color = Color(0.15, 1, 0.4, 1)
+		else:
+			title = "YOU LOSE"
+			color = Color(1, 0.18, 0.22, 1)
+	
 	get_tree().paused = true
 	_end_menu = END_MENU.instantiate()
 	add_child(_end_menu)
@@ -110,3 +124,24 @@ func _on_peer_disconnected(peer_id: int) -> void:
 
 func _on_host_pressed() -> void:
 	Networking.host_lobby()
+
+func _spawn_local_players() -> void:  # NEW
+	var devices := LocalPlayers.joined_devices
+	for i in devices.size():
+		var device_id: int = devices[i]
+		var player := PLAYER.instantiate() as CharacterBody2D
+		player.name = str(i + 1)
+		player.device_id = device_id
+		player.position = $"spawn point".position + Vector2(i * 80.0, 0.0)
+
+		for other in players.duplicate():
+			if not is_instance_valid(other) or not other is PhysicsBody2D:
+				players.erase(other)
+				continue
+			player.add_collision_exception_with(other)
+			other.add_collision_exception_with(player)
+
+		add_child(player)
+		var bomb_controller: Node = player.get_node("BombController")
+		bomb_controller.device_id = device_id
+		players.append(player)

@@ -274,6 +274,7 @@ land_sound = ExtResource("3_ur7pv")
 jump_sound = ExtResource("4_y4r1p")
 slam_sound = ExtResource("5_d2wvv")
 footstep_sound = ExtResource("3_smehm")
+device_id = 0
 
 [node name="Glow" type="Sprite2D" parent="." unique_id=1253636982]
 z_index = -1

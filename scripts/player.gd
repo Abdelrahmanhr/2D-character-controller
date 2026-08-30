@@ -23,6 +23,20 @@ extends CharacterBody2D
 @export var footstep_pitch_variance: float = 0.15
 @export var footstep_debounce: float = 0.1
 
+@export var device_id: int = -2  #-1 = keyboard, 0+ = joypad index, -2 = unassigned
+@export var keyboard_left: Key = KEY_A  
+@export var keyboard_right: Key = KEY_D  
+@export var keyboard_up: Key = KEY_W  
+@export var keyboard_down: Key = KEY_S 
+@export var keyboard_jump: Key = KEY_SPACE  
+@export var keyboard_dash: Key = KEY_SHIFT  
+
+const STICK_DEADZONE: float = 0.2
+
+var _prev_jump_held: bool = false  
+var _prev_dash_held: bool = false  
+var _last_move_input: Vector2 = Vector2.ZERO  
+
 var _was_on_floor: bool = true
 
 var _was_walking: bool = false
@@ -76,6 +90,9 @@ func _ready() -> void:
 func _enter_tree() -> void:
 	set_multiplayer_authority(name.to_int())
 
+func _is_networked() -> bool:  # NEW
+	return multiplayer.multiplayer_peer != null and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer)
+
 func _recalculate_jump_physics() -> void:
 	rise_gravity = (2.0 * jump_height) / (time_to_peak * time_to_peak)
 	fall_gravity = (2.0 * jump_height) / (time_to_descent * time_to_descent)
@@ -88,7 +105,7 @@ func _physics_process(delta: float) -> void:
 		velocity.y += gravity * delta
 		move_and_slide()
 		return
-	if not is_multiplayer_authority():
+	if _is_networked() and not is_multiplayer_authority():  # CHANGED: was "if not is_multiplayer_authority(): return"
 		return
 	
 	
@@ -208,18 +225,47 @@ func _update_animation() -> void:
 		animation_name = next_animation
 		animated_sprite.play(animation_name)
 
-func _handle_input(delta: float) -> void:
+func _handle_input(delta: float) -> void:  # CHANGED: full per-device rewrite, see below
+	var is_keyboard: bool = device_id == LocalPlayers.KEYBOARD_DEVICE_ID  # NEW
 	
-	if Input.is_action_just_pressed("dash") and not is_dashing and dash_cooldown_left <= 0.0:
+	var move_x: float  # NEW
+	var move_y: float  # NEW
+	var jump_held: bool  # NEW
+	var dash_held: bool  # NEW
+	
+	if is_keyboard:  # NEW
+		move_x = float(Input.is_physical_key_pressed(keyboard_right)) - float(Input.is_physical_key_pressed(keyboard_left))
+		move_y = float(Input.is_physical_key_pressed(keyboard_down)) - float(Input.is_physical_key_pressed(keyboard_up))
+		jump_held = Input.is_physical_key_pressed(keyboard_jump)
+		dash_held = Input.is_physical_key_pressed(keyboard_dash)
+	else:  
+		move_x = Input.get_joy_axis(device_id, JOY_AXIS_LEFT_X)
+		move_y = Input.get_joy_axis(device_id, JOY_AXIS_LEFT_Y)
+		if abs(move_x) < STICK_DEADZONE:  
+			move_x = 0.0  
+		if abs(move_y) < STICK_DEADZONE:  # NEW
+			move_y = 0.0  # NEW
+		jump_held = Input.is_joy_button_pressed(device_id, JOY_BUTTON_A)
+		dash_held = Input.is_joy_button_pressed(device_id, JOY_BUTTON_X)
+	
+	direction = move_x  # CHANGED: was Input.get_axis("move_left", "move_right")
+	_last_move_input = Vector2(move_x, move_y)  # NEW
+	
+	var jump_just_pressed: bool = jump_held and not _prev_jump_held  # NEW
+	var jump_just_released: bool = not jump_held and _prev_jump_held  # NEW
+	var dash_just_pressed: bool = dash_held and not _prev_dash_held  # NEW
+	_prev_jump_held = jump_held  
+	_prev_dash_held = dash_held 
+	
+	if dash_just_pressed and not is_dashing and dash_cooldown_left <= 0.0:  # CHANGED: was Input.is_action_just_pressed("dash")
 		_start_dash()
 	
-	direction = Input.get_axis("move_left", "move_right")
 	if is_on_floor():
 		coyote_time_counter = coyote_time
 	else:
 		coyote_time_counter -= delta
 	
-	if Input.is_action_just_pressed("jump"):
+	if jump_just_pressed:  # CHANGED: was Input.is_action_just_pressed("jump")
 		jump_buffer_counter = jump_buffer_time
 	else:
 		jump_buffer_counter -= delta
@@ -229,7 +275,7 @@ func _handle_input(delta: float) -> void:
 		jump_buffer_counter = 0.0
 		coyote_time_counter = 0.0
 
-	if Input.is_action_just_released("jump") and velocity.y < 0.0:
+	if jump_just_released and velocity.y < 0.0:  # CHANGED: was Input.is_action_just_released("jump")
 		cut_jump = true
 
 
@@ -263,10 +309,7 @@ func _apply_movement(delta: float) -> void:
 	velocity.y += gravity * delta
 
 func _get_dash_direction() -> Vector2:
-	var raw := Vector2(
-		Input.get_axis("move_left", "move_right"),
-		Input.get_axis("move_up", "move_down")
-	)
+	var raw := _last_move_input  # CHANGED: was Input.get_axis(...) x2
 	if raw.length() < 0.2:
 		raw = Vector2.RIGHT if facing_right else Vector2.LEFT
 	
@@ -342,7 +385,7 @@ func _play_footstep() -> void:
 	SfxManager.play(footstep_sound, -4.0 + randf_range(-2.0, 2.0), footstep_pitch_variance)
 
 
-func _check_landing() -> void:  # NEW
+func _check_landing() -> void:
 	var on_floor_now := is_on_floor()
 	if on_floor_now and not _was_on_floor:
 		SfxManager.play(land_sound,-20.0,0.2)

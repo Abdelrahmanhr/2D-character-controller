@@ -1,12 +1,10 @@
 [gd_scene format=3 uid="uid://xmu73o4be3vy"]
 
 [ext_resource type="Script" uid="uid://bmopkndvg4l5v" path="res://scripts/minigame_director.gd" id="1_iogug"]
-[ext_resource type="PackedScene" uid="uid://bfp8yuwl46p72" path="res://scenes/math_minigame.tscn" id="2_math"]
-[ext_resource type="PackedScene" uid="uid://byb0b07om1f3l" path="res://scenes/input_sequence_minigame.tscn" id="3_y0foh"]
-[ext_resource type="PackedScene" uid="uid://e468yxvbaau6" path="res://scenes/mash_minigame.tscn" id="4_4ybhr"]
-[ext_resource type="PackedScene" uid="uid://v1hn6b1fyp0k" path="res://scenes/color_match_minigame.tscn" id="5_os3jr"]
+[ext_resource type="PackedScene" uid="uid://byb0b07om1f3l" path="res://scenes/Minigames/input_sequence_minigame.tscn" id="3_y0foh"]
+[ext_resource type="PackedScene" uid="uid://e468yxvbaau6" path="res://scenes/Minigames/mash_minigame.tscn" id="4_4ybhr"]
+[ext_resource type="PackedScene" uid="uid://v1hn6b1fyp0k" path="res://scenes/Minigames/color_match_minigame.tscn" id="5_os3jr"]
 
 [node name="MinigameDirector" type="Node" unique_id=921820911]
 script = ExtResource("1_iogug")
-expected_player_count = 3
-minigame_order = Array[PackedScene]([ExtResource("2_math"), ExtResource("3_y0foh"), ExtResource("4_4ybhr"), ExtResource("5_os3jr")])
+minigame_order = Array[PackedScene]([ExtResource("3_y0foh"), ExtResource("3_y0foh"), ExtResource("4_4ybhr"), ExtResource("5_os3jr")])

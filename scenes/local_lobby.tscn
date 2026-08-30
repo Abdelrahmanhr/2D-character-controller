@@ -1,0 +1,144 @@
+[gd_scene format=3 uid="uid://djol111xuflpi"]
+
+[ext_resource type="Script" uid="uid://d11dx0mi6t8ke" path="res://scripts/local_lobby.gd" id="1_hngs2"]
+[ext_resource type="PackedScene" uid="uid://ba5h6cemm2cs7" path="res://scenes/player_slot.tscn" id="2_3apr2"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3apr2"]
+bg_color = Color(0.02, 0.06, 0.08, 0.3)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.95, 1, 0.45)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2f41p"]
+bg_color = Color(0.2, 0.95, 1, 0.25)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.75, 1, 1, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jyo2l"]
+bg_color = Color(0.04, 0.13, 0.16, 0.55)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.95, 1, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.2, 0.95, 1, 0.4)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gtmy7"]
+bg_color = Color(0.03, 0.05, 0.06, 0.2)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.4, 0.42, 0.35)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="LocalLobby" type="Control" unique_id=75862373]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_hngs2")
+min_players_to_start = 1
+slot_scene = ExtResource("2_3apr2")
+
+[node name="SlotContainer" type="HBoxContainer" parent="." unique_id=219804431]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = 87.0
+offset_right = 20.0
+offset_bottom = 127.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StartHintLabel" type="Label" parent="." unique_id=1459092464]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = 45.0
+offset_right = 26.0
+offset_bottom = 68.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Start ?"
+
+[node name="BackButton" type="Button" parent="." unique_id=932631489]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -139.0
+offset_top = -347.0
+offset_right = 141.0
+offset_bottom = -303.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 1, 1, 0.96)
+theme_override_colors/font_hover_color = Color(0.2, 0.95, 1, 1)
+theme_override_colors/font_outline_color = Color(0.2, 0.95, 1, 0.7)
+theme_override_constants/outline_size = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_3apr2")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_2f41p")
+theme_override_styles/hover = SubResource("StyleBoxFlat_jyo2l")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_gtmy7")
+theme_override_styles/focus = SubResource("StyleBoxFlat_jyo2l")
+text = "BACK TO MAIN MENU"
+
+[node name="StartButton" type="Button" parent="." unique_id=1561034884]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -139.0
+offset_top = -400.0
+offset_right = 141.0
+offset_bottom = -356.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 1, 1, 0.96)
+theme_override_colors/font_hover_color = Color(0.2, 0.95, 1, 1)
+theme_override_colors/font_outline_color = Color(0.2, 0.95, 1, 0.7)
+theme_override_constants/outline_size = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_3apr2")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_2f41p")
+theme_override_styles/hover = SubResource("StyleBoxFlat_jyo2l")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_gtmy7")
+theme_override_styles/focus = SubResource("StyleBoxFlat_jyo2l")
+text = "START GAME"
