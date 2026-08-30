@@ -86,6 +86,10 @@ func _ready() -> void:
 	_recalculate_jump_physics()
 	_setup_glow_texture()
 	_update_identity()
+	if _is_networked() and is_multiplayer_authority() and device_id == -2:  # NEW
+		device_id = -1  # NEW: default to keyboard for online play, since there's no lobby-side device picker for online yet
+		if bomb_controller:  # NEW
+			bomb_controller.device_id = -1  # NEW
 
 func _enter_tree() -> void:
 	set_multiplayer_authority(name.to_int())

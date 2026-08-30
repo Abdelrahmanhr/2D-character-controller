@@ -172,3 +172,7 @@ func _process(delta: float) -> void:
 		_cooldowns[bomb_controller] = cooldown
 		if cooldown <= 0.0:
 			_start_next_round_for_player(bomb_controller)
+
+
+func set_expected_player_count(count: int) -> void:  # NEW
+	expected_player_count = maxi(count, 1)
