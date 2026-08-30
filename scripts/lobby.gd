@@ -16,6 +16,9 @@ func _ready() -> void:
 	Networking.client_joined.connect(_on_client_joined)
 
 
+
+
+
 func _on_host_pressed() -> void:
 	host_button.disabled = true
 	status_label.text = "Creating lobby..."

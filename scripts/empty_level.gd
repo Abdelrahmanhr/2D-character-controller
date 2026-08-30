@@ -13,6 +13,7 @@ var _end_menu: CanvasLayer
 @onready var background_sprite: Sprite2D = $background/Sprite2D
 
 func _ready() -> void:
+	MusicManager.play(preload("res://resources/audio/ARENA SOUNDTRACK.ogg"), false, true, -25.0)  
 	$PauseMenu.process_mode = Node.PROCESS_MODE_ALWAYS
 	get_viewport().size_changed.connect(_layout_viewport_content)
 	_layout_viewport_content()

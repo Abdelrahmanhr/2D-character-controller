@@ -26,6 +26,7 @@ func _ready() -> void:
 	back_button.pressed.connect(_on_back_pressed)
 	_refresh_start_hint()
 
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventJoypadButton and event.pressed:
 		if event.button_index in CONFIRM_JOYPAD_BUTTONS:  # CHANGED: removed the START_JOYPAD_BUTTON check above this
@@ -67,7 +68,7 @@ func _refresh_start_hint() -> void:
 	if count >= min_players_to_start:
 		start_hint_label.text = "Press Start to begin (%d players)" % count
 	else:
-		start_hint_label.text = "Waiting for players... (%d/%d minimum)" % [count, min_players_to_start]
+		start_hint_label.text = "Listening for input... (%d/%d minimum players)" % [count, min_players_to_start]
 
 func _try_start_match() -> void:
 	if LocalPlayers.joined_devices.size() < min_players_to_start:

@@ -5,12 +5,14 @@ const LOCAL_LOBBY_SCENE := "res://scenes/local_lobby.tscn"
 const CREDITS_SCENE := "res://scenes/credits.tscn"
 
 func _ready() -> void:
+	MusicManager.play(preload("res://resources/audio/MAINMENUSOUNDTRACK.ogg"), false, false)
 	$Menu/StartButton.pressed.connect(_on_start_pressed)
 	$Menu/MultiplayerButton.pressed.connect(_on_multiplayer_pressed)
 	$Menu/LocalMultiplayerButton.pressed.connect(_on_local_multiplayer_pressed) 
 	$Menu/CreditsButton.pressed.connect(_on_credits_pressed)
 	$Menu/ExitButton.pressed.connect(_on_exit_pressed)
 	Networking.client_joined.connect(_on_client_joined)
+
 
 func _on_client_joined() -> void:
 	get_tree().change_scene_to_file(LOBBY_SCENE)

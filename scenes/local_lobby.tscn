@@ -157,3 +157,20 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_jyo2l")
 theme_override_styles/disabled = SubResource("StyleBoxFlat_gtmy7")
 theme_override_styles/focus = SubResource("StyleBoxFlat_jyo2l")
 text = "START GAME"
+
+[node name="Title" type="Label" parent="." unique_id=322225641]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 128.0
+offset_bottom = 188.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.97)
+theme_override_colors/font_shadow_color = Color(0.2, 0.95, 1, 0.45)
+theme_override_colors/font_outline_color = Color(0.2, 0.95, 1, 0.9)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 0
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 40
+text = "LOCAL LOBBY"
+horizontal_alignment = 1

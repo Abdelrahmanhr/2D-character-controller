@@ -9,6 +9,7 @@ signal player_left(device_id: int)
 
 var joined_devices: Array[int] = []  # device_id per joined player, in join order
 
+
 func is_joined(device_id: int) -> bool:
 	return joined_devices.has(device_id)
 

@@ -28,6 +28,7 @@ GlobalParallax="*res://scenes/global_parallax.tscn"
 SceneTransition="*res://scenes/scene_transition.tscn"
 LocalPlayers="*uid://beo37lguvwq13"
 UISfx="*uid://3suisp3wkvkg"
+MusicManager="*uid://d1np3sr422x7"
 
 [display]
 

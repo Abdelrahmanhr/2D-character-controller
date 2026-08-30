@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://d37j220yev0oj"]
+[gd_scene format=3 uid="uid://dvvnkja0gcka1"]
 
 [ext_resource type="Script" uid="uid://bwnw43x5ovafm" path="res://scripts/credits.gd" id="1"]
 [ext_resource type="Theme" uid="uid://doxgt2jeresa3" path="res://resources/themes/gravity.tres" id="2"]
@@ -43,8 +43,8 @@ script = ExtResource("1")
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_top = 80.0
-offset_bottom = 135.0
+offset_top = 134.0
+offset_bottom = 189.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.97)
 theme_override_colors/font_outline_color = Color(0.2, 0.95, 1, 0.9)
@@ -61,9 +61,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -220.0
-offset_top = -155.0
+offset_top = -93.0
 offset_right = 220.0
-offset_bottom = 185.0
+offset_bottom = 247.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -110,6 +110,7 @@ Nourin Awad"
 horizontal_alignment = 1
 
 [node name="AssetsSection" type="VBoxContainer" parent="ScrollContainer/Content" unique_id=714562770]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 4
 
