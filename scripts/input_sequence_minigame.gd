@@ -14,6 +14,9 @@ signal round_finished
 const ARROW_SIZE := Vector2(48.0, 22.0)
 const INACTIVE_COLOR := Color(1.0, 1.0, 1.0, 0.55)
 
+
+
+
 const DIRECTIONS := ["up", "down", "left", "right"]
 const ARROW_SYMBOLS := {"up": "^", "down": "v", "left": "<", "right": ">"}
 
@@ -27,6 +30,8 @@ var _active_tweens: Dictionary = {}
 
 @onready var arrow_container: Control = $ArrowContainer
 @onready var time_bar: ProgressBar = $TimeBar
+
+
 
 func setup(player: Node, rng_seed: int = 0) -> void:
 	_player = player
@@ -126,14 +131,51 @@ func _submit_direction(direction: String) -> void:
 		return
 	var next_arrow: Label = _arrow_queue[_arrow_queue.size() - 1]
 
+	MinigameUI.shake_widget(time_bar)  # NEW
+
 	if direction == next_arrow.get_meta("direction"):
 		_correct_count += 1
 		bomb_time_delta.emit(bonus_per_correct)
+		_spawn_sequence_popup(next_arrow, bonus_per_correct)
+		await MinigameUI.highlight_correct(next_arrow)
 		_consume_active_arrow()
 		if _correct_count >= target_correct:
 			_finish_round()
 	else:
 		bomb_time_delta.emit(-penalty_per_wrong)
+		_spawn_sequence_popup(next_arrow, -penalty_per_wrong)
+		await MinigameUI.highlight_wrong(next_arrow)
+
+func _spawn_sequence_popup(arrow: Label, amount: float) -> void:
+	var popup := Label.new()
+	popup.text = "%+.1f" % amount
+	popup.add_theme_font_override("font", MinigameUI.game_font())
+	popup.add_theme_font_size_override("font_size", 18)
+	popup.add_theme_color_override("font_color", Color(0.35, 1.0, 0.35) if amount > 0.0 else Color(1.0, 0.3, 0.3))
+	popup.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
+	popup.add_theme_constant_override("outline_size", 3)
+	popup.z_index = 10
+	arrow_container.add_child(popup)
+	
+	var start_position: Vector2 = arrow.position + Vector2(ARROW_SIZE.x + 12.0, 0.0)
+	popup.position = start_position
+	
+	var tween := popup.create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(popup, "position:y", start_position.y - 20.0, 1.2)
+	tween.tween_property(popup, "modulate:a", 0.0, 1.2).set_delay(0.5)
+	tween.chain().tween_callback(popup.queue_free)
+
+func _finalize_arrow_position(arrow: Label) -> void:  # NEW
+	if _active_tweens.has(arrow):
+		var tween: Tween = _active_tweens[arrow]
+		if tween.is_valid():
+			tween.kill()
+		_active_tweens.erase(arrow)
+	var index: int = _arrow_queue.find(arrow)
+	if index != -1:
+		arrow.position.y = float(index) * arrow_spacing
+
 
 func _finish_round() -> void:
 	if _round_finished:

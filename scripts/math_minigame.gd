@@ -105,14 +105,21 @@ func _handle_input(event: InputEvent) -> bool:
 
 func _submit_answer(side: int) -> void:
 	_answered = true
+	MinigameUI.shake_widget(self)
 	if side == _current_answer:
 		_correct_count += 1
 		bomb_time_delta.emit(bonus_per_correct)
+		var correct_label: Label = option_left if side == 0 else option_right
+		MinigameUI.spawn_floating_bonus(correct_label, bonus_per_correct)
+		await MinigameUI.highlight_correct(correct_label)
 		if _correct_count >= target_correct:
 			_finish_round()
 			return
 	else:
 		bomb_time_delta.emit(-penalty_per_wrong)
+		var wrong_label: Label = option_left if side == 0 else option_right
+		MinigameUI.spawn_floating_bonus(wrong_label, -penalty_per_wrong)  # NEW
+		await MinigameUI.highlight_wrong(wrong_label)
 	_load_new_equation()
 
 func _finish_round() -> void:

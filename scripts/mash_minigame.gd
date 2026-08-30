@@ -15,6 +15,8 @@ var _round_finished: bool = false
 @onready var press_count_label: Label = $PressCountLabel
 @onready var time_bar: ProgressBar = $TimeBar
 
+
+
 func setup(player: Node, _rng_seed: int = 0) -> void:
 	_player = player
 	var color := MinigameUI.player_color_for(player)
@@ -42,8 +44,10 @@ func _register_press() -> void:
 	_press_count += 1
 	_update_label()
 	time_bar.value = (float(_press_count) / float(max_presses)) * 100.0
+	MinigameUI.shake_widget(self)  # NEW
 	if _press_count % presses_per_bonus == 0:
 		bomb_time_delta.emit(bonus_per_threshold)
+		MinigameUI.spawn_floating_bonus(press_count_label, bonus_per_threshold)  # NEW
 	if _press_count >= max_presses:
 		_finish_round()
 

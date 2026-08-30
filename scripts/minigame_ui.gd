@@ -2,6 +2,86 @@ class_name MinigameUI
 
 static var _font: Font
 
+
+const SHAKE_STRENGTH: float = 6.0
+const SHAKE_DURATION: float = 0.15
+const WRONG_COLOR: Color = Color(1.0, 0.3, 0.3)  
+const DEFAULT_FONT_COLOR: Color = Color(1, 1, 1, 0.96) 
+const CORRECT_COLOR: Color = Color(0.35, 1.0, 0.35)
+const HIGHLIGHT_DURATION: float = 0.12
+const ANSWER_SHAKE_STRENGTH: float = 10.0 
+
+const FLOAT_TEXT_DURATION: float = 1.0  
+const FLOAT_TEXT_RISE: float = 40.0  
+const FLOAT_TEXT_SPREAD: float = 25.0
+
+const FLOAT_TEXT_VERTICAL_OFFSET: float = 12.0  
+
+static func spawn_floating_bonus(label: Label, amount: float, forced_side: float = 0.0, vertical_offset: float = FLOAT_TEXT_VERTICAL_OFFSET, rise_distance: float = FLOAT_TEXT_RISE) -> void:  # CHANGED: added rise_distance param
+	var parent: Node = label.get_parent()
+	if parent == null:
+		return
+	
+	var popup := Label.new()
+	popup.text = "%+.1f" % amount
+	popup.add_theme_font_override("font", game_font())
+	popup.add_theme_font_size_override("font_size", 18)
+	popup.add_theme_color_override("font_color", CORRECT_COLOR if amount > 0.0 else WRONG_COLOR)
+	popup.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
+	popup.add_theme_constant_override("outline_size", 3)
+	popup.z_index = 10
+	parent.add_child(popup)
+	
+	var side: float = forced_side if forced_side != 0.0 else (1.0 if randf() < 0.5 else -1.0)
+	var min_offset: float = 8.0
+	var max_offset: float = min_offset + FLOAT_TEXT_SPREAD
+	var horizontal_offset: float = randf_range(min_offset, max_offset) * side
+	var start_position: Vector2 = label.position + Vector2(label.size.x * 0.5 + horizontal_offset, -vertical_offset)
+	popup.position = start_position
+	popup.pivot_offset = popup.size * 0.5
+	
+	var tween := popup.create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(popup, "position:y", start_position.y - rise_distance, FLOAT_TEXT_DURATION)  # CHANGED: was "- FLOAT_TEXT_RISE"
+	tween.tween_property(popup, "modulate:a", 0.0, FLOAT_TEXT_DURATION).set_delay(FLOAT_TEXT_DURATION * 0.3)
+	tween.chain().tween_callback(popup.queue_free)
+
+static func highlight_correct(label: Label) -> void: 
+	await _flash_label(label, CORRECT_COLOR)
+
+static func highlight_wrong(label: Label) -> void:  
+	await _flash_label(label, WRONG_COLOR)
+
+static func _flash_label(label: Label, color: Color) -> void:  
+	var original_position: Vector2 = label.position
+	label.add_theme_color_override("font_color", color)
+	var tween := label.create_tween()
+	var steps := 4
+	for i in steps:
+		var offset := Vector2(randf_range(-ANSWER_SHAKE_STRENGTH, ANSWER_SHAKE_STRENGTH), randf_range(-ANSWER_SHAKE_STRENGTH, ANSWER_SHAKE_STRENGTH))
+		tween.tween_property(label, "position", original_position + offset, HIGHLIGHT_DURATION / steps)
+	tween.tween_property(label, "position", original_position, HIGHLIGHT_DURATION / steps)
+	await tween.finished
+	label.add_theme_color_override("font_color", DEFAULT_FONT_COLOR) 
+
+static func shake_widget(node: Control) -> void:
+	if not node.has_meta("_shake_home_position"):  # NEW
+		node.set_meta("_shake_home_position", node.position)  # NEW: captured once, the true resting position
+	if node.has_meta("_shake_tween"):  # NEW
+		var old_tween: Tween = node.get_meta("_shake_tween")  # NEW
+		if old_tween.is_valid():  # NEW
+			old_tween.kill()  # NEW
+	
+	var home_position: Vector2 = node.get_meta("_shake_home_position")  # CHANGED: was "node.position"
+	var tween := node.create_tween()
+	node.set_meta("_shake_tween", tween)  # NEW
+	var steps := 4
+	for i in steps:
+		var offset := Vector2(randf_range(-SHAKE_STRENGTH, SHAKE_STRENGTH), randf_range(-SHAKE_STRENGTH, SHAKE_STRENGTH))
+		tween.tween_property(node, "position", home_position + offset, SHAKE_DURATION / steps)
+	tween.tween_property(node, "position", home_position, SHAKE_DURATION / steps)
+
+
 static func player_color_for(player: Node) -> Color:
 	var bomb := player.get_node_or_null("BombController") as BombController
 	if bomb:

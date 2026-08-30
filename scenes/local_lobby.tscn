@@ -61,6 +61,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_hngs2")
+min_players_to_start = 1
 slot_scene = ExtResource("2_3apr2")
 
 [node name="SlotContainer" type="HBoxContainer" parent="." unique_id=219804431]
@@ -85,9 +86,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -24.0
-offset_top = 49.0
+offset_top = 45.0
 offset_right = 26.0
-offset_bottom = 72.0
+offset_bottom = 68.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "Start ?"

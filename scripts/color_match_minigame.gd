@@ -39,6 +39,7 @@ func setup(player: Node, rng_seed: int = 0) -> void:
 	time_bar.value = 0.0
 	for label in [label_left, label_up, label_right, label_down]:
 		MinigameUI.style_label(label, accent, 14)
+		label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.6))  
 	_next_round()
 
 func _get_label(position: String) -> Label:
@@ -92,16 +93,32 @@ func _handle_input(event: InputEvent) -> bool:
 
 func _submit_position(position: String) -> void:
 	var color_name_at_position: String = _position_color_name[position]
+	var label := _get_label(position)
+	var forced_side: float = _get_popup_side(position)  # NEW
 	
+	MinigameUI.shake_widget(self)
+
 	if color_name_at_position == _target_color_name:
 		_correct_count += 1
 		bomb_time_delta.emit(bonus_per_correct)
+		MinigameUI.spawn_floating_bonus(label, bonus_per_correct, forced_side)  # CHANGED: added forced_side
 		time_bar.value = (float(_correct_count) / float(target_correct)) * 100.0
+		await MinigameUI.highlight_correct(label)
 		if _correct_count >= target_correct:
 			_finish_round()
 			return
 	else:
 		bomb_time_delta.emit(-penalty_per_wrong)
+		MinigameUI.spawn_floating_bonus(label, -penalty_per_wrong, forced_side)  # CHANGED: added forced_side
+		await MinigameUI.highlight_wrong(label)
+	
+	_next_round()
+
+func _get_popup_side(position: String) -> float:  # NEW
+	match position:
+		"left": return -1.0
+		"right": return 1.0
+		_: return 1.0 if randf() < 0.5 else -1.0  # up/down: no strong left/right bias needed, random is fine
 	
 	_next_round()
 
