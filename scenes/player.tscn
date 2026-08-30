@@ -266,9 +266,11 @@ properties/0/replication_mode = 1
 [node name="Player" type="CharacterBody2D" unique_id=1169704896]
 script = ExtResource("1_g2els")
 jump_height = 110.0
-dash_speed = 700.0
+dash_speed = 500.0
 dash_cooldown = 1.0
 dash_end_momentum_retention = 0.5
+knockback_speed = 1000.0
+hitstop_duration = 0.02
 dash_sound = ExtResource("2_fjrip")
 land_sound = ExtResource("3_ur7pv")
 jump_sound = ExtResource("4_y4r1p")
@@ -324,10 +326,12 @@ replication_config = SubResource("SceneReplicationConfig_g2els")
 
 [node name="BombController" type="Node" parent="." unique_id=1813107372]
 script = ExtResource("5_qlg0r")
+bomb_time = 25.0
 bonus_sounds = Array[AudioStream]([ExtResource("11_3v2ag")])
 input_sound = ExtResource("12_oprun")
 penalty_sound = ExtResource("13_f1ej7")
 minigame_complete_sound = ExtResource("14_oprun")
+max_bomb_time = 30.0
 
 [node name="Minigamelayer" type="Control" parent="BombController" unique_id=2025939438]
 layout_mode = 3

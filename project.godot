@@ -27,6 +27,8 @@ SfxManager="*uid://cj7thjw7nipac"
 GlobalParallax="*res://scenes/global_parallax.tscn"
 SceneTransition="*res://scenes/scene_transition.tscn"
 LocalPlayers="*uid://beo37lguvwq13"
+UISfx="*uid://3suisp3wkvkg"
+MusicManager="*uid://d1np3sr422x7"
 
 [display]
 
@@ -37,6 +39,7 @@ window/stretch/aspect="expand"
 [gui]
 
 theme/custom="res://resources/themes/gravity.tres"
+theme/custom_font="uid://bgtwri1cbfy4m"
 
 [input]
 

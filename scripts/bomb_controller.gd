@@ -11,11 +11,17 @@ signal player_finished_round
 @export var penalty_sound: AudioStream  
 @export var minigame_complete_sound: AudioStream
 
+@export var max_bomb_time: float = 60.0  # 
+
 var _time_left: float
 var _active_minigame: Control = null
 var _active_minigame_slot: Control = null
 var _player: Node
 var _expired := false
+
+const STICK_THRESHOLD: float = 0.5  
+
+var _prev_stick_direction: String = ""
 
 var time_left: float:
 	get:
@@ -44,6 +50,7 @@ func _process(delta: float) -> void:
 			_on_bomb_expired()
 	if _minigame_layer:
 		_minigame_layer.global_position = _player.global_position + Vector2(-100, -150)
+	_poll_right_stick()
 
 func _input(event: InputEvent) -> void:
 	if _active_minigame == null or not _has_authority() or _player.is_stunned:  # CHANGED
@@ -184,10 +191,58 @@ func _on_bomb_time_delta(seconds: float) -> void:
 		_play_bonus_sound()
 	elif seconds < 0.0: 
 		SfxManager.play(penalty_sound,-15.0,0.2) 
-	_time_left += seconds
+	_time_left = minf(_time_left + seconds, max_bomb_time)
 
 func _play_bonus_sound() -> void:
 	if bonus_sounds.is_empty():
 		return
 	var sound: AudioStream = bonus_sounds[randi() % bonus_sounds.size()]
 	SfxManager.play(sound, -10.0, bonus_pitch_variance)
+
+func _poll_right_stick() -> void:  # NEW
+	if _active_minigame == null or not _has_authority() or _player.is_stunned or device_id < 0:
+		_prev_stick_direction = ""
+		return
+	
+	var stick_x: float = Input.get_joy_axis(device_id, JOY_AXIS_RIGHT_X)
+	var stick_y: float = Input.get_joy_axis(device_id, JOY_AXIS_RIGHT_Y)
+	
+	var current_direction: String = ""
+	if abs(stick_x) > abs(stick_y):
+		if stick_x > STICK_THRESHOLD:
+			current_direction = "right"
+		elif stick_x < -STICK_THRESHOLD:
+			current_direction = "left"
+	else:
+		if stick_y > STICK_THRESHOLD:
+			current_direction = "down"
+		elif stick_y < -STICK_THRESHOLD:
+			current_direction = "up"
+	
+	if current_direction != "" and current_direction != _prev_stick_direction:
+		_submit_stick_direction(current_direction)
+	
+	if current_direction == "":
+		_prev_stick_direction = ""
+	else:
+		_prev_stick_direction = current_direction
+
+
+func _submit_stick_direction(direction: String) -> void:  # NEW
+	var button: JoyButton
+	match direction:
+		"up": button = JOY_BUTTON_DPAD_UP
+		"down": button = JOY_BUTTON_DPAD_DOWN
+		"left": button = JOY_BUTTON_DPAD_LEFT
+		"right": button = JOY_BUTTON_DPAD_RIGHT
+		_: return
+	
+	var synthetic_event := InputEventJoypadButton.new()
+	synthetic_event.device = device_id
+	synthetic_event.button_index = button
+	synthetic_event.pressed = true
+	
+	var handled: bool = _active_minigame._handle_input(synthetic_event)
+	if handled:
+		SfxManager.play(input_sound, -13.0, 0.1)
+	_try_replicate_input(false, button)

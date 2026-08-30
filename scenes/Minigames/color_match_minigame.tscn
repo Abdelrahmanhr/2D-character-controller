@@ -25,6 +25,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_fud5r")
+bonus_per_correct = 2.0
+penalty_per_wrong = 3.0
+target_correct = 8
 
 [node name="CenterSquare" type="ColorRect" parent="." unique_id=1712461176]
 layout_mode = 0

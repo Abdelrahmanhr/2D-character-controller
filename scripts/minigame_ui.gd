@@ -2,7 +2,6 @@ class_name MinigameUI
 
 static var _font: Font
 
-
 const SHAKE_STRENGTH: float = 6.0
 const SHAKE_DURATION: float = 0.15
 const WRONG_COLOR: Color = Color(1.0, 0.3, 0.3)  
@@ -17,7 +16,12 @@ const FLOAT_TEXT_SPREAD: float = 25.0
 
 const FLOAT_TEXT_VERTICAL_OFFSET: float = 12.0  
 
-static func spawn_floating_bonus(label: Label, amount: float, forced_side: float = 0.0, vertical_offset: float = FLOAT_TEXT_VERTICAL_OFFSET, rise_distance: float = FLOAT_TEXT_RISE) -> void:  # CHANGED: added rise_distance param
+static func game_font() -> Font:  
+	if _font == null:
+		_font = load("res://resources/boldpixels.ttf")  
+	return _font
+
+static func spawn_floating_bonus(label: Label, amount: float, forced_side: float = 0.0, vertical_offset: float = FLOAT_TEXT_VERTICAL_OFFSET, rise_distance: float = FLOAT_TEXT_RISE) -> void:
 	var parent: Node = label.get_parent()
 	if parent == null:
 		return
@@ -42,7 +46,7 @@ static func spawn_floating_bonus(label: Label, amount: float, forced_side: float
 	
 	var tween := popup.create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(popup, "position:y", start_position.y - rise_distance, FLOAT_TEXT_DURATION)  # CHANGED: was "- FLOAT_TEXT_RISE"
+	tween.tween_property(popup, "position:y", start_position.y - rise_distance, FLOAT_TEXT_DURATION)
 	tween.tween_property(popup, "modulate:a", 0.0, FLOAT_TEXT_DURATION).set_delay(FLOAT_TEXT_DURATION * 0.3)
 	tween.chain().tween_callback(popup.queue_free)
 
@@ -65,16 +69,16 @@ static func _flash_label(label: Label, color: Color) -> void:
 	label.add_theme_color_override("font_color", DEFAULT_FONT_COLOR) 
 
 static func shake_widget(node: Control) -> void:
-	if not node.has_meta("_shake_home_position"):  # NEW
-		node.set_meta("_shake_home_position", node.position)  # NEW: captured once, the true resting position
-	if node.has_meta("_shake_tween"):  # NEW
-		var old_tween: Tween = node.get_meta("_shake_tween")  # NEW
-		if old_tween.is_valid():  # NEW
-			old_tween.kill()  # NEW
+	if not node.has_meta("_shake_home_position"):
+		node.set_meta("_shake_home_position", node.position)
+	if node.has_meta("_shake_tween"):
+		var old_tween: Tween = node.get_meta("_shake_tween")
+		if old_tween.is_valid():
+			old_tween.kill()
 	
-	var home_position: Vector2 = node.get_meta("_shake_home_position")  # CHANGED: was "node.position"
+	var home_position: Vector2 = node.get_meta("_shake_home_position")
 	var tween := node.create_tween()
-	node.set_meta("_shake_tween", tween)  # NEW
+	node.set_meta("_shake_tween", tween)
 	var steps := 4
 	for i in steps:
 		var offset := Vector2(randf_range(-SHAKE_STRENGTH, SHAKE_STRENGTH), randf_range(-SHAKE_STRENGTH, SHAKE_STRENGTH))
@@ -88,13 +92,7 @@ static func player_color_for(player: Node) -> Color:
 		return bomb.get_player_color()
 	return Color(1, 0.95, 0.15, 1)
 
-static func game_font() -> Font:
-	if _font == null:
-		var sys := SystemFont.new()
-		sys.font_names = PackedStringArray(["Segoe UI", "Noto Sans", "Arial"])
-		sys.font_weight = 700
-		_font = sys
-	return _font
+# CHANGED: removed the second, duplicate game_font() that was here (the SystemFont version) — game_font() now only exists once, near the top of the file
 
 static func style_time_bar(bar: ProgressBar, color: Color) -> void:
 	var bg := StyleBoxFlat.new()

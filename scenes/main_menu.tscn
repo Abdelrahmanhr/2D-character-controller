@@ -94,11 +94,13 @@ theme_override_constants/outline_size = 10
 theme_override_constants/shadow_outline_size = 24
 theme_override_fonts/font = SubResource("FontVariation_title")
 theme_override_font_sizes/font_size = 115
-text = "Meltdown"
+text = "Bomb Voyage"
 horizontal_alignment = 1
 vertical_alignment = 1
 script = ExtResource("3_glow")
 base_alpha = 0.815
+min_flicker_chance = 0.09
+flicker_max_duration = 0.15
 double_flicker_chance = 0.12
 flicker_sound = ExtResource("5_8ln24")
 flicker_sound_volume = -14.715
@@ -112,14 +114,15 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -140.0
-offset_top = -43.0
+offset_top = -21.0
 offset_right = 140.0
-offset_bottom = 233.0
+offset_bottom = 255.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 14
 
 [node name="StartButton" type="Button" parent="Menu" unique_id=1948249052]
+visible = false
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.96)
@@ -145,7 +148,7 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 theme_override_styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
 theme_override_styles/focus = SubResource("StyleBoxFlat_btn_hover")
-text = "LOCAL MULTIPLAYER"
+text = "COUCH PLAY"
 
 [node name="MultiplayerButton" type="Button" parent="Menu" unique_id=680130786]
 custom_minimum_size = Vector2(0, 44)
@@ -159,7 +162,7 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 theme_override_styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
 theme_override_styles/focus = SubResource("StyleBoxFlat_btn_hover")
-text = "MULTIPLAYER"
+text = "ONLINE MULTIPLAYER"
 
 [node name="CreditsButton" type="Button" parent="Menu" unique_id=968154274]
 custom_minimum_size = Vector2(0, 44)
