@@ -1,11 +1,11 @@
 [gd_scene format=3 uid="uid://ds8833kkx7530"]
 
 [ext_resource type="Script" uid="uid://yv5cfb7voxbn" path="res://scripts/parallax_layer.gd" id="1_layer"]
-[ext_resource type="Texture2D" uid="uid://bimjxs7mlmv2e" path="res://resources/parallax/layer_1_sky.png" id="2_sky"]
+[ext_resource type="Texture2D" uid="uid://ccdlrgvobqy24" path="res://resources/RS Cyberpunk City Background/4layer looping background PNG/420x240px/background.png" id="2_4j2lk"]
 [ext_resource type="Texture2D" uid="uid://c7ae08t73np7i" path="res://resources/parallax/layer_2_towers.png" id="3_towers"]
-[ext_resource type="Texture2D" uid="uid://d0uirk7kk4p17" path="res://resources/parallax/layer_3_skyline.png" id="4_skyline"]
-[ext_resource type="Texture2D" uid="uid://cnvv8lbbobict" path="res://resources/parallax/layer_4_wires.png" id="5_wires"]
-[ext_resource type="Texture2D" uid="uid://c0l08jc2h77wj" path="res://resources/parallax/layer_5_foreground.png" id="6_foreground"]
+[ext_resource type="Texture2D" uid="uid://xgekggbv5g66" path="res://resources/RS Cyberpunk City Background/4layer looping background PNG/420x240px/03building.png" id="4_bh54y"]
+[ext_resource type="Texture2D" uid="uid://dayp46cs72v4m" path="res://resources/RS Cyberpunk City Background/4layer looping background PNG/420x240px/02building.png" id="5_48ck1"]
+[ext_resource type="Texture2D" uid="uid://pxbjkc5agug2" path="res://resources/RS Cyberpunk City Background/4layer looping background PNG/420x240px/01building.png" id="6_w43qo"]
 
 [node name="ParallaxBG" type="Control" unique_id=1401532211]
 clip_contents = true
@@ -26,10 +26,11 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_layer")
-texture = ExtResource("2_sky")
+texture = ExtResource("2_4j2lk")
 scroll_speed = 3.0
 
 [node name="Towers" type="Control" parent="." unique_id=309434134]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -50,7 +51,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_layer")
-texture = ExtResource("4_skyline")
+texture = ExtResource("4_bh54y")
 scroll_speed = 17.0
 
 [node name="Wires" type="Control" parent="." unique_id=438836190]
@@ -62,7 +63,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_layer")
-texture = ExtResource("5_wires")
+texture = ExtResource("5_48ck1")
 scroll_speed = 27.0
 
 [node name="Foreground" type="Control" parent="." unique_id=551262166]
@@ -74,7 +75,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_layer")
-texture = ExtResource("6_foreground")
+texture = ExtResource("6_w43qo")
 scroll_speed = 40.0
 
 [node name="Scrim" type="ColorRect" parent="." unique_id=1802314708]

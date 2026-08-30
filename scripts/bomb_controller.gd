@@ -11,6 +11,8 @@ signal player_finished_round
 @export var penalty_sound: AudioStream  
 @export var minigame_complete_sound: AudioStream
 
+@export var max_bomb_time: float = 60.0  # 
+
 var _time_left: float
 var _active_minigame: Control = null
 var _active_minigame_slot: Control = null
@@ -184,7 +186,7 @@ func _on_bomb_time_delta(seconds: float) -> void:
 		_play_bonus_sound()
 	elif seconds < 0.0: 
 		SfxManager.play(penalty_sound,-15.0,0.2) 
-	_time_left += seconds
+	_time_left = minf(_time_left + seconds, max_bomb_time)
 
 func _play_bonus_sound() -> void:
 	if bonus_sounds.is_empty():

@@ -326,10 +326,12 @@ replication_config = SubResource("SceneReplicationConfig_g2els")
 
 [node name="BombController" type="Node" parent="." unique_id=1813107372]
 script = ExtResource("5_qlg0r")
+bomb_time = 25.0
 bonus_sounds = Array[AudioStream]([ExtResource("11_3v2ag")])
 input_sound = ExtResource("12_oprun")
 penalty_sound = ExtResource("13_f1ej7")
 minigame_complete_sound = ExtResource("14_oprun")
+max_bomb_time = 30.0
 
 [node name="Minigamelayer" type="Control" parent="BombController" unique_id=2025939438]
 layout_mode = 3
