@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://ba5h6cemm2cs7"]
+
+[ext_resource type="Script" uid="uid://qgakfh33prxc" path="res://scripts/player_slot.gd" id="1_m0w6y"]
+
+[node name="PlayerSlot" type="PanelContainer" unique_id=1598046341]
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_m0w6y")
+
+[node name="ColorBar" type="ColorRect" parent="." unique_id=94302108]
+layout_mode = 2
+
+[node name="SlotLabel" type="Label" parent="." unique_id=78861752]
+layout_mode = 2
