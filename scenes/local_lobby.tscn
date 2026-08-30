@@ -86,12 +86,27 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -24.0
-offset_top = 45.0
+offset_top = 52.0
 offset_right = 26.0
-offset_bottom = 68.0
+offset_bottom = 75.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "Start ?"
+
+[node name="StartHintLabel2" type="Label" parent="." unique_id=1867511027]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -45.0
+offset_top = 67.0
+offset_right = 48.0
+offset_bottom = 90.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Press to Join"
 
 [node name="BackButton" type="Button" parent="." unique_id=932631489]
 custom_minimum_size = Vector2(0, 44)

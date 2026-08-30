@@ -26,6 +26,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_kc3fh")
 max_presses = 60
+bonus_per_threshold = 3.0
 
 [node name="MashLabel" type="Label" parent="." unique_id=1559007947]
 layout_mode = 0
