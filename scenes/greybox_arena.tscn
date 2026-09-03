@@ -1,0 +1,240 @@
+[gd_scene format=3 uid="uid://dw16hvy6pgf3b"]
+
+[ext_resource type="Script" path="res://scripts/greybox_arena.gd" id="1_arena"]
+[ext_resource type="Script" uid="uid://yjxuo048bmay" path="res://scripts/tracking_camera.gd" id="2_camera"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_centerdeck"]
+size = Vector2(360, 48)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_midplatform"]
+size = Vector2(300, 32)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_tankblock"]
+size = Vector2(90, 70)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_catwalktop"]
+size = Vector2(240, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_catwalkside"]
+size = Vector2(260, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_killledge"]
+size = Vector2(220, 28)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_blastlr"]
+size = Vector2(300, 1800)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_blasttb"]
+size = Vector2(2800, 300)
+
+[node name="GreyboxArena" type="Node2D" unique_id=18255671]
+script = ExtResource("1_arena")
+
+[node name="Platforms" type="Node2D" parent="." unique_id=610765188]
+
+[node name="CenterDeck" type="StaticBody2D" parent="Platforms" unique_id=1243119583]
+position = Vector2(1200, 824)
+
+[node name="ColorRect" type="ColorRect" parent="Platforms/CenterDeck" unique_id=566880897]
+offset_left = -180.0
+offset_top = -24.0
+offset_right = 180.0
+offset_bottom = 24.0
+mouse_filter = 2
+color = Color(0.55, 0.58, 0.65, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/CenterDeck" unique_id=201940323]
+shape = SubResource("RectangleShape2D_centerdeck")
+
+[node name="MidPlatformLeft" type="StaticBody2D" parent="Platforms" unique_id=557374200]
+position = Vector2(750, 866)
+
+[node name="ColorRect" type="ColorRect" parent="Platforms/MidPlatformLeft" unique_id=1335362777]
+offset_left = -150.0
+offset_top = -16.0
+offset_right = 150.0
+offset_bottom = 16.0
+mouse_filter = 2
+color = Color(0.55, 0.58, 0.65, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/MidPlatformLeft" unique_id=427024539]
+shape = SubResource("RectangleShape2D_midplatform")
+
+[node name="MidPlatformRight" type="StaticBody2D" parent="Platforms" unique_id=1632337607]
+position = Vector2(1650, 866)
+
+[node name="ColorRect" type="ColorRect" parent="Platforms/MidPlatformRight" unique_id=658679969]
+offset_left = -150.0
+offset_top = -16.0
+offset_right = 150.0
+offset_bottom = 16.0
+mouse_filter = 2
+color = Color(0.55, 0.58, 0.65, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/MidPlatformRight" unique_id=1839460667]
+shape = SubResource("RectangleShape2D_midplatform")
+
+[node name="TankBlockLeft" type="StaticBody2D" parent="Platforms" unique_id=2048177312]
+position = Vector2(650, 815)
+
+[node name="ColorRect" type="ColorRect" parent="Platforms/TankBlockLeft" unique_id=1417963481]
+offset_left = -45.0
+offset_top = -35.0
+offset_right = 45.0
+offset_bottom = 35.0
+mouse_filter = 2
+color = Color(0.45, 0.48, 0.55, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/TankBlockLeft" unique_id=994664794]
+shape = SubResource("RectangleShape2D_tankblock")
+
+[node name="TankBlockRight" type="StaticBody2D" parent="Platforms" unique_id=1367375826]
+position = Vector2(1750, 815)
+
+[node name="ColorRect" type="ColorRect" parent="Platforms/TankBlockRight" unique_id=1178032659]
+offset_left = -45.0
+offset_top = -35.0
+offset_right = 45.0
+offset_bottom = 35.0
+mouse_filter = 2
+color = Color(0.45, 0.48, 0.55, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/TankBlockRight" unique_id=302633732]
+shape = SubResource("RectangleShape2D_tankblock")
+
+[node name="CatwalkTopCenter" type="StaticBody2D" parent="Platforms" unique_id=55491471]
+position = Vector2(1200, 658)
+
+[node name="ColorRect" type="ColorRect" parent="Platforms/CatwalkTopCenter" unique_id=28300022]
+offset_left = -120.0
+offset_top = -8.0
+offset_right = 120.0
+offset_bottom = 8.0
+mouse_filter = 2
+color = Color(0.5, 0.75, 0.55, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/CatwalkTopCenter" unique_id=189203285]
+shape = SubResource("RectangleShape2D_catwalktop")
+one_way_collision = true
+
+[node name="CatwalkSideLeft" type="StaticBody2D" parent="Platforms" unique_id=611413475]
+position = Vector2(850, 708)
+
+[node name="ColorRect" type="ColorRect" parent="Platforms/CatwalkSideLeft" unique_id=1864290974]
+offset_left = -130.0
+offset_top = -8.0
+offset_right = 130.0
+offset_bottom = 8.0
+mouse_filter = 2
+color = Color(0.5, 0.75, 0.55, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/CatwalkSideLeft" unique_id=783942170]
+shape = SubResource("RectangleShape2D_catwalkside")
+one_way_collision = true
+
+[node name="CatwalkSideRight" type="StaticBody2D" parent="Platforms" unique_id=1112162575]
+position = Vector2(1550, 708)
+
+[node name="ColorRect" type="ColorRect" parent="Platforms/CatwalkSideRight" unique_id=319150088]
+offset_left = -130.0
+offset_top = -8.0
+offset_right = 130.0
+offset_bottom = 8.0
+mouse_filter = 2
+color = Color(0.5, 0.75, 0.55, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/CatwalkSideRight" unique_id=1050817759]
+shape = SubResource("RectangleShape2D_catwalkside")
+one_way_collision = true
+
+[node name="KillLedgeLeft" type="StaticBody2D" parent="Platforms" unique_id=1599317157]
+position = Vector2(350, 1014)
+
+[node name="ColorRect" type="ColorRect" parent="Platforms/KillLedgeLeft" unique_id=1457740122]
+offset_left = -110.0
+offset_top = -14.0
+offset_right = 110.0
+offset_bottom = 14.0
+mouse_filter = 2
+color = Color(0.75, 0.5, 0.45, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/KillLedgeLeft" unique_id=195322806]
+shape = SubResource("RectangleShape2D_killledge")
+
+[node name="KillLedgeRight" type="StaticBody2D" parent="Platforms" unique_id=1413110931]
+position = Vector2(2050, 1014)
+
+[node name="ColorRect" type="ColorRect" parent="Platforms/KillLedgeRight" unique_id=1910214761]
+offset_left = -110.0
+offset_top = -14.0
+offset_right = 110.0
+offset_bottom = 14.0
+mouse_filter = 2
+color = Color(0.75, 0.5, 0.45, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/KillLedgeRight" unique_id=901607706]
+shape = SubResource("RectangleShape2D_killledge")
+
+[node name="Pylons" type="Node2D" parent="." unique_id=1936141385]
+
+[node name="PylonLeft" type="ColorRect" parent="Pylons" unique_id=373664212]
+offset_left = 40.0
+offset_top = 100.0
+offset_right = 60.0
+offset_bottom = 1300.0
+mouse_filter = 2
+color = Color(0.25, 0.26, 0.3, 1)
+
+[node name="PylonRight" type="ColorRect" parent="Pylons" unique_id=1640059409]
+offset_left = 2340.0
+offset_top = 100.0
+offset_right = 2360.0
+offset_bottom = 1300.0
+mouse_filter = 2
+color = Color(0.25, 0.26, 0.3, 1)
+
+[node name="BlastZones" type="Node2D" parent="." unique_id=1672623046]
+
+[node name="BlastLeft" type="Area2D" parent="BlastZones" unique_id=2032169175]
+position = Vector2(-50, 700)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BlastZones/BlastLeft" unique_id=634207876]
+shape = SubResource("RectangleShape2D_blastlr")
+
+[node name="BlastRight" type="Area2D" parent="BlastZones" unique_id=2132964379]
+position = Vector2(2450, 700)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BlastZones/BlastRight" unique_id=320607194]
+shape = SubResource("RectangleShape2D_blastlr")
+
+[node name="BlastTop" type="Area2D" parent="BlastZones" unique_id=150644240]
+position = Vector2(1200, -50)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BlastZones/BlastTop" unique_id=1682088669]
+shape = SubResource("RectangleShape2D_blasttb")
+
+[node name="BlastBottom" type="Area2D" parent="BlastZones" unique_id=1357789488]
+position = Vector2(1200, 1450)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BlastZones/BlastBottom" unique_id=2118497370]
+shape = SubResource("RectangleShape2D_blasttb")
+
+[node name="Spawns" type="Node2D" parent="." unique_id=1262202007]
+
+[node name="SpawnPoint1" type="Marker2D" parent="Spawns" unique_id=2019155422]
+position = Vector2(750, 760)
+
+[node name="SpawnPoint2" type="Marker2D" parent="Spawns" unique_id=1344656125]
+position = Vector2(1120, 740)
+
+[node name="SpawnPoint3" type="Marker2D" parent="Spawns" unique_id=1744822061]
+position = Vector2(1280, 740)
+
+[node name="SpawnPoint4" type="Marker2D" parent="Spawns" unique_id=1865088292]
+position = Vector2(1650, 760)
+
+[node name="Players" type="Node2D" parent="." unique_id=531237073]
+
+[node name="TrackingCamera" type="Camera2D" parent="." unique_id=321920893]
+position = Vector2(1200, 700)
+script = ExtResource("2_camera")

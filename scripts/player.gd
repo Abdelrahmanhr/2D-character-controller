@@ -74,6 +74,7 @@ var is_dead := false
 @onready var glow: Sprite2D = $Glow
 @onready var bomb_controller: BombController = $BombController
 @onready var dash_hitbox: Area2D = $DashHitbox
+@onready var dash_afterimage = $DashAfterimage
 
 var _identity_slot: int = -1
 
@@ -294,6 +295,7 @@ func _apply_movement(delta: float) -> void:
 			is_dashing = false
 			dash_hitbox.monitoring = false
 			velocity = dash_direction * dash_speed * dash_end_momentum_retention
+			dash_afterimage.stop()
 		return
 	
 	velocity.x = direction * speed
@@ -330,6 +332,7 @@ func _start_dash() -> void:
 	velocity = dash_direction * dash_speed
 	dash_hitbox.monitoring = true
 	SfxManager.play(dash_sound,-15.0)
+	dash_afterimage.start()
 
 func _end_dash_immediately() -> void:
 	is_dashing = false

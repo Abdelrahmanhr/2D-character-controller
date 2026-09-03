@@ -15,6 +15,7 @@
 [ext_resource type="AudioStream" uid="uid://cdq8igrt5el1p" path="res://resources/audio/Clock Tick OR Press .wav" id="12_oprun"]
 [ext_resource type="AudioStream" uid="uid://bxpemw6a5q1sh" path="res://resources/audio/Time Penalty.wav" id="13_f1ej7"]
 [ext_resource type="AudioStream" uid="uid://de26hwehtwo0h" path="res://resources/audio/Minigame Complete .wav" id="14_oprun"]
+[ext_resource type="Script" uid="uid://cgf2eqenrmaos" path="res://scripts/dash.gd" id="16_a8ls1"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_qlg0r"]
 atlas = ExtResource("5_tuyoq")
@@ -227,8 +228,9 @@ animations = [{
 "speed": 7.0
 }]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_k0quf"]
-size = Vector2(45, 48)
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_oe7fn"]
+radius = 20.0
+height = 44.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_7avdm"]
 size = Vector2(28, 55.5)
@@ -265,7 +267,7 @@ properties/0/replication_mode = 1
 
 [node name="Player" type="CharacterBody2D" unique_id=1169704896]
 script = ExtResource("1_g2els")
-jump_height = 110.0
+jump_height = 130.0
 dash_speed = 500.0
 dash_cooldown = 1.0
 dash_end_momentum_retention = 0.5
@@ -303,8 +305,8 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=461499085]
-position = Vector2(1.499999, 0)
-shape = SubResource("RectangleShape2D_k0quf")
+position = Vector2(-9.536743e-07, 2)
+shape = SubResource("CapsuleShape2D_oe7fn")
 
 [node name="DashHitbox" type="Area2D" parent="." unique_id=197582232]
 
@@ -355,3 +357,6 @@ show_percentage = false
 
 [node name="BombSynchronizer" type="MultiplayerSynchronizer" parent="BombController" unique_id=149651899]
 replication_config = SubResource("SceneReplicationConfig_bomb")
+
+[node name="DashAfterimage" type="Node2D" parent="." unique_id=1706127928]
+script = ExtResource("16_a8ls1")
