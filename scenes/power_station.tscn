@@ -810,6 +810,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_slot3")
 position = Vector2(736, 459)
 script = ExtResource("7_camera")
 margin = 120.0
+min_zoom = 0.9
 position_lerp_speed = 6.0
 zoom_lerp_speed = 5.0
 world_bounds = Rect2(40, 40, 1520, 960)
