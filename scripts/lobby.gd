@@ -12,6 +12,7 @@ func _ready() -> void:
 	Networking.lobby_ready.connect(_on_lobby_ready)
 	Networking.lobby_failed.connect(_on_lobby_failed)
 	Networking.client_joined.connect(_on_client_joined)
+	Networking.arena_updated.connect(_on_arena_updated)
 
 func _on_host_pressed() -> void:
 	host_button.disabled = true
@@ -33,12 +34,14 @@ func _exit_game() -> void:
 	
 func _on_lobby_ready(is_host: bool) -> void:
 	if is_host:
-		status_label.text = "Lobby created. Invite a friend, then start."
+		status_label.text = "Lobby created. Invite a friend, then start. Arena: %s" % Networking.selected_arena_name
 		start_button.disabled = false
 	else:
 		status_label.text = "Joined lobby. Waiting for host..."
 func _on_client_joined() -> void:
 	status_label.text = "Joined lobby. Waiting for host..."
+func _on_arena_updated(display_name: String) -> void:
+	status_label.text = "Joined lobby. Arena: %s. Waiting for host..." % display_name
 func _on_lobby_failed(message: String) -> void:
 	host_button.disabled = false
 	status_label.text = message

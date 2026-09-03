@@ -73,7 +73,7 @@ func _refresh_start_hint() -> void:
 func _try_start_match() -> void:
 	if LocalPlayers.joined_devices.size() < min_players_to_start:
 		return
-	get_tree().change_scene_to_file("res://scenes/empty_level.tscn")
+	SceneTransition.circle_to("res://scenes/power_station.tscn")
 
 func _on_back_pressed() -> void:  
 	LocalPlayers.reset()

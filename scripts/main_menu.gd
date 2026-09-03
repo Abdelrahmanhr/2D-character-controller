@@ -1,6 +1,7 @@
 extends Control
-const EMPTY_LEVEL_SCENE := "res://scenes/empty_level.tscn"
+const EMPTY_LEVEL_SCENE := "res://scenes/power_station.tscn"
 const LOBBY_SCENE := "res://scenes/lobby.tscn"
+const ARENA_SELECT_SCENE := "res://scenes/arena_select.tscn"
 const LOCAL_LOBBY_SCENE := "res://scenes/local_lobby.tscn"
 const CREDITS_SCENE := "res://scenes/credits.tscn"
 
@@ -21,7 +22,7 @@ func _on_start_pressed() -> void:
 	SceneTransition.circle_to(EMPTY_LEVEL_SCENE)
 
 func _on_multiplayer_pressed() -> void:
-	get_tree().change_scene_to_file(LOBBY_SCENE)
+	get_tree().change_scene_to_file(ARENA_SELECT_SCENE)
 
 func _on_local_multiplayer_pressed() -> void: 
 	get_tree().change_scene_to_file(LOCAL_LOBBY_SCENE)

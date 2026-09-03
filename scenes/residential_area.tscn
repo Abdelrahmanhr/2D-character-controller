@@ -1,6 +1,6 @@
-[gd_scene format=4 uid="uid://dgax3qm2bemoq"]
+[gd_scene format=4]
 
-[ext_resource type="Script" uid="uid://b8xod8ibb371m" path="res://scripts/empty_level.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/residential_area.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/pause_menu.tscn" id="2"]
 [ext_resource type="Texture2D" uid="uid://bfdgnpr2icbgo" path="res://resources/example.jpg" id="2_nowf6"]
 [ext_resource type="PackedScene" uid="uid://deiu510u7y2u3" path="res://scenes/match_hud.tscn" id="6_hud"]
@@ -617,7 +617,7 @@ tile_size = Vector2i(32, 32)
 physics_layer_0/collision_layer = 1
 sources/2 = SubResource("TileSetAtlasSource_5fsco")
 
-[node name="EmptyLevel" type="Node2D" unique_id=2122088302]
+[node name="ResidentialArea" type="Node2D"]
 script = ExtResource("1")
 
 [node name="background" type="Node2D" parent="." unique_id=1051009932]
