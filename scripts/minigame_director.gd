@@ -155,6 +155,8 @@ func _report_elimination(peer_id: int) -> void:
 		_resolve_elimination(peer_id)
 
 func player_disconnected(peer_id: int) -> void:
+	if Networking.is_leaving:
+		return
 	if multiplayer.is_server():
 		_resolve_elimination(peer_id)
 

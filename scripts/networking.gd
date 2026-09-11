@@ -29,6 +29,7 @@ var selected_arena_path: String = DEFAULT_ARENA_SCENE
 var selected_arena_name: String = DEFAULT_ARENA_NAME
 var current_lobby_id: int = 0
 var is_host: bool = false
+var is_leaving: bool = false
 var pending_lobby_id: int = 0
 var _create_pending: bool = false
 var _abandon_create: bool = false
@@ -109,8 +110,7 @@ func set_arena(path: String, display_name: String) -> void:
 
 
 func leave_lobby() -> void:
-	# A createLobby call may still be in flight; mark it so the callback drops
-	# the lobby instead of installing a peer we no longer want.
+	is_leaving = true
 	if _create_pending:
 		_abandon_create = true
 	_reset_peer()
@@ -121,6 +121,7 @@ func leave_lobby() -> void:
 	MinigameDirector.reset_match()
 	NetDebug.set_ack_target(0)
 	peers_changed.emit(0)
+	is_leaving = false
 
 
 func _reset_peer() -> void:

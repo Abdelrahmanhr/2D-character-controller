@@ -9,6 +9,7 @@ var _joining := false
 
 
 func _ready() -> void:
+	get_tree().paused = false
 	MusicManager.play(preload("res://resources/audio/MAINMENUSOUNDTRACK.ogg"), false, false)
 	$Menu/MultiplayerButton.pressed.connect(_on_multiplayer_pressed)
 	$Menu/LocalMultiplayerButton.pressed.connect(_on_local_multiplayer_pressed)
