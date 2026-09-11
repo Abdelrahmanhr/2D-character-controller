@@ -108,16 +108,15 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventJoypadButton and event.device == device_id:
 		var handled: bool = _active_minigame._handle_input(event)
-		get_viewport().set_input_as_handled()
-		if event.pressed:
-			if handled:
-				SfxManager.play(input_sound,-13.0,0.1)
-			_try_replicate_input(false, event.button_index)
+		if handled:
+			get_viewport().set_input_as_handled()
+			SfxManager.play(input_sound,-13.0,0.1)
+		_try_replicate_input(false, event.button_index)
 	elif event is InputEventKey and _player.device_id == LocalPlayers.KEYBOARD_DEVICE_ID:
 		var handled: bool = _active_minigame._handle_input(event)
-		get_viewport().set_input_as_handled()
 		if event.pressed and not event.echo:
 			if handled:
+				get_viewport().set_input_as_handled()
 				SfxManager.play(input_sound,-13.0,0.1)
 			var key: int = event.keycode if event.keycode != KEY_NONE else event.physical_keycode
 			_try_replicate_input(true, key)
@@ -329,39 +328,45 @@ func _submit_stick_direction(direction: String) -> void:
 	_try_replicate_input(false, button)
 
 
-func player_died() -> void: 
+func player_died() -> void:
 	if _expired:
 		return
+	print("[%s] player_died() called | lives before: %d" % [_player.name, _lives_remaining])  # NEW
 	if not _is_networked():
 		_do_player_died()
 	else:
 		_do_player_died.rpc()
 
-@rpc("any_peer", "call_local", "reliable")  # NEW
-func _do_player_died() -> void:  # NEW
+@rpc("any_peer", "call_local", "reliable")
+func _do_player_died() -> void:
 	if _expired:
 		return
 	_lives_remaining -= 1
+	print("[%s] _do_player_died() ran | lives after: %d | sender: %s | is_server: %s" % [_player.name, _lives_remaining, multiplayer.get_remote_sender_id(), multiplayer.is_server()])  # NEW
 	if _lives_remaining <= 0:
+		print("[%s] going to eliminate_player()" % _player.name)  # NEW
 		eliminate_player()
 	else:
+		print("[%s] going to _respawn()" % _player.name)  # NEW
 		_respawn()
 
 func _respawn() -> void:
+	set_process(false) 
+	_player.is_dead = true
+	_player.velocity = Vector2.ZERO
 	stop_minigame()
 	MinigameDirector.schedule_next_round(self)
 	await get_tree().create_timer(respawn_delay).timeout
 	if _expired:
 		return
-	if _is_networked():  
-		var elapsed: float = float(Networking.get_sync_time() - _start_time_ms) / 1000.0  
-		if elapsed < 0.0:  
-			elapsed = 0.0  
-		_adjust_total = elapsed  
-		_running = true  
-		_frozen_value = bomb_time  
-	else:  
-		_time_left = bomb_time  
+	if _is_networked():
+		_start_time_ms = Networking.get_sync_time()
+		_adjust_total = 0.0
+		_running = true
+		_frozen_value = bomb_time
+	else:
+		_time_left = bomb_time
+	set_process(true)  
 	var scene := get_tree().current_scene
 	if scene.has_method("respawn_player"):
 		scene.respawn_player(_player)
