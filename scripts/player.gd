@@ -100,7 +100,7 @@ func _ready() -> void:
 	if _is_networked() and is_multiplayer_authority() and device_id == -2:
 		device_id = -1
 		if bomb_controller:
-			bomb_controller.device_id = -1
+			bomb_controller.device_id = device_id
 
 func _enter_tree() -> void:
 	set_multiplayer_authority(name.to_int())
@@ -257,27 +257,52 @@ func _update_animation() -> void:
 		animated_sprite.play(animation_name)
 
 func _handle_input(delta: float) -> void:
-	var is_keyboard: bool = device_id == LocalPlayers.KEYBOARD_DEVICE_ID
-	
 	var move_x: float
 	var move_y: float
 	var jump_held: bool
 	var dash_held: bool
 	
-	if is_keyboard:
-		move_x = float(Input.is_physical_key_pressed(keyboard_right)) - float(Input.is_physical_key_pressed(keyboard_left))
-		move_y = float(Input.is_physical_key_pressed(keyboard_down)) - float(Input.is_physical_key_pressed(keyboard_up))
-		jump_held = Input.is_physical_key_pressed(keyboard_jump)
-		dash_held = Input.is_physical_key_pressed(keyboard_dash)
-	else:  
-		move_x = PadState.get_axis(device_id, JOY_AXIS_LEFT_X)
-		move_y = PadState.get_axis(device_id, JOY_AXIS_LEFT_Y)
-		if abs(move_x) < STICK_DEADZONE:  
-			move_x = 0.0  
-		if abs(move_y) < STICK_DEADZONE:
-			move_y = 0.0
-		jump_held = PadState.is_pressed(device_id, JOY_BUTTON_A)
-		dash_held = PadState.is_pressed(device_id, JOY_BUTTON_X)
+	if _is_networked():  # NEW: online players merge keyboard + first controller
+		var kb_move_x: float = float(Input.is_physical_key_pressed(keyboard_right)) - float(Input.is_physical_key_pressed(keyboard_left))
+		var kb_move_y: float = float(Input.is_physical_key_pressed(keyboard_down)) - float(Input.is_physical_key_pressed(keyboard_up))
+		var kb_jump_held: bool = Input.is_physical_key_pressed(keyboard_jump)
+		var kb_dash_held: bool = Input.is_physical_key_pressed(keyboard_dash)
+		
+		var pad_move_x: float = 0.0
+		var pad_move_y: float = 0.0
+		var pad_jump_held: bool = false
+		var pad_dash_held: bool = false
+		if not Input.get_connected_joypads().is_empty():
+			var pad_id: int = Input.get_connected_joypads()[0]
+			pad_move_x = PadState.get_axis(pad_id, JOY_AXIS_LEFT_X)
+			pad_move_y = PadState.get_axis(pad_id, JOY_AXIS_LEFT_Y)
+			if abs(pad_move_x) < STICK_DEADZONE:
+				pad_move_x = 0.0
+			if abs(pad_move_y) < STICK_DEADZONE:
+				pad_move_y = 0.0
+			pad_jump_held = PadState.is_pressed(pad_id, JOY_BUTTON_A)
+			pad_dash_held = PadState.is_pressed(pad_id, JOY_BUTTON_X)
+		
+		move_x = pad_move_x if pad_move_x != 0.0 else kb_move_x
+		move_y = pad_move_y if pad_move_y != 0.0 else kb_move_y
+		jump_held = kb_jump_held or pad_jump_held
+		dash_held = kb_dash_held or pad_dash_held
+	else:  # CHANGED: unchanged local-multiplayer logic, exactly as it was before
+		var is_keyboard: bool = device_id == LocalPlayers.KEYBOARD_DEVICE_ID
+		if is_keyboard:
+			move_x = float(Input.is_physical_key_pressed(keyboard_right)) - float(Input.is_physical_key_pressed(keyboard_left))
+			move_y = float(Input.is_physical_key_pressed(keyboard_down)) - float(Input.is_physical_key_pressed(keyboard_up))
+			jump_held = Input.is_physical_key_pressed(keyboard_jump)
+			dash_held = Input.is_physical_key_pressed(keyboard_dash)
+		else:
+			move_x = PadState.get_axis(device_id, JOY_AXIS_LEFT_X)
+			move_y = PadState.get_axis(device_id, JOY_AXIS_LEFT_Y)
+			if abs(move_x) < STICK_DEADZONE:
+				move_x = 0.0
+			if abs(move_y) < STICK_DEADZONE:
+				move_y = 0.0
+			jump_held = PadState.is_pressed(device_id, JOY_BUTTON_A)
+			dash_held = PadState.is_pressed(device_id, JOY_BUTTON_X)
 	
 	direction = move_x
 	_last_move_input = Vector2(move_x, move_y)
@@ -285,8 +310,8 @@ func _handle_input(delta: float) -> void:
 	var jump_just_pressed: bool = jump_held and not _prev_jump_held
 	var jump_just_released: bool = not jump_held and _prev_jump_held
 	var dash_just_pressed: bool = dash_held and not _prev_dash_held
-	_prev_jump_held = jump_held  
-	_prev_dash_held = dash_held 
+	_prev_jump_held = jump_held
+	_prev_dash_held = dash_held
 	
 	if dash_just_pressed and not is_dashing and dash_cooldown_left <= 0.0:
 		_start_dash()
@@ -305,7 +330,7 @@ func _handle_input(delta: float) -> void:
 		jump_pressed = true
 		jump_buffer_counter = 0.0
 		coyote_time_counter = 0.0
-
+	
 	if jump_just_released and velocity.y < 0.0:
 		cut_jump = true
 

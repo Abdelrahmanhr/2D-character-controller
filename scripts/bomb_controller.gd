@@ -351,9 +351,8 @@ func _do_player_died() -> void:
 		_respawn()
 
 func _respawn() -> void:
-	set_process(false) 
-	_player.is_dead = true
-	_player.velocity = Vector2.ZERO
+	set_process(false)
+	_player.play_death_animation()  
 	stop_minigame()
 	MinigameDirector.schedule_next_round(self)
 	await get_tree().create_timer(respawn_delay).timeout
@@ -366,7 +365,7 @@ func _respawn() -> void:
 		_frozen_value = bomb_time
 	else:
 		_time_left = bomb_time
-	set_process(true)  
+	set_process(true)
 	var scene := get_tree().current_scene
 	if scene.has_method("respawn_player"):
 		scene.respawn_player(_player)
