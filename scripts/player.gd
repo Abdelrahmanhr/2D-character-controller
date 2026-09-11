@@ -22,6 +22,9 @@ extends CharacterBody2D
 @export var footstep_frames: Array[int] = [0,2]
 @export var footstep_pitch_variance: float = 0.15
 @export var footstep_debounce: float = 0.1
+@export var dash_conflict_knockback_multiplier: float = 2.0
+@export var dash_conflict_flash_color: Color = Color(1.0, 0.15, 0.15, 1.0) 
+@export var dash_conflict_flash_duration: float = 0.25 
 
 @export var device_id: int = -2
 @export var keyboard_left: Key = KEY_A  
@@ -32,7 +35,7 @@ extends CharacterBody2D
 @export var keyboard_dash: Key = KEY_SHIFT  
 
 @export var invulnerability_flash_speed: float = 0.1  
-
+var dash_start_time_ms: int = 0  
 var is_invulnerable: bool = false 
 var _invuln_time_left: float = 0.0 
 var _invuln_flash_timer: float = 0.0 
@@ -353,11 +356,12 @@ func _start_dash() -> void:
 	dash_time_left = dash_duration
 	dash_cooldown_left = dash_cooldown
 	dash_direction = _get_dash_direction()
+	dash_start_time_ms = _get_timestamp()  
 	velocity = dash_direction * dash_speed
 	dash_hitbox.monitoring = true
 	SfxManager.play(dash_sound,-15.0)
 	dash_afterimage.start()
-
+	
 func _end_dash_immediately() -> void:
 	is_dashing = false
 	dash_hitbox.monitoring = false
@@ -368,28 +372,42 @@ func _on_dash_hitbox_body_entered(body: Node) -> void:
 		return
 	if not body.is_in_group("players"):
 		return
-	if body.has_method("is_invulnerable") or "is_invulnerable" in body: 
-		if body.is_invulnerable:  
-			return 
+	if body.has_method("is_invulnerable") or "is_invulnerable" in body:
+		if body.is_invulnerable:
+			return
+	
+	if body.get("is_dashing") == true:
+		if dash_start_time_ms <= body.dash_start_time_ms:
+			return
+		if body.has_method("apply_stun"):
+			body.apply_stun(dash_direction, dash_conflict_knockback_multiplier)
+		if body.has_method("apply_hitstop"):
+			body.apply_hitstop(hitstop_duration)
+		if body.has_method("flash_dash_loss"): 
+			body.flash_dash_loss()  
+		return
+	
 	if body.has_method("apply_stun"):
 		body.apply_stun(dash_direction)
 	apply_hitstop(hitstop_duration)
 	if body.has_method("apply_hitstop"):
 		body.apply_hitstop(hitstop_duration)
-
-func apply_stun(from_direction: Vector2) -> void:
+		
+func apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0) -> void: 
 	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
-		_do_apply_stun(from_direction)
+		_do_apply_stun(from_direction, knockback_multiplier)  
 	else:
-		_do_apply_stun.rpc(from_direction)
+		_do_apply_stun.rpc(from_direction, knockback_multiplier)  
 
 @rpc("any_peer", "call_local", "reliable")
-func _do_apply_stun(from_direction: Vector2) -> void:
+func _do_apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0) -> void:
+	is_dashing = false 
+	dash_hitbox.monitoring = false  
+	dash_afterimage.stop()  
 	is_stunned = true
 	stun_time_left = stun_duration
-	velocity = from_direction * knockback_speed
+	velocity = from_direction * knockback_speed * knockback_multiplier
 	SfxManager.play(slam_sound, -10.0, 0.1)
-	
 
 func apply_hitstop(duration: float) -> void:
 	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
@@ -441,3 +459,25 @@ func respawn(invuln_duration: float) -> void:
 	is_invulnerable = true
 	_invuln_time_left = invuln_duration
 	_invuln_flash_timer = 0.0
+
+func _get_timestamp() -> int:  
+	if _is_networked():
+		return Networking.get_sync_time()
+	return Time.get_ticks_msec()
+
+func flash_dash_loss() -> void:  # NEW
+	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		_do_flash_dash_loss()
+	else:
+		_do_flash_dash_loss.rpc()
+
+@rpc("any_peer", "call_local", "reliable") 
+func _do_flash_dash_loss() -> void:  
+	var tween := create_tween()
+	tween.tween_property(animated_sprite, "modulate", dash_conflict_flash_color, dash_conflict_flash_duration * 0.3)
+	tween.tween_property(animated_sprite, "modulate", Color.WHITE.lerp(_current_identity_color(), 0.28), dash_conflict_flash_duration * 0.7)
+	
+func _current_identity_color() -> Color:  # NEW
+	if bomb_controller:
+		return bomb_controller.get_player_color()
+	return Color.WHITE
