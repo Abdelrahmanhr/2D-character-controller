@@ -120,20 +120,19 @@ func _physics_process(delta: float) -> void:
 		velocity.y += gravity * delta
 		move_and_slide()
 		return
-	if _is_networked() and not is_multiplayer_authority():
-		return
-	
 	
 	if is_invulnerable:  
-		_invuln_time_left -= delta  
-		_invuln_flash_timer -= delta 
-		if _invuln_flash_timer <= 0.0: 
-			_invuln_flash_timer = invulnerability_flash_speed  
-			animated_sprite.visible = not animated_sprite.visible  
-		if _invuln_time_left <= 0.0:  
-			is_invulnerable = false 
-			animated_sprite.visible = true  
+		_invuln_time_left -= delta
+		_invuln_flash_timer -= delta
+		if _invuln_flash_timer <= 0.0:
+			_invuln_flash_timer = invulnerability_flash_speed
+			animated_sprite.visible = not animated_sprite.visible
+		if _invuln_time_left <= 0.0:
+			is_invulnerable = false
+			animated_sprite.visible = true
 	
+	if _is_networked() and not is_multiplayer_authority():
+		return
 	
 	if is_frozen:
 		freeze_time_left -= delta
