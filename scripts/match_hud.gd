@@ -51,9 +51,9 @@ func _rebuild_slots(bombs: Array[BombController]) -> void:
 			"caption": slot.get_node("BombCaption") as Label,
 			"bar": slot.get_node("BombBar") as ProgressBar,
 			"time": slot.get_node("BombTime") as Label,
+			"lives": slot.get_node("LivesLabel") as Label,  
 			"bomb": bomb,
 		})
-
 func _update_slot(slot: Dictionary, bomb: BombController) -> void:
 	if bomb == null or not is_instance_valid(bomb):
 		return
@@ -63,6 +63,7 @@ func _update_slot(slot: Dictionary, bomb: BombController) -> void:
 	var caption := slot.caption as Label
 	var bar := slot.bar as ProgressBar
 	var time_label := slot.time as Label
+	var lives_label := slot.lives as Label  # NEW
 	var root := slot.root as Control
 	caption.text = "P%d" % (bomb.get_slot_index() + 1)
 	_apply_neon_label(caption, color)
@@ -76,6 +77,8 @@ func _update_slot(slot: Dictionary, bomb: BombController) -> void:
 	bar.add_theme_stylebox_override("background", bg_style)
 	time_label.text = "%.1f" % time_left
 	_apply_neon_label(time_label, color)
+	lives_label.text = "x%d" % bomb.get_lives_remaining()  # NEW
+	_apply_neon_label(lives_label, color)  # NEW
 	var urgency := clampf(time_left / max_time, 0.0, 1.0)
 	var bar_color := color
 	if urgency < 0.25:

@@ -6,6 +6,7 @@ extends Camera2D
 @export var position_lerp_speed: float = 5.0
 @export var zoom_lerp_speed: float = 4.0
 @export var world_bounds: Rect2 = Rect2(100, 100, 2200, 1200)
+@export var top_ui_margin: float = 160.0  # NEW: screen-space pixels reserved at the top for the minigame UI
 
 func _process(delta: float) -> void:
 	var players := get_tree().get_nodes_in_group("players")
@@ -28,7 +29,9 @@ func _process(delta: float) -> void:
 	box_size.y = maxf(box_size.y, 1.0)
 
 	var viewport_size: Vector2 = get_viewport_rect().size
-	var fit_zoom: Vector2 = viewport_size / box_size
+	var available_size: Vector2 = viewport_size - Vector2(0.0, top_ui_margin)  # NEW: usable screen space, excluding the UI band
+	available_size.y = maxf(available_size.y, 1.0)  # NEW: safety floor
+	var fit_zoom: Vector2 = available_size / box_size  # CHANGED: was "viewport_size / box_size"
 	var target_zoom_scalar: float = clampf(minf(fit_zoom.x, fit_zoom.y), min_zoom, max_zoom)
 	var target_zoom := Vector2(target_zoom_scalar, target_zoom_scalar)
 
@@ -45,3 +48,4 @@ func _process(delta: float) -> void:
 
 	global_position = global_position.lerp(target_center, clampf(position_lerp_speed * delta, 0.0, 1.0))
 	zoom = zoom.lerp(target_zoom, clampf(zoom_lerp_speed * delta, 0.0, 1.0))
+	offset.y = lerpf(offset.y, -(top_ui_margin * 0.5) / target_zoom_scalar, clampf(zoom_lerp_speed * delta, 0.0, 1.0))  # NEW: shifts framing down so the reserved band stays empty at the top

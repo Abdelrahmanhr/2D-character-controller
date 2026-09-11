@@ -371,3 +371,6 @@ func _respawn() -> void:
 	if scene.has_method("respawn_player"):
 		scene.respawn_player(_player)
 	_player.respawn(respawn_invulnerability_duration)
+
+func get_lives_remaining() -> int:  
+	return _lives_remaining

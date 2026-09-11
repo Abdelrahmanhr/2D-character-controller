@@ -55,7 +55,7 @@ gravity = Vector3(0, 800, 0)
 blend_mode = 1
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_deathbox"]
-size = Vector2(2000, 120)
+size = Vector2(2994, 120)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot0"]
 bg_color = Color(0, 0, 0, 0.88)
@@ -735,6 +735,7 @@ spawn_path = NodePath("..")
 position = Vector2(792, 1054)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="DeathBox" unique_id=791328526]
+position = Vector2(-79, 0)
 shape = SubResource("RectangleShape2D_deathbox")
 
 [node name="MatchResult" type="Label" parent="." unique_id=2050580856]
@@ -761,20 +762,22 @@ mouse_filter = 2
 [node name="Slot0" type="Panel" parent="MinigameLayout/Layout" unique_id=266500927]
 visible = false
 layout_mode = 1
-offset_left = 24.0
+offset_left = 45.999996
 offset_top = 80.0
-offset_right = 304.0
+offset_right = 326.0
 offset_bottom = 240.0
+scale = Vector2(0.8, 0.8)
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot0")
 
 [node name="Slot1" type="Panel" parent="MinigameLayout/Layout" unique_id=388569904]
 visible = false
 layout_mode = 1
-offset_left = 24.0
-offset_top = 460.0
-offset_right = 304.0
-offset_bottom = 620.0
+offset_left = 338.0
+offset_top = 80.0
+offset_right = 618.0
+offset_bottom = 240.0
+scale = Vector2(0.8, 0.8)
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot1")
 
@@ -784,11 +787,12 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -304.0
+offset_left = -510.0
 offset_top = 80.0
-offset_right = -24.0
+offset_right = -230.0
 offset_bottom = 240.0
 grow_horizontal = 0
+scale = Vector2(0.8, 0.8)
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot2")
 
@@ -798,11 +802,12 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -304.0
-offset_top = 460.0
-offset_right = -24.0
-offset_bottom = 620.0
+offset_left = -240.0
+offset_top = 81.0
+offset_right = 40.0
+offset_bottom = 241.0
 grow_horizontal = 0
+scale = Vector2(0.8, 0.8)
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot3")
 
@@ -810,10 +815,11 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_slot3")
 position = Vector2(736, 459)
 script = ExtResource("7_camera")
 margin = 120.0
-min_zoom = 0.9
+min_zoom = 0.5
 position_lerp_speed = 6.0
 zoom_lerp_speed = 5.0
-world_bounds = Rect2(40, 40, 1520, 960)
+world_bounds = Rect2(40, 40, 1700, 1100)
+top_ui_margin = 230.0
 
 [node name="props" type="Node2D" parent="." unique_id=781998622]
 

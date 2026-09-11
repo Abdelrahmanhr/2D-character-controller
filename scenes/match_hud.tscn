@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://deiu510u7y2u3"]
 
-[ext_resource type="Script" path="res://scripts/match_hud.gd" id="1_hud"]
+[ext_resource type="Script" uid="uid://dqmrjtp88pcf0" path="res://scripts/match_hud.gd" id="1_hud"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_header"]
 bg_color = Color(0, 0, 0, 0.88)
@@ -30,11 +30,11 @@ corner_radius_bottom_left = 1
 shadow_color = Color(1, 0.92, 0.2, 0.35)
 shadow_size = 2
 
-[node name="MatchHUD" type="CanvasLayer"]
+[node name="MatchHUD" type="CanvasLayer" unique_id=1726097885]
 layer = 8
 script = ExtResource("1_hud")
 
-[node name="Header" type="Control" parent="."]
+[node name="Header" type="Control" parent="." unique_id=1558700081]
 layout_mode = 3
 anchors_preset = 10
 anchor_right = 1.0
@@ -42,7 +42,7 @@ offset_bottom = 64.0
 grow_horizontal = 2
 mouse_filter = 2
 
-[node name="Backdrop" type="Panel" parent="Header"]
+[node name="Backdrop" type="Panel" parent="Header" unique_id=1506012034]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -52,7 +52,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_header")
 
-[node name="TimerBlock" type="HBoxContainer" parent="Header"]
+[node name="TimerBlock" type="HBoxContainer" parent="Header" unique_id=1576379935]
 layout_mode = 1
 anchors_preset = 14
 anchor_top = 0.5
@@ -63,18 +63,18 @@ offset_top = -18.0
 offset_right = -200.0
 offset_bottom = 18.0
 grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 20
 
-[node name="TimerSlot" type="HBoxContainer" parent="Header/TimerBlock"]
-visible = false
+[node name="TimerSlot" type="HBoxContainer" parent="Header/TimerBlock" unique_id=1136999389]
 custom_minimum_size = Vector2(200, 36)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 theme_override_constants/separation = 8
 
-[node name="BombCaption" type="Label" parent="Header/TimerBlock/TimerSlot"]
+[node name="BombCaption" type="Label" parent="Header/TimerBlock/TimerSlot" unique_id=55731244]
 custom_minimum_size = Vector2(36, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.95, 0.25, 1)
@@ -86,7 +86,10 @@ theme_override_font_sizes/font_size = 13
 text = "P1"
 vertical_alignment = 1
 
-[node name="BombBar" type="ProgressBar" parent="Header/TimerBlock/TimerSlot"]
+[node name="LivesLabel" type="Label" parent="Header/TimerBlock/TimerSlot" unique_id=784758278]
+layout_mode = 2
+
+[node name="BombBar" type="ProgressBar" parent="Header/TimerBlock/TimerSlot" unique_id=1673543382]
 custom_minimum_size = Vector2(80, 20)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -97,7 +100,7 @@ max_value = 40.0
 value = 40.0
 show_percentage = false
 
-[node name="BombTime" type="Label" parent="Header/TimerBlock/TimerSlot"]
+[node name="BombTime" type="Label" parent="Header/TimerBlock/TimerSlot" unique_id=1001499121]
 custom_minimum_size = Vector2(52, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.97, 0.45, 1)
@@ -109,7 +112,7 @@ theme_override_font_sizes/font_size = 20
 text = "40.0"
 vertical_alignment = 1
 
-[node name="AliveBlock" type="VBoxContainer" parent="Header"]
+[node name="AliveBlock" type="VBoxContainer" parent="Header" unique_id=1784600853]
 layout_mode = 1
 anchors_preset = 6
 anchor_left = 1.0
@@ -126,7 +129,7 @@ mouse_filter = 2
 theme_override_constants/separation = -2
 alignment = 1
 
-[node name="AliveCaption" type="Label" parent="Header/AliveBlock"]
+[node name="AliveCaption" type="Label" parent="Header/AliveBlock" unique_id=1137201553]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.9)
 theme_override_colors/font_shadow_color = Color(1, 1, 1, 0.3)
@@ -137,7 +140,7 @@ theme_override_font_sizes/font_size = 10
 text = "ALIVE"
 horizontal_alignment = 2
 
-[node name="AliveCount" type="Label" parent="Header/AliveBlock"]
+[node name="AliveCount" type="Label" parent="Header/AliveBlock" unique_id=2021435694]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(1, 1, 1, 0.3)
