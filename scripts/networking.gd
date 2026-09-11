@@ -21,6 +21,8 @@ const CLOCK_PING_INTERVAL := 5.0
 const CLOCK_WARMUP_INTERVAL := 0.25
 const BOMB_START_LEAD_MS := 250
 const LOBBY_CREATE_TIMEOUT := 10.0
+const MAX_VIRTUAL_PORT := 64
+const LOBBY_VPORT_KEY := "vport"
 
 var peer: SteamMultiplayerPeer
 var selected_arena_path: String = DEFAULT_ARENA_SCENE
@@ -31,6 +33,8 @@ var pending_lobby_id: int = 0
 var _create_pending: bool = false
 var _abandon_create: bool = false
 var _create_timeout_left: float = 0.0
+var _next_vport: int = 0
+var _active_vport: int = 0
 
 var _ready_acks: Dictionary = {}
 var _expected_acks: Array[int] = []
@@ -125,6 +129,13 @@ func _reset_peer() -> void:
 	_expected_acks.clear()
 	_assigned_slots.clear()
 	_reset_clock()
+	if peer != null:
+
+		if multiplayer.multiplayer_peer == peer and multiplayer.is_server():
+			for id in multiplayer.get_peers():
+				peer.disconnect_peer(id, true)
+		NetDebug.log_event("closing peer, status %d" % peer.get_connection_status())
+		peer.close()
 	if multiplayer.multiplayer_peer != null and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer):
 		multiplayer.multiplayer_peer.close()
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
@@ -163,15 +174,25 @@ func join_lobby(lobby_id: int) -> void:
 	NetDebug.log_event("requesting join %d" % lobby_id)
 	Steam.joinLobby(lobby_id)
 
-
-# Steam releases the previous relay session and listen socket from inside
-# run_callbacks(), which SteamManager pumps in _process. Creating or joining in
-# the same frame as the teardown makes create_host()/create_client() fail on the
-# second attempt, so wait for a couple of callback pumps first.
 func _settle_steam() -> bool:
-	await get_tree().process_frame
-	await get_tree().process_frame
+	await get_tree().create_timer(0.3).timeout
 	return SteamManager.is_initialized
+
+func _open_host_peer() -> SteamMultiplayerPeer:
+	for _attempt in MAX_VIRTUAL_PORT:
+		var vport := _next_vport
+		_next_vport = (_next_vport + 1) % MAX_VIRTUAL_PORT
+		var candidate := SteamMultiplayerPeer.new()
+		candidate.server_relay = true
+		var err: int = candidate.create_host(vport)
+		if err == OK and candidate.get_connection_status() != MultiplayerPeer.CONNECTION_DISCONNECTED:
+			_active_vport = vport
+			NetDebug.log_event("host listening on vport %d" % vport)
+			return candidate
+		NetDebug.log_event("create_host vport %d failed, err %d" % [vport, err])
+
+		candidate.close()
+	return null
 
 
 func on_lobby_created(connect_result: int, lobby_id: int) -> void:
@@ -189,21 +210,21 @@ func on_lobby_created(connect_result: int, lobby_id: int) -> void:
 		NetDebug.log_event("abandoning lobby %d, host cancelled" % lobby_id)
 		Steam.leaveLobby(lobby_id)
 		return
-	var host_peer := SteamMultiplayerPeer.new()
-	host_peer.server_relay = true
-	var err: int = host_peer.create_host()
-	if err != OK or host_peer.get_connection_status() == MultiplayerPeer.CONNECTION_DISCONNECTED:
-		NetDebug.log_event("create_host failed, err %d status %d" % [err, host_peer.get_connection_status()])
+	var host_peer := _open_host_peer()
+	if host_peer == null:
+		NetDebug.log_event("no virtual port could be opened for hosting")
 		Steam.leaveLobby(lobby_id)
 		current_lobby_id = 0
 		is_host = false
-		lobby_failed.emit("Could not open the host connection. Try hosting again.")
+		lobby_failed.emit("Could not open the host connection. Restart the game and try again.")
 		return
 	peer = host_peer
 	multiplayer.multiplayer_peer = peer
 	current_lobby_id = lobby_id
 	is_host = true
-	NetDebug.log_event("lobby created %d" % lobby_id)
+
+	Steam.setLobbyData(lobby_id, LOBBY_VPORT_KEY, str(_active_vport))
+	NetDebug.log_event("lobby created %d on vport %d" % [lobby_id, _active_vport])
 	lobby_ready.emit(true)
 	peers_changed.emit(0)
 
@@ -218,11 +239,15 @@ func on_lobby_joined(lobby_id: int, _permissions: int, _locked: bool, response: 
 		# Our own lobby echoing back. on_lobby_created owns the host peer.
 		current_lobby_id = lobby_id
 		return
+
+	var vport_text: String = str(Steam.getLobbyData(lobby_id, LOBBY_VPORT_KEY))
+	var vport: int = vport_text.to_int() if not vport_text.is_empty() else 0
 	var client_peer := SteamMultiplayerPeer.new()
 	client_peer.server_relay = true
-	var err: int = client_peer.create_client(owner_id)
+	var err: int = client_peer.create_client(owner_id, vport)
 	if err != OK or client_peer.get_connection_status() == MultiplayerPeer.CONNECTION_DISCONNECTED:
-		NetDebug.log_event("create_client failed, err %d" % err)
+		NetDebug.log_event("create_client vport %d failed, err %d" % [vport, err])
+		client_peer.close()
 		Steam.leaveLobby(lobby_id)
 		current_lobby_id = 0
 		lobby_failed.emit("Could not connect to the host.")
@@ -231,7 +256,7 @@ func on_lobby_joined(lobby_id: int, _permissions: int, _locked: bool, response: 
 	multiplayer.multiplayer_peer = peer
 	current_lobby_id = lobby_id
 	is_host = false
-	NetDebug.log_event("joining lobby %d owner %d" % [lobby_id, owner_id])
+	NetDebug.log_event("joining lobby %d owner %d vport %d" % [lobby_id, owner_id, vport])
 
 
 func on_join_requested(lobby_id: int, _steam_id: int) -> void:
