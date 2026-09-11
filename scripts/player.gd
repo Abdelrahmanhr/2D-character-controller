@@ -23,8 +23,7 @@ extends CharacterBody2D
 @export var footstep_pitch_variance: float = 0.15
 @export var footstep_debounce: float = 0.1
 
-
-@export var device_id: int = -2  #-1 = keyboard, 0+ = joypad index, -2 = unassigned
+@export var device_id: int = -2
 @export var keyboard_left: Key = KEY_A  
 @export var keyboard_right: Key = KEY_D  
 @export var keyboard_up: Key = KEY_W  
@@ -95,15 +94,15 @@ func _ready() -> void:
 	_recalculate_jump_physics()
 	_setup_glow_texture()
 	_update_identity()
-	if _is_networked() and is_multiplayer_authority() and device_id == -2:  # NEW
-		device_id = -1  # NEW: default to keyboard for online play, since there's no lobby-side device picker for online yet
-		if bomb_controller:  # NEW
-			bomb_controller.device_id = -1  # NEW
+	if _is_networked() and is_multiplayer_authority() and device_id == -2:
+		device_id = -1
+		if bomb_controller:
+			bomb_controller.device_id = -1
 
 func _enter_tree() -> void:
 	set_multiplayer_authority(name.to_int())
 
-func _is_networked() -> bool:  # NEW
+func _is_networked() -> bool:
 	return multiplayer.multiplayer_peer != null and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer)
 
 func _recalculate_jump_physics() -> void:
@@ -118,7 +117,7 @@ func _physics_process(delta: float) -> void:
 		velocity.y += gravity * delta
 		move_and_slide()
 		return
-	if _is_networked() and not is_multiplayer_authority():  # CHANGED: was "if not is_multiplayer_authority(): return"
+	if _is_networked() and not is_multiplayer_authority():
 		return
 	
 	
@@ -255,39 +254,39 @@ func _update_animation() -> void:
 		animation_name = next_animation
 		animated_sprite.play(animation_name)
 
-func _handle_input(delta: float) -> void:  # CHANGED: full per-device rewrite, see below
-	var is_keyboard: bool = device_id == LocalPlayers.KEYBOARD_DEVICE_ID  # NEW
+func _handle_input(delta: float) -> void:
+	var is_keyboard: bool = device_id == LocalPlayers.KEYBOARD_DEVICE_ID
 	
-	var move_x: float  # NEW
-	var move_y: float  # NEW
-	var jump_held: bool  # NEW
-	var dash_held: bool  # NEW
+	var move_x: float
+	var move_y: float
+	var jump_held: bool
+	var dash_held: bool
 	
-	if is_keyboard:  # NEW
+	if is_keyboard:
 		move_x = float(Input.is_physical_key_pressed(keyboard_right)) - float(Input.is_physical_key_pressed(keyboard_left))
 		move_y = float(Input.is_physical_key_pressed(keyboard_down)) - float(Input.is_physical_key_pressed(keyboard_up))
 		jump_held = Input.is_physical_key_pressed(keyboard_jump)
 		dash_held = Input.is_physical_key_pressed(keyboard_dash)
 	else:  
-		move_x = Input.get_joy_axis(device_id, JOY_AXIS_LEFT_X)
-		move_y = Input.get_joy_axis(device_id, JOY_AXIS_LEFT_Y)
+		move_x = PadState.get_axis(device_id, JOY_AXIS_LEFT_X)
+		move_y = PadState.get_axis(device_id, JOY_AXIS_LEFT_Y)
 		if abs(move_x) < STICK_DEADZONE:  
 			move_x = 0.0  
-		if abs(move_y) < STICK_DEADZONE:  # NEW
-			move_y = 0.0  # NEW
-		jump_held = Input.is_joy_button_pressed(device_id, JOY_BUTTON_A)
-		dash_held = Input.is_joy_button_pressed(device_id, JOY_BUTTON_X)
+		if abs(move_y) < STICK_DEADZONE:
+			move_y = 0.0
+		jump_held = PadState.is_pressed(device_id, JOY_BUTTON_A)
+		dash_held = PadState.is_pressed(device_id, JOY_BUTTON_X)
 	
-	direction = move_x  # CHANGED: was Input.get_axis("move_left", "move_right")
-	_last_move_input = Vector2(move_x, move_y)  # NEW
+	direction = move_x
+	_last_move_input = Vector2(move_x, move_y)
 	
-	var jump_just_pressed: bool = jump_held and not _prev_jump_held  # NEW
-	var jump_just_released: bool = not jump_held and _prev_jump_held  # NEW
-	var dash_just_pressed: bool = dash_held and not _prev_dash_held  # NEW
+	var jump_just_pressed: bool = jump_held and not _prev_jump_held
+	var jump_just_released: bool = not jump_held and _prev_jump_held
+	var dash_just_pressed: bool = dash_held and not _prev_dash_held
 	_prev_jump_held = jump_held  
 	_prev_dash_held = dash_held 
 	
-	if dash_just_pressed and not is_dashing and dash_cooldown_left <= 0.0:  # CHANGED: was Input.is_action_just_pressed("dash")
+	if dash_just_pressed and not is_dashing and dash_cooldown_left <= 0.0:
 		_start_dash()
 	
 	if is_on_floor():
@@ -295,7 +294,7 @@ func _handle_input(delta: float) -> void:  # CHANGED: full per-device rewrite, s
 	else:
 		coyote_time_counter -= delta
 	
-	if jump_just_pressed:  # CHANGED: was Input.is_action_just_pressed("jump")
+	if jump_just_pressed:
 		jump_buffer_counter = jump_buffer_time
 	else:
 		jump_buffer_counter -= delta
@@ -305,7 +304,7 @@ func _handle_input(delta: float) -> void:  # CHANGED: full per-device rewrite, s
 		jump_buffer_counter = 0.0
 		coyote_time_counter = 0.0
 
-	if jump_just_released and velocity.y < 0.0:  # CHANGED: was Input.is_action_just_released("jump")
+	if jump_just_released and velocity.y < 0.0:
 		cut_jump = true
 
 
@@ -340,7 +339,7 @@ func _apply_movement(delta: float) -> void:
 	velocity.y += gravity * delta
 
 func _get_dash_direction() -> Vector2:
-	var raw := _last_move_input  # CHANGED: was Input.get_axis(...) x2
+	var raw := _last_move_input
 	if raw.length() < 0.2:
 		raw = Vector2.RIGHT if facing_right else Vector2.LEFT
 	

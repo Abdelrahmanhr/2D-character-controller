@@ -21,12 +21,14 @@ buses/default_bus_layout="uid://dlo5inop6ahho"
 [autoload]
 
 SteamManager="*res://scripts/steam_manager.gd"
+NetDebug="*res://scripts/net_debug.gd"
 Networking="*uid://biey2tmy4kxep"
 MinigameDirector="*uid://xmu73o4be3vy"
 SfxManager="*uid://cj7thjw7nipac"
 GlobalParallax="*res://scenes/global_parallax.tscn"
 SceneTransition="*res://scenes/scene_transition.tscn"
 LocalPlayers="*uid://beo37lguvwq13"
+PadState="*res://scripts/pad_state.gd"
 UISfx="*uid://3suisp3wkvkg"
 MusicManager="*uid://d1np3sr422x7"
 

@@ -30,7 +30,8 @@ func _toggle_pause() -> void:
 	else:
 		dim.show()
 		panel.show()
-		get_tree().paused = true
+		if not Networking.is_connected_online():
+			get_tree().paused = true
 
 func _resume() -> void:
 	options_panel.hide()
@@ -53,6 +54,8 @@ func _hide_options() -> void:
 
 func _exit_game() -> void:
 	get_tree().paused = false
+	MinigameDirector.reset_match()
+	Networking.leave_lobby()
 	SceneTransition.circle_to("res://scenes/main_menu.tscn")
 
 func _set_volume(value: float) -> void:
