@@ -21,6 +21,7 @@ buses/default_bus_layout="uid://dlo5inop6ahho"
 [autoload]
 
 SteamManager="*res://scripts/steam_manager.gd"
+NetDebug="*res://scripts/net_debug.gd"
 Networking="*uid://biey2tmy4kxep"
 MinigameDirector="*uid://xmu73o4be3vy"
 SfxManager="*uid://cj7thjw7nipac"

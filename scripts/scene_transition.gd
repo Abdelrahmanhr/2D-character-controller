@@ -6,6 +6,7 @@ const MAX_R := 1.6
 var _mat: ShaderMaterial
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 100
 	rect.material.set_shader_parameter("radius", MAX_R)
 	_mat = rect.material

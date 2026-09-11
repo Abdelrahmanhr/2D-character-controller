@@ -11,7 +11,7 @@ signal alive_count_changed(alive: int, total: int)
 var _countdown_left: float = 0.0
 var _counting_down: bool = false
 
-@export var minigame_order: Array[PackedScene] = []  # index 0 = math, hardcoded order
+@export var minigame_order: Array[PackedScene] = []
 @export var spawn_cooldown: float = 5.0
 
 var _bomb_controllers: Array[BombController] = []
@@ -20,6 +20,33 @@ var _cooldowns: Dictionary = {}
 var _alive_peer_ids: Dictionary = {}
 var _total_players: int = 0
 var _match_finished := false
+var _start_grace_left: float = 0.0
+
+const START_GRACE := 4.0
+
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	Networking.match_begin.connect(_on_match_begin)
+
+
+func _on_match_begin(expected_count: int) -> void:
+	set_expected_player_count(expected_count)
+	_match_finished = false
+	_start_grace_left = START_GRACE
+	_begin_countdown()
+
+
+func get_registered_count() -> int:
+	return _bomb_controllers.size()
+
+
+func is_counting_down() -> bool:
+	return _counting_down
+
+
+func is_match_finished() -> bool:
+	return _match_finished
 
 func get_alive_count() -> int:
 	return _alive_peer_ids.size()
@@ -47,6 +74,7 @@ func reset_match() -> void:
 	_countdown_left = 0.0
 	_counting_down = false
 	_match_finished = false
+	_start_grace_left = 0.0
 
 func register_player(bomb_controller: BombController) -> void:
 	if _bomb_controllers.has(bomb_controller):
@@ -58,9 +86,13 @@ func register_player(bomb_controller: BombController) -> void:
 	_cooldowns[bomb_controller] = 0.0
 	bomb_controller.player_finished_round.connect(_on_player_finished.bind(bomb_controller))
 	_notify_alive_count()
-	
-	if _bomb_controllers.size() >= expected_player_count and not _counting_down and not _match_finished:
+
+	if _is_offline() and _bomb_controllers.size() >= expected_player_count and not _counting_down and not _match_finished:
 		_begin_countdown()
+
+
+func _is_offline() -> bool:
+	return multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer
 
 func _begin_countdown() -> void:
 	_counting_down = true
@@ -156,7 +188,11 @@ func _process(delta: float) -> void:
 		if new_second != prev_second and new_second >= 0:
 			countdown_tick.emit(new_second)
 		if _countdown_left <= 0.0:
+			if _bomb_controllers.size() < expected_player_count and _start_grace_left > 0.0:
+				_start_grace_left -= delta
+				return
 			_counting_down = false
+			_start_grace_left = 0.0
 			match_started.emit()
 			_start_rounds()
 		return

@@ -11,7 +11,7 @@ signal player_finished_round
 @export var penalty_sound: AudioStream  
 @export var minigame_complete_sound: AudioStream
 
-@export var max_bomb_time: float = 60.0  # 
+@export var max_bomb_time: float = 60.0
 
 var _time_left: float
 var _active_minigame: Control = null
@@ -37,14 +37,14 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	MinigameDirector.unregister_player(self)
 
-func _is_networked() -> bool:  # NEW
+func _is_networked() -> bool:
 	return multiplayer.multiplayer_peer != null and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer)
 
-func _has_authority() -> bool:  # NEW
+func _has_authority() -> bool:
 	return not _is_networked() or _player.is_multiplayer_authority()
 
 func _process(delta: float) -> void:
-	if _has_authority() and not _expired:  # CHANGED: was "_player.is_multiplayer_authority()"
+	if _has_authority() and not _expired:
 		_time_left -= delta
 		if _time_left <= 0.0:
 			_on_bomb_expired()
@@ -53,7 +53,7 @@ func _process(delta: float) -> void:
 	_poll_right_stick()
 
 func _input(event: InputEvent) -> void:
-	if _active_minigame == null or not _has_authority() or _player.is_stunned:  # CHANGED
+	if _active_minigame == null or not _has_authority() or _player.is_stunned:
 		return
 	if event is InputEventJoypadButton and event.device == device_id:
 		var handled: bool = _active_minigame._handle_input(event)
@@ -62,7 +62,7 @@ func _input(event: InputEvent) -> void:
 			if handled:
 				SfxManager.play(input_sound,-13.0,0.1)
 			_try_replicate_input(false, event.button_index)
-	elif event is InputEventKey and _player.device_id == LocalPlayers.KEYBOARD_DEVICE_ID:  # CHANGED: added device_id check
+	elif event is InputEventKey and _player.device_id == LocalPlayers.KEYBOARD_DEVICE_ID:
 		var handled: bool = _active_minigame._handle_input(event)
 		get_viewport().set_input_as_handled()
 		if event.pressed and not event.echo:
@@ -86,7 +86,7 @@ func eliminate_player() -> void:
 	stop_minigame()
 	await _player.play_death_animation()
 	MinigameDirector.player_eliminated(_player.name.to_int())
-	if _has_authority():  # CHANGED: was "_player.is_multiplayer_authority()"
+	if _has_authority():
 		var scene := get_tree().current_scene
 		if scene.has_method("show_lose_popup"):
 			scene.show_lose_popup()
@@ -109,7 +109,7 @@ func get_player_color() -> Color:
 	return PLAYER_COLORS[get_slot_index()]
 
 func play_minigame(scene: PackedScene, slot_index: int) -> void:
-	if _expired or not _has_authority():  # CHANGED
+	if _expired or not _has_authority():
 		return
 	var scene_index: int = MinigameDirector.minigame_order.find(scene)
 	if scene_index < 0:
@@ -123,7 +123,7 @@ func play_minigame(scene: PackedScene, slot_index: int) -> void:
 		_show_minigame.rpc(slot_index, scene_index, rng_seed)
 
 func stop_minigame() -> void:
-	if _has_authority() and _is_networked():  # CHANGED: was "_player.is_multiplayer_authority() and multiplayer.multiplayer_peer != null and not (...)"
+	if _has_authority() and _is_networked():
 		_clear_minigame.rpc()
 	else:
 		_clear_minigame()
@@ -143,7 +143,7 @@ func _show_minigame(slot_index: int, scene_index: int, rng_seed: int = 0) -> voi
 	slot.add_child(_active_minigame)
 	_active_minigame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_active_minigame.setup(_player, rng_seed)
-	if _has_authority():  # CHANGED: was "_player.is_multiplayer_authority()"
+	if _has_authority():
 		_active_minigame.bomb_time_delta.connect(_on_bomb_time_delta)
 		_active_minigame.round_finished.connect(_on_minigame_finished)
 
@@ -156,7 +156,7 @@ func _try_replicate_input(is_key: bool, code: int) -> void:
 func _replicate_minigame_input(is_key: bool, code: int) -> void:
 	if multiplayer.get_remote_sender_id() != _player.name.to_int():
 		return
-	if _active_minigame == null or _has_authority() or _player.is_stunned:  # CHANGED: was "_player.is_multiplayer_authority()"
+	if _active_minigame == null or _has_authority() or _player.is_stunned:
 		return
 	if is_key:
 		var key_event := InputEventKey.new()
@@ -199,7 +199,7 @@ func _play_bonus_sound() -> void:
 	var sound: AudioStream = bonus_sounds[randi() % bonus_sounds.size()]
 	SfxManager.play(sound, -10.0, bonus_pitch_variance)
 
-func _poll_right_stick() -> void:  # NEW
+func _poll_right_stick() -> void:
 	if _active_minigame == null or not _has_authority() or _player.is_stunned or device_id < 0:
 		_prev_stick_direction = ""
 		return
@@ -228,7 +228,7 @@ func _poll_right_stick() -> void:  # NEW
 		_prev_stick_direction = current_direction
 
 
-func _submit_stick_direction(direction: String) -> void:  # NEW
+func _submit_stick_direction(direction: String) -> void:
 	var button: JoyButton
 	match direction:
 		"up": button = JOY_BUTTON_DPAD_UP

@@ -53,6 +53,8 @@ func _hide_options() -> void:
 
 func _exit_game() -> void:
 	get_tree().paused = false
+	MinigameDirector.reset_match()
+	Networking.leave_lobby()
 	SceneTransition.circle_to("res://scenes/main_menu.tscn")
 
 func _set_volume(value: float) -> void:
