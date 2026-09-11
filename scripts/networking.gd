@@ -20,6 +20,7 @@ const CLOCK_SAMPLE_COUNT := 5
 const CLOCK_PING_INTERVAL := 5.0
 const CLOCK_WARMUP_INTERVAL := 0.25
 const BOMB_START_LEAD_MS := 250
+const LOBBY_CREATE_TIMEOUT := 10.0
 
 var peer: SteamMultiplayerPeer
 var selected_arena_path: String = DEFAULT_ARENA_SCENE
@@ -27,6 +28,9 @@ var selected_arena_name: String = DEFAULT_ARENA_NAME
 var current_lobby_id: int = 0
 var is_host: bool = false
 var pending_lobby_id: int = 0
+var _create_pending: bool = false
+var _abandon_create: bool = false
+var _create_timeout_left: float = 0.0
 
 var _ready_acks: Dictionary = {}
 var _expected_acks: Array[int] = []
@@ -101,6 +105,21 @@ func set_arena(path: String, display_name: String) -> void:
 
 
 func leave_lobby() -> void:
+	# A createLobby call may still be in flight; mark it so the callback drops
+	# the lobby instead of installing a peer we no longer want.
+	if _create_pending:
+		_abandon_create = true
+	_reset_peer()
+	if current_lobby_id != 0 and SteamManager.is_initialized:
+		Steam.leaveLobby(current_lobby_id)
+	current_lobby_id = 0
+	is_host = false
+	MinigameDirector.reset_match()
+	NetDebug.set_ack_target(0)
+	peers_changed.emit(0)
+
+
+func _reset_peer() -> void:
 	_awaiting_acks = false
 	_ready_acks.clear()
 	_expected_acks.clear()
@@ -110,18 +129,26 @@ func leave_lobby() -> void:
 		multiplayer.multiplayer_peer.close()
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 	peer = null
-	if current_lobby_id != 0 and SteamManager.is_initialized:
-		Steam.leaveLobby(current_lobby_id)
-	current_lobby_id = 0
-	is_host = false
-	peers_changed.emit(0)
 
 
 func host_lobby() -> void:
 	if not SteamManager.is_initialized:
 		lobby_failed.emit("Steam is not initialized. Restart Steam, then reopen the editor.")
 		return
+	if _create_pending:
+		# Steam has not answered the previous createLobby yet. Bail out and let the
+		# UI re-enable Host rather than stacking a second request.
+		NetDebug.log_event("host_lobby ignored, create already pending")
+		lobby_failed.emit("Still finishing the previous lobby request. Try again in a moment.")
+		return
 	leave_lobby()
+	if not await _settle_steam():
+		lobby_failed.emit("Steam is not initialized.")
+		return
+	_create_pending = true
+	_abandon_create = false
+	_create_timeout_left = LOBBY_CREATE_TIMEOUT
+	NetDebug.log_event("creating lobby")
 	Steam.createLobby(LOBBY_TYPE, MAX_MEMBERS)
 
 
@@ -130,19 +157,52 @@ func join_lobby(lobby_id: int) -> void:
 		lobby_failed.emit("Steam is not initialized.")
 		return
 	leave_lobby()
+	if not await _settle_steam():
+		lobby_failed.emit("Steam is not initialized.")
+		return
+	NetDebug.log_event("requesting join %d" % lobby_id)
 	Steam.joinLobby(lobby_id)
 
 
+# Steam releases the previous relay session and listen socket from inside
+# run_callbacks(), which SteamManager pumps in _process. Creating or joining in
+# the same frame as the teardown makes create_host()/create_client() fail on the
+# second attempt, so wait for a couple of callback pumps first.
+func _settle_steam() -> bool:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	return SteamManager.is_initialized
+
+
 func on_lobby_created(connect_result: int, lobby_id: int) -> void:
+	_create_pending = false
+	_create_timeout_left = 0.0
 	if connect_result != Steam.RESULT_OK:
+		_abandon_create = false
+		NetDebug.log_event("createLobby failed, result %d" % connect_result)
 		lobby_failed.emit("Could not create lobby.")
 		return
+	if _abandon_create:
+		# The player backed out while the create was in flight. Drop the lobby
+		# instead of leaking it, and leave the offline peer in place.
+		_abandon_create = false
+		NetDebug.log_event("abandoning lobby %d, host cancelled" % lobby_id)
+		Steam.leaveLobby(lobby_id)
+		return
+	var host_peer := SteamMultiplayerPeer.new()
+	host_peer.server_relay = true
+	var err: int = host_peer.create_host()
+	if err != OK or host_peer.get_connection_status() == MultiplayerPeer.CONNECTION_DISCONNECTED:
+		NetDebug.log_event("create_host failed, err %d status %d" % [err, host_peer.get_connection_status()])
+		Steam.leaveLobby(lobby_id)
+		current_lobby_id = 0
+		is_host = false
+		lobby_failed.emit("Could not open the host connection. Try hosting again.")
+		return
+	peer = host_peer
+	multiplayer.multiplayer_peer = peer
 	current_lobby_id = lobby_id
 	is_host = true
-	peer = SteamMultiplayerPeer.new()
-	peer.server_relay = true
-	peer.create_host()
-	multiplayer.multiplayer_peer = peer
 	NetDebug.log_event("lobby created %d" % lobby_id)
 	lobby_ready.emit(true)
 	peers_changed.emit(0)
@@ -150,18 +210,27 @@ func on_lobby_created(connect_result: int, lobby_id: int) -> void:
 
 func on_lobby_joined(lobby_id: int, _permissions: int, _locked: bool, response: int) -> void:
 	if response != Steam.CHAT_ROOM_ENTER_RESPONSE_SUCCESS:
+		NetDebug.log_event("lobby_joined failed, response %d" % response)
 		lobby_failed.emit("Could not join lobby.")
 		return
 	var owner_id: int = Steam.getLobbyOwner(lobby_id)
-	if owner_id == Steam.getSteamID():
+	if _create_pending or is_host or owner_id == Steam.getSteamID():
+		# Our own lobby echoing back. on_lobby_created owns the host peer.
 		current_lobby_id = lobby_id
 		return
+	var client_peer := SteamMultiplayerPeer.new()
+	client_peer.server_relay = true
+	var err: int = client_peer.create_client(owner_id)
+	if err != OK or client_peer.get_connection_status() == MultiplayerPeer.CONNECTION_DISCONNECTED:
+		NetDebug.log_event("create_client failed, err %d" % err)
+		Steam.leaveLobby(lobby_id)
+		current_lobby_id = 0
+		lobby_failed.emit("Could not connect to the host.")
+		return
+	peer = client_peer
+	multiplayer.multiplayer_peer = peer
 	current_lobby_id = lobby_id
 	is_host = false
-	peer = SteamMultiplayerPeer.new()
-	peer.server_relay = true
-	peer.create_client(owner_id)
-	multiplayer.multiplayer_peer = peer
 	NetDebug.log_event("joining lobby %d owner %d" % [lobby_id, owner_id])
 
 
@@ -406,6 +475,13 @@ func _begin_match(expected_count: int) -> void:
 
 
 func _process(delta: float) -> void:
+	if _create_pending:
+		_create_timeout_left -= delta
+		if _create_timeout_left <= 0.0:
+			_create_pending = false
+			_abandon_create = false
+			NetDebug.log_event("createLobby timed out, no callback from Steam")
+			lobby_failed.emit("Steam never answered the lobby request. Try again.")
 	if is_connected_online() and not multiplayer.is_server():
 		_ping_timer -= delta
 		if _ping_timer <= 0.0:
@@ -440,3 +516,8 @@ func _unpause() -> void:
 func _request_restart() -> void:
 	if multiplayer.is_server():
 		restart_game()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		leave_lobby()

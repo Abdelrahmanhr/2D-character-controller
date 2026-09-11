@@ -53,7 +53,7 @@ func _on_arena_spawn_requested(slots: Dictionary) -> void:
 		var spawned := multiplayer_spawner.spawn({"peer": int(peer_id), "slot": int(slots[peer_id])})
 		if int(peer_id) == local_id:
 			_self_player = spawned as CharacterBody2D
-	if slots.size() <= 1:
+	if slots.size() <= 1 and NetDebug.dev_mode:
 		_enter_solo_test_mode()
 
 

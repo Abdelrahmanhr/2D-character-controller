@@ -22,4 +22,5 @@ func _on_main_menu() -> void:
 	SceneTransition.circle_to("res://scenes/main_menu.tscn")
 
 func _on_exit() -> void:
+	Networking.leave_lobby()
 	get_tree().quit()
