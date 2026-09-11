@@ -411,27 +411,26 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="Slot0" type="Panel" parent="MinigameLayout/Layout" unique_id=266500927]
-visible = false
 layout_mode = 1
 offset_left = 24.0
 offset_top = 80.0
 offset_right = 304.0
 offset_bottom = 240.0
+scale = Vector2(0.8, 0.8)
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot0")
 
 [node name="Slot1" type="Panel" parent="MinigameLayout/Layout" unique_id=388569904]
-visible = false
 layout_mode = 1
-offset_left = 24.0
-offset_top = 460.0
-offset_right = 304.0
-offset_bottom = 620.0
+offset_left = 301.0
+offset_top = 78.0
+offset_right = 581.0
+offset_bottom = 238.0
+scale = Vector2(0.8, 0.8)
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot1")
 
 [node name="Slot2" type="Panel" parent="MinigameLayout/Layout" unique_id=1122928017]
-visible = false
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -441,20 +440,21 @@ offset_top = 80.0
 offset_right = -24.0
 offset_bottom = 240.0
 grow_horizontal = 0
+scale = Vector2(0.8, 0.8)
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot2")
 
 [node name="Slot3" type="Panel" parent="MinigameLayout/Layout" unique_id=1023460895]
-visible = false
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -304.0
-offset_top = 460.0
-offset_right = -24.0
-offset_bottom = 620.0
+offset_left = -571.0
+offset_top = 79.0
+offset_right = -291.0
+offset_bottom = 239.0
 grow_horizontal = 0
+scale = Vector2(0.8, 0.8)
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot3")
 
