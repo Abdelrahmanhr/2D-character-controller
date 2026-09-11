@@ -106,13 +106,13 @@ func _process(delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if _active_minigame == null or not _has_authority() or _player.is_stunned:
 		return
-	if event is InputEventJoypadButton and event.device == device_id:
+	if event is InputEventJoypadButton and (_is_networked() or event.device == device_id):
 		var handled: bool = _active_minigame._handle_input(event)
 		if handled:
 			get_viewport().set_input_as_handled()
 			SfxManager.play(input_sound,-13.0,0.1)
 		_try_replicate_input(false, event.button_index)
-	elif event is InputEventKey and _player.device_id == LocalPlayers.KEYBOARD_DEVICE_ID:
+	elif event is InputEventKey and (_is_networked() or _player.device_id == LocalPlayers.KEYBOARD_DEVICE_ID):
 		var handled: bool = _active_minigame._handle_input(event)
 		if event.pressed and not event.echo:
 			if handled:
@@ -121,6 +121,64 @@ func _input(event: InputEvent) -> void:
 			var key: int = event.keycode if event.keycode != KEY_NONE else event.physical_keycode
 			_try_replicate_input(true, key)
 
+
+func _poll_right_stick() -> void:
+	if _active_minigame == null or not _has_authority() or _player.is_stunned:
+		return
+	
+	var poll_device: int = device_id
+	if _is_networked():
+		var pads := Input.get_connected_joypads()
+		if pads.is_empty():
+			_prev_stick_direction = ""
+			return
+		poll_device = pads[0]
+	elif device_id < 0:
+		_prev_stick_direction = ""
+		return
+	
+	var stick_x: float = PadState.get_axis(poll_device, JOY_AXIS_RIGHT_X)
+	var stick_y: float = PadState.get_axis(poll_device, JOY_AXIS_RIGHT_Y)
+	
+	var current_direction: String = ""
+	if abs(stick_x) > abs(stick_y):
+		if stick_x > STICK_THRESHOLD:
+			current_direction = "right"
+		elif stick_x < -STICK_THRESHOLD:
+			current_direction = "left"
+	else:
+		if stick_y > STICK_THRESHOLD:
+			current_direction = "down"
+		elif stick_y < -STICK_THRESHOLD:
+			current_direction = "up"
+	
+	if current_direction != "" and current_direction != _prev_stick_direction:
+		_submit_stick_direction(current_direction, poll_device)
+	
+	if current_direction == "":
+		_prev_stick_direction = ""
+	else:
+		_prev_stick_direction = current_direction
+
+
+func _submit_stick_direction(direction: String, source_device: int) -> void:
+	var button: JoyButton
+	match direction:
+		"up": button = JOY_BUTTON_DPAD_UP
+		"down": button = JOY_BUTTON_DPAD_DOWN
+		"left": button = JOY_BUTTON_DPAD_LEFT
+		"right": button = JOY_BUTTON_DPAD_RIGHT
+		_: return
+	
+	var synthetic_event := InputEventJoypadButton.new()
+	synthetic_event.device = source_device
+	synthetic_event.button_index = button
+	synthetic_event.pressed = true
+	
+	var handled: bool = _active_minigame._handle_input(synthetic_event)
+	if handled:
+		SfxManager.play(input_sound, -13.0, 0.1)
+	_try_replicate_input(false, button)
 @rpc("any_peer", "call_local", "reliable")
 func _explode() -> void:
 	var sender := multiplayer.get_remote_sender_id()
@@ -278,54 +336,6 @@ func _play_bonus_sound() -> void:
 		return
 	var sound: AudioStream = bonus_sounds[randi() % bonus_sounds.size()]
 	SfxManager.play(sound, -10.0, bonus_pitch_variance)
-
-func _poll_right_stick() -> void:
-	if _active_minigame == null or not _has_authority() or _player.is_stunned or device_id < 0:
-		_prev_stick_direction = ""
-		return
-	
-	var stick_x: float = PadState.get_axis(device_id, JOY_AXIS_RIGHT_X)
-	var stick_y: float = PadState.get_axis(device_id, JOY_AXIS_RIGHT_Y)
-	
-	var current_direction: String = ""
-	if abs(stick_x) > abs(stick_y):
-		if stick_x > STICK_THRESHOLD:
-			current_direction = "right"
-		elif stick_x < -STICK_THRESHOLD:
-			current_direction = "left"
-	else:
-		if stick_y > STICK_THRESHOLD:
-			current_direction = "down"
-		elif stick_y < -STICK_THRESHOLD:
-			current_direction = "up"
-	
-	if current_direction != "" and current_direction != _prev_stick_direction:
-		_submit_stick_direction(current_direction)
-	
-	if current_direction == "":
-		_prev_stick_direction = ""
-	else:
-		_prev_stick_direction = current_direction
-
-
-func _submit_stick_direction(direction: String) -> void:
-	var button: JoyButton
-	match direction:
-		"up": button = JOY_BUTTON_DPAD_UP
-		"down": button = JOY_BUTTON_DPAD_DOWN
-		"left": button = JOY_BUTTON_DPAD_LEFT
-		"right": button = JOY_BUTTON_DPAD_RIGHT
-		_: return
-	
-	var synthetic_event := InputEventJoypadButton.new()
-	synthetic_event.device = device_id
-	synthetic_event.button_index = button
-	synthetic_event.pressed = true
-	
-	var handled: bool = _active_minigame._handle_input(synthetic_event)
-	if handled:
-		SfxManager.play(input_sound, -13.0, 0.1)
-	_try_replicate_input(false, button)
 
 
 func player_died() -> void:
