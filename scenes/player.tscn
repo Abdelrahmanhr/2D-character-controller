@@ -360,3 +360,5 @@ replication_config = SubResource("SceneReplicationConfig_bomb")
 
 [node name="DashAfterimage" type="Node2D" parent="." unique_id=1706127928]
 script = ExtResource("16_a8ls1")
+fade_time = 0.2
+interval = 0.04

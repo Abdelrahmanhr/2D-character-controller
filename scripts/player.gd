@@ -23,6 +23,7 @@ extends CharacterBody2D
 @export var footstep_pitch_variance: float = 0.15
 @export var footstep_debounce: float = 0.1
 
+
 @export var device_id: int = -2  #-1 = keyboard, 0+ = joypad index, -2 = unassigned
 @export var keyboard_left: Key = KEY_A  
 @export var keyboard_right: Key = KEY_D  
@@ -30,6 +31,13 @@ extends CharacterBody2D
 @export var keyboard_down: Key = KEY_S 
 @export var keyboard_jump: Key = KEY_SPACE  
 @export var keyboard_dash: Key = KEY_SHIFT  
+
+@export var invulnerability_flash_speed: float = 0.1  
+
+var is_invulnerable: bool = false 
+var _invuln_time_left: float = 0.0 
+var _invuln_flash_timer: float = 0.0 
+var _death_animation_id: int = 0  
 
 const STICK_DEADZONE: float = 0.2
 
@@ -114,6 +122,17 @@ func _physics_process(delta: float) -> void:
 		return
 	
 	
+	if is_invulnerable:  
+		_invuln_time_left -= delta  
+		_invuln_flash_timer -= delta 
+		if _invuln_flash_timer <= 0.0: 
+			_invuln_flash_timer = invulnerability_flash_speed  
+			animated_sprite.visible = not animated_sprite.visible  
+		if _invuln_time_left <= 0.0:  
+			is_invulnerable = false 
+			animated_sprite.visible = true  
+	
+	
 	if is_frozen:
 		freeze_time_left -= delta
 		if freeze_time_left <= 0.0:
@@ -193,18 +212,24 @@ func play_death_animation() -> void:
 	if is_dead:
 		return
 	is_dead = true
+	_death_animation_id += 1  
+	var my_id := _death_animation_id  
 	velocity = Vector2.ZERO
 	var facing := "right" if facing_right else "left"
 	animation_name = StringName("die_" + facing)
 	animated_sprite.sprite_frames.set_animation_loop(animation_name, false)
 	animated_sprite.play(animation_name)
 	await animated_sprite.animation_finished
+	if my_id != _death_animation_id:  
+		return  
 	animated_sprite.stop()
 	animated_sprite.frame = animated_sprite.sprite_frames.get_frame_count(animation_name) - 1
 	var elapsed := 0.0
 	while not is_on_floor() and elapsed < 3.0:
 		await get_tree().physics_frame
 		elapsed += get_physics_process_delta_time()
+		if my_id != _death_animation_id:  
+			return
 
 
 
@@ -344,12 +369,14 @@ func _on_dash_hitbox_body_entered(body: Node) -> void:
 		return
 	if not body.is_in_group("players"):
 		return
+	if body.has_method("is_invulnerable") or "is_invulnerable" in body: 
+		if body.is_invulnerable:  
+			return 
 	if body.has_method("apply_stun"):
 		body.apply_stun(dash_direction)
 	apply_hitstop(hitstop_duration)
 	if body.has_method("apply_hitstop"):
 		body.apply_hitstop(hitstop_duration)
-
 
 func apply_stun(from_direction: Vector2) -> void:
 	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
@@ -397,3 +424,21 @@ func _check_landing() -> void:
 	if on_floor_now and not _was_on_floor:
 		SfxManager.play(land_sound,-20.0,0.2)
 	_was_on_floor = on_floor_now
+
+func respawn(invuln_duration: float) -> void:
+	_death_animation_id += 1
+	is_dead = false
+	velocity = Vector2.ZERO
+	is_stunned = false
+	is_frozen = false
+	is_dashing = false  
+	dash_time_left = 0.0  
+	dash_hitbox.monitoring = false  
+	dash_afterimage.stop()  
+	animated_sprite.speed_scale = 1.0
+	animated_sprite.modulate.a = 1.0
+	visible = true
+	animation_name = StringName("idle_right" if facing_right else "idle_left")
+	is_invulnerable = true
+	_invuln_time_left = invuln_duration
+	_invuln_flash_timer = 0.0

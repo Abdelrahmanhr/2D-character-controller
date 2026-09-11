@@ -5,8 +5,12 @@ signal player_finished_round
 
 @export var bomb_time: float = 40.0
 @export var device_id: int = 0  
+@export var respawn_delay: float = 2.0  
 @export var bonus_sounds: Array[AudioStream] = [] 
 @export var bonus_pitch_variance: float = 0.15  
+@export var max_lives: int = 5  
+@export var respawn_invulnerability_duration: float = 1.5 
+var _lives_remaining: int = 5 
 @export var input_sound: AudioStream
 @export var penalty_sound: AudioStream  
 @export var minigame_complete_sound: AudioStream
@@ -32,6 +36,7 @@ var time_left: float:
 func _ready() -> void:
 	_player = get_parent()
 	_time_left = bomb_time
+	_lives_remaining = max_lives  
 	MinigameDirector.register_player(self)
 
 func _exit_tree() -> void:
@@ -246,3 +251,25 @@ func _submit_stick_direction(direction: String) -> void:  # NEW
 	if handled:
 		SfxManager.play(input_sound, -13.0, 0.1)
 	_try_replicate_input(false, button)
+
+
+func player_died() -> void: 
+	if _expired:
+		return
+	_lives_remaining -= 1
+	if _lives_remaining <= 0:
+		eliminate_player()
+	else:
+		_respawn()
+
+func _respawn() -> void:
+	_time_left = bomb_time
+	stop_minigame()
+	MinigameDirector.schedule_next_round(self)
+	await get_tree().create_timer(respawn_delay).timeout  
+	if _expired:  
+		return  
+	var scene := get_tree().current_scene
+	if scene.has_method("respawn_player"):
+		scene.respawn_player(_player)
+	_player.respawn(respawn_invulnerability_duration)

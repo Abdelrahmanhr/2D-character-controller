@@ -180,3 +180,7 @@ func set_expected_player_count(count: int) -> void:
 func force_start() -> void:
 	if not _counting_down and not _match_finished:
 		_begin_countdown()
+
+func schedule_next_round(bomb_controller: BombController) -> void:  
+	if _cooldowns.has(bomb_controller):
+		_cooldowns[bomb_controller] = spawn_cooldown
