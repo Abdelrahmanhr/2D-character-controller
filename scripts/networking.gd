@@ -9,12 +9,17 @@ signal disconnected(message: String)
 signal join_pending()
 signal arena_spawn_requested(slots: Dictionary)
 signal match_begin(expected_count: int)
+signal bombs_start(start_time_ms: int)
 
 const LOBBY_TYPE := Steam.LobbyType.LOBBY_TYPE_FRIENDS_ONLY
 const MAX_MEMBERS := 4
 const DEFAULT_ARENA_SCENE := "res://scenes/power_station.tscn"
 const DEFAULT_ARENA_NAME := "Power Station"
 const ARENA_READY_TIMEOUT := 8.0
+const CLOCK_SAMPLE_COUNT := 5
+const CLOCK_PING_INTERVAL := 5.0
+const CLOCK_WARMUP_INTERVAL := 0.25
+const BOMB_START_LEAD_MS := 250
 
 var peer: SteamMultiplayerPeer
 var selected_arena_path: String = DEFAULT_ARENA_SCENE
@@ -28,6 +33,11 @@ var _expected_acks: Array[int] = []
 var _awaiting_acks: bool = false
 var _ack_timeout_left: float = 0.0
 var _assigned_slots: Dictionary = {}
+
+var _clock_offset: int = 0
+var _clock_samples: Array[int] = []
+var _last_rtt: int = 0
+var _ping_timer: float = 0.0
 
 
 func _ready() -> void:
@@ -95,6 +105,7 @@ func leave_lobby() -> void:
 	_ready_acks.clear()
 	_expected_acks.clear()
 	_assigned_slots.clear()
+	_reset_clock()
 	if multiplayer.multiplayer_peer != null and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer):
 		multiplayer.multiplayer_peer.close()
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
@@ -161,6 +172,8 @@ func on_join_requested(lobby_id: int, _steam_id: int) -> void:
 
 func _on_connected_to_server() -> void:
 	NetDebug.log_event("connected to server as %d" % multiplayer.get_unique_id())
+	_reset_clock()
+	_send_ping()
 	lobby_ready.emit(false)
 	client_joined.emit()
 	peers_changed.emit(multiplayer.get_peers().size())
@@ -199,6 +212,55 @@ func _receive_arena(path: String, display_name: String) -> void:
 	selected_arena_path = path
 	selected_arena_name = display_name
 	arena_updated.emit(display_name)
+
+
+func get_sync_time() -> int:
+	return Time.get_ticks_msec() + _clock_offset
+
+
+func get_clock_offset() -> int:
+	return _clock_offset
+
+
+func get_last_rtt() -> int:
+	return _last_rtt
+
+
+func is_clock_ready() -> bool:
+	return multiplayer.is_server() or not _clock_samples.is_empty()
+
+
+func _reset_clock() -> void:
+	_clock_offset = 0
+	_clock_samples.clear()
+	_last_rtt = 0
+	_ping_timer = 0.0
+
+
+func _send_ping() -> void:
+	if not is_connected_online() or multiplayer.is_server():
+		return
+	_ping.rpc_id(1, Time.get_ticks_msec())
+
+
+@rpc("any_peer", "reliable")
+func _ping(client_ms: int) -> void:
+	if not multiplayer.is_server():
+		return
+	_pong.rpc_id(multiplayer.get_remote_sender_id(), client_ms, Time.get_ticks_msec())
+
+
+@rpc("authority", "reliable")
+func _pong(client_ms: int, host_ms: int) -> void:
+	var now := Time.get_ticks_msec()
+	_last_rtt = now - client_ms
+	var sample: int = host_ms - (client_ms + _last_rtt / 2)
+	_clock_samples.append(sample)
+	if _clock_samples.size() > CLOCK_SAMPLE_COUNT:
+		_clock_samples.remove_at(0)
+	var sorted := _clock_samples.duplicate()
+	sorted.sort()
+	_clock_offset = sorted[sorted.size() / 2]
 
 
 func is_connected_online() -> bool:
@@ -284,6 +346,58 @@ func _dispatch_spawns() -> void:
 	_begin_match.rpc(slots.size())
 
 
+func broadcast_bomb_start() -> void:
+	if not multiplayer.is_server():
+		return
+	var start_time_ms: int = get_sync_time() + BOMB_START_LEAD_MS
+	NetDebug.log_event("bomb start at host t=%d" % start_time_ms)
+	_start_bombs.rpc(start_time_ms)
+
+
+@rpc("authority", "call_local", "reliable")
+func _start_bombs(start_time_ms: int) -> void:
+	bombs_start.emit(start_time_ms)
+
+
+func report_time_delta(peer_id: int, seconds: float) -> void:
+	_request_time_delta.rpc_id(1, peer_id, seconds)
+
+
+@rpc("any_peer", "reliable")
+func _request_time_delta(peer_id: int, seconds: float) -> void:
+	if not multiplayer.is_server():
+		return
+	if multiplayer.get_remote_sender_id() != peer_id:
+		return
+	apply_time_delta(peer_id, seconds)
+
+
+func apply_time_delta(peer_id: int, seconds: float) -> void:
+	if not multiplayer.is_server():
+		return
+	var bomb := _find_bomb(peer_id)
+	if bomb == null:
+		return
+	var effective: float = bomb.clamp_time_delta(seconds)
+	if is_equal_approx(effective, 0.0):
+		return
+	_commit_time_delta.rpc(peer_id, effective)
+
+
+@rpc("authority", "call_local", "reliable")
+func _commit_time_delta(peer_id: int, seconds: float) -> void:
+	var bomb := _find_bomb(peer_id)
+	if bomb:
+		bomb.commit_time_delta(seconds)
+
+
+func _find_bomb(peer_id: int) -> BombController:
+	for node in get_tree().get_nodes_in_group("players"):
+		if node.name.to_int() == peer_id:
+			return node.get_node_or_null("BombController") as BombController
+	return null
+
+
 @rpc("authority", "call_local", "reliable")
 func _begin_match(expected_count: int) -> void:
 	NetDebug.log_event("match begin, expected %d" % expected_count)
@@ -292,6 +406,11 @@ func _begin_match(expected_count: int) -> void:
 
 
 func _process(delta: float) -> void:
+	if is_connected_online() and not multiplayer.is_server():
+		_ping_timer -= delta
+		if _ping_timer <= 0.0:
+			_ping_timer = CLOCK_WARMUP_INTERVAL if _clock_samples.size() < CLOCK_SAMPLE_COUNT else CLOCK_PING_INTERVAL
+			_send_ping()
 	if not _awaiting_acks:
 		return
 	_ack_timeout_left -= delta

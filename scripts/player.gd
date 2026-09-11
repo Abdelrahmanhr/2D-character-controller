@@ -244,14 +244,14 @@ func _handle_input(delta: float) -> void:
 		jump_held = Input.is_physical_key_pressed(keyboard_jump)
 		dash_held = Input.is_physical_key_pressed(keyboard_dash)
 	else:  
-		move_x = Input.get_joy_axis(device_id, JOY_AXIS_LEFT_X)
-		move_y = Input.get_joy_axis(device_id, JOY_AXIS_LEFT_Y)
+		move_x = PadState.get_axis(device_id, JOY_AXIS_LEFT_X)
+		move_y = PadState.get_axis(device_id, JOY_AXIS_LEFT_Y)
 		if abs(move_x) < STICK_DEADZONE:  
 			move_x = 0.0  
 		if abs(move_y) < STICK_DEADZONE:
 			move_y = 0.0
-		jump_held = Input.is_joy_button_pressed(device_id, JOY_BUTTON_A)
-		dash_held = Input.is_joy_button_pressed(device_id, JOY_BUTTON_X)
+		jump_held = PadState.is_pressed(device_id, JOY_BUTTON_A)
+		dash_held = PadState.is_pressed(device_id, JOY_BUTTON_X)
 	
 	direction = move_x
 	_last_move_input = Vector2(move_x, move_y)

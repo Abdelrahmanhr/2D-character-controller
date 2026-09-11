@@ -20,21 +20,27 @@ var _cooldowns: Dictionary = {}
 var _alive_peer_ids: Dictionary = {}
 var _total_players: int = 0
 var _match_finished := false
-var _start_grace_left: float = 0.0
-
-const START_GRACE := 4.0
+var _pending_start_ms: int = 0
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	Networking.match_begin.connect(_on_match_begin)
+	Networking.bombs_start.connect(_on_bombs_start)
 
 
 func _on_match_begin(expected_count: int) -> void:
 	set_expected_player_count(expected_count)
 	_match_finished = false
-	_start_grace_left = START_GRACE
-	_begin_countdown()
+	_pending_start_ms = 0
+	if multiplayer.is_server():
+		_begin_countdown()
+
+
+func _on_bombs_start(start_time_ms: int) -> void:
+	_counting_down = false
+	_countdown_left = 0.0
+	_pending_start_ms = start_time_ms
 
 
 func get_registered_count() -> int:
@@ -74,7 +80,7 @@ func reset_match() -> void:
 	_countdown_left = 0.0
 	_counting_down = false
 	_match_finished = false
-	_start_grace_left = 0.0
+	_pending_start_ms = 0
 
 func register_player(bomb_controller: BombController) -> void:
 	if _bomb_controllers.has(bomb_controller):
@@ -181,6 +187,14 @@ func _finish_match(winner_peer_id: int) -> void:
 func _process(delta: float) -> void:
 	if _match_finished:
 		return
+
+	if _pending_start_ms != 0:
+		if Networking.get_sync_time() >= _pending_start_ms:
+			_pending_start_ms = 0
+			match_started.emit()
+			_start_rounds()
+		return
+
 	if _counting_down:
 		var prev_second := ceili(_countdown_left)
 		_countdown_left -= delta
@@ -188,13 +202,12 @@ func _process(delta: float) -> void:
 		if new_second != prev_second and new_second >= 0:
 			countdown_tick.emit(new_second)
 		if _countdown_left <= 0.0:
-			if _bomb_controllers.size() < expected_player_count and _start_grace_left > 0.0:
-				_start_grace_left -= delta
-				return
 			_counting_down = false
-			_start_grace_left = 0.0
-			match_started.emit()
-			_start_rounds()
+			if _is_offline():
+				match_started.emit()
+				_start_rounds()
+			else:
+				Networking.broadcast_bomb_start()
 		return
 
 	for bomb_controller in _cooldowns.keys():
@@ -214,5 +227,7 @@ func set_expected_player_count(count: int) -> void:
 	expected_player_count = maxi(count, 1)
 
 func force_start() -> void:
+	if not _is_offline() and not multiplayer.is_server():
+		return
 	if not _counting_down and not _match_finished:
 		_begin_countdown()

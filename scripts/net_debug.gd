@@ -13,6 +13,15 @@ var _label: Label
 var _panel: PanelContainer
 var _visible_overlay: bool = false
 
+var _pad_label: Label
+var _pad_panel: PanelContainer
+var _pad_overlay: bool = false
+var _pad_events: Array[String] = []
+
+const MAX_PAD_EVENTS := 10
+const WATCH_BUTTONS: Array[int] = [JOY_BUTTON_A, JOY_BUTTON_B, JOY_BUTTON_X, JOY_BUTTON_Y, JOY_BUTTON_START]
+const BUTTON_NAMES: Array[String] = ["A", "B", "X", "Y", "Start"]
+
 
 func _ready() -> void:
 	layer = 200
@@ -20,6 +29,7 @@ func _ready() -> void:
 	ready_delay = _read_delay_arg()
 	allow_solo_start = OS.has_feature("editor") or OS.get_cmdline_args().has("--solo-start")
 	_build_overlay()
+	_build_pad_overlay()
 	if ready_delay > 0.0:
 		_visible_overlay = true
 		_panel.visible = true
@@ -50,6 +60,78 @@ func _build_overlay() -> void:
 	add_child(_panel)
 
 
+func _build_pad_overlay() -> void:
+	_pad_panel = PanelContainer.new()
+	_pad_panel.position = Vector2(12, 12)
+	_pad_panel.visible = false
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0, 0, 0, 0.78)
+	style.border_color = Color(1, 0.8, 0.2, 0.7)
+	style.set_border_width_all(1)
+	style.set_content_margin_all(8)
+	_pad_panel.add_theme_stylebox_override("panel", style)
+	_pad_label = Label.new()
+	_pad_label.add_theme_font_size_override("font_size", 12)
+	_pad_label.add_theme_color_override("font_color", Color(1, 0.95, 0.8, 1))
+	_pad_panel.add_child(_pad_label)
+	add_child(_pad_panel)
+
+
+func _input(event: InputEvent) -> void:
+	if not _pad_overlay:
+		return
+	if event is InputEventJoypadButton:
+		_log_pad("dev %d  button %d  %s" % [event.device, event.button_index, "down" if event.pressed else "up"])
+	elif event is InputEventJoypadMotion:
+		if absf(event.axis_value) > 0.35:
+			_log_pad("dev %d  axis %d  %+.2f" % [event.device, event.axis, event.axis_value])
+
+
+func _log_pad(text: String) -> void:
+	_pad_events.append(text)
+	if _pad_events.size() > MAX_PAD_EVENTS:
+		_pad_events.remove_at(0)
+
+
+func _compose_pad_text() -> String:
+	var lines: Array[String] = []
+	lines.append("CONTROLLER DEBUG   F2 hide")
+	lines.append("joined devices: %s" % str(LocalPlayers.joined_devices))
+	var pads := Input.get_connected_joypads()
+	if pads.is_empty():
+		lines.append("no joypads connected")
+	for device in pads:
+		lines.append("")
+		lines.append("[%d] %s" % [device, Input.get_joy_name(device)])
+		lines.append("    guid %s" % Input.get_joy_guid(device))
+		lines.append("    info %s" % str(Input.get_joy_info(device)))
+		lines.append("    LX/LY polled %+.2f %+.2f   event %+.2f %+.2f" % [
+			Input.get_joy_axis(device, JOY_AXIS_LEFT_X),
+			Input.get_joy_axis(device, JOY_AXIS_LEFT_Y),
+			PadState.get_axis(device, JOY_AXIS_LEFT_X),
+			PadState.get_axis(device, JOY_AXIS_LEFT_Y),
+		])
+		lines.append("    RX/RY polled %+.2f %+.2f   event %+.2f %+.2f" % [
+			Input.get_joy_axis(device, JOY_AXIS_RIGHT_X),
+			Input.get_joy_axis(device, JOY_AXIS_RIGHT_Y),
+			PadState.get_axis(device, JOY_AXIS_RIGHT_X),
+			PadState.get_axis(device, JOY_AXIS_RIGHT_Y),
+		])
+		var polled: Array[String] = []
+		var evented: Array[String] = []
+		for i in WATCH_BUTTONS.size():
+			if Input.is_joy_button_pressed(device, WATCH_BUTTONS[i]):
+				polled.append(BUTTON_NAMES[i])
+			if PadState.is_pressed(device, WATCH_BUTTONS[i]):
+				evented.append(BUTTON_NAMES[i])
+		lines.append("    buttons polled %s   event %s" % [str(polled), str(evented)])
+	lines.append("")
+	lines.append("--- raw events ---")
+	for line in _pad_events:
+		lines.append(line)
+	return "\n".join(lines)
+
+
 func get_ready_delay() -> float:
 	return ready_delay
 
@@ -73,7 +155,11 @@ func log_event(text: String) -> void:
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not (event is InputEventKey and event.pressed and not event.echo):
 		return
-	if event.physical_keycode == KEY_F3:
+	if event.physical_keycode == KEY_F2:
+		_pad_overlay = not _pad_overlay
+		_pad_panel.visible = _pad_overlay
+		get_viewport().set_input_as_handled()
+	elif event.physical_keycode == KEY_F3:
 		_visible_overlay = not _visible_overlay
 		_panel.visible = _visible_overlay
 		get_viewport().set_input_as_handled()
@@ -85,6 +171,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 
 func _process(_delta: float) -> void:
+	if _pad_overlay:
+		_pad_label.text = _compose_pad_text()
+		_panel.position = Vector2(12, 12 + _pad_panel.size.y + 8)
+	else:
+		_panel.position = Vector2(12, 12)
 	if not _visible_overlay:
 		return
 	_label.text = _compose_text()
@@ -102,6 +193,12 @@ func _compose_text() -> String:
 		lines.append("peers: %s" % str(mp.get_peers()))
 		lines.append("lobby: %d" % Networking.current_lobby_id)
 		lines.append("arena acks: %d/%d" % [ack_count, ack_target])
+		lines.append("clock offset: %d ms   rtt: %d ms   sync: %d" % [
+			Networking.get_clock_offset(),
+			Networking.get_last_rtt(),
+			Networking.get_sync_time(),
+		])
+		lines.append("bomb starts: %s" % str(_bomb_starts()))
 	lines.append("arena: %s" % Networking.selected_arena_name)
 	lines.append("players in tree: %s" % str(_player_names()))
 	lines.append("director: registered %d / expected %d  alive %d" % [
@@ -117,6 +214,16 @@ func _compose_text() -> String:
 	for line in _events:
 		lines.append(line)
 	return "\n".join(lines)
+
+
+func _bomb_starts() -> Array[String]:
+	var out: Array[String] = []
+	for node in get_tree().get_nodes_in_group("players"):
+		var bomb := node.get_node_or_null("BombController")
+		if bomb:
+			out.append("%s:t=%d %.2fs" % [node.name, bomb._start_time_ms, bomb.time_left])
+	out.sort()
+	return out
 
 
 func _player_names() -> Array[String]:

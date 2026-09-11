@@ -261,13 +261,16 @@ region = Rect2(1918.1863, 210.03284, 259.31567, 41.097687)
 texture = SubResource("AtlasTexture_4kmta")
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_bomb"]
-properties/0/path = NodePath(".:_time_left")
+properties/0/path = NodePath(".:_start_time_ms")
 properties/0/spawn = true
-properties/0/replication_mode = 1
+properties/0/replication_mode = 0
+properties/1/path = NodePath(".:_adjust_total")
+properties/1/spawn = true
+properties/1/replication_mode = 0
 
 [node name="Player" type="CharacterBody2D" unique_id=1169704896]
 script = ExtResource("1_g2els")
-jump_height = 130.0
+jump_height = 150.0
 dash_speed = 500.0
 dash_cooldown = 1.0
 dash_end_momentum_retention = 0.5

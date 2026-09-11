@@ -30,7 +30,8 @@ func _toggle_pause() -> void:
 	else:
 		dim.show()
 		panel.show()
-		get_tree().paused = true
+		if not Networking.is_connected_online():
+			get_tree().paused = true
 
 func _resume() -> void:
 	options_panel.hide()

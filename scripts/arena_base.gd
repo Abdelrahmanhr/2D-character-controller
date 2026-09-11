@@ -194,6 +194,7 @@ func _spawn_dummy_players() -> void:
 		dummy.set_multiplayer_authority(multiplayer.get_unique_id())
 		var bomb_controller: Node = dummy.get_node("BombController")
 		bomb_controller.device_id = DUMMY_DEVICE_IDS[i]
+		bomb_controller.detach_from_match()
 		bomb_controller.stop_timer()
 		MinigameDirector.unregister_player(bomb_controller)
 		_dummy_players.append(dummy)
@@ -234,10 +235,8 @@ func _respawn_self() -> void:
 	_self_player.dash_time_left = 0.0
 	_self_player.is_frozen = false
 	_self_player.freeze_time_left = 0.0
-	var bomb_controller: Node = _self_player.get_node("BombController")
-	bomb_controller._expired = false
-	bomb_controller._time_left = bomb_controller.bomb_time
-	bomb_controller.set_process(true)
+	var bomb_controller: BombController = _self_player.get_node("BombController")
+	bomb_controller.reset_for_respawn()
 	MinigameDirector.reset_match()
 	MinigameDirector.register_player(bomb_controller)
 	MinigameDirector.force_start()
