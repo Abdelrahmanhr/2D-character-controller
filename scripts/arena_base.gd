@@ -82,7 +82,7 @@ func _is_networked() -> bool:
 
 func _on_death_zone_body_entered(body: Node) -> void:
 	if body is CharacterBody2D and (not _is_networked() or body.is_multiplayer_authority()) and not body.is_dead:
-		body.get_node("BombController").eliminate_player()
+		body.get_node("BombController").player_died() 
 
 
 func show_lose_popup() -> void:
@@ -240,3 +240,8 @@ func _respawn_self() -> void:
 	MinigameDirector.reset_match()
 	MinigameDirector.register_player(bomb_controller)
 	MinigameDirector.force_start()
+
+
+func respawn_player(player: CharacterBody2D) -> void:  
+	var slot_index: int = player.get_node("BombController").get_slot_index()
+	player.global_position = spawn_points[slot_index % spawn_points.size()].global_position

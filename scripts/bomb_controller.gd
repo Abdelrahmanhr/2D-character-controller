@@ -42,6 +42,7 @@ func _ready() -> void:
 	_player = get_parent()
 	_time_left = bomb_time
 	_frozen_value = bomb_time
+	_lives_remaining = max_lives
 	if _is_networked():
 		Networking.bombs_start.connect(start_at)
 	MinigameDirector.register_player(self)
@@ -97,7 +98,7 @@ func _process(delta: float) -> void:
 	elif not _expired:
 		_time_left -= delta
 		if _time_left <= 0.0:
-			eliminate_player()
+			player_died()  
 	if _minigame_layer:
 		_minigame_layer.global_position = _player.global_position + Vector2(-100, -150)
 	_poll_right_stick()
@@ -128,7 +129,7 @@ func _explode() -> void:
 		return
 	_running = false
 	_frozen_value = 0.0
-	eliminate_player()
+	_do_player_died()  
 
 
 func detach_from_match() -> void:
@@ -331,6 +332,15 @@ func _submit_stick_direction(direction: String) -> void:
 func player_died() -> void: 
 	if _expired:
 		return
+	if not _is_networked():
+		_do_player_died()
+	else:
+		_do_player_died.rpc()
+
+@rpc("any_peer", "call_local", "reliable")  # NEW
+func _do_player_died() -> void:  # NEW
+	if _expired:
+		return
 	_lives_remaining -= 1
 	if _lives_remaining <= 0:
 		eliminate_player()
@@ -338,12 +348,20 @@ func player_died() -> void:
 		_respawn()
 
 func _respawn() -> void:
-	_time_left = bomb_time
 	stop_minigame()
 	MinigameDirector.schedule_next_round(self)
-	await get_tree().create_timer(respawn_delay).timeout  
-	if _expired:  
-		return  
+	await get_tree().create_timer(respawn_delay).timeout
+	if _expired:
+		return
+	if _is_networked():  
+		var elapsed: float = float(Networking.get_sync_time() - _start_time_ms) / 1000.0  
+		if elapsed < 0.0:  
+			elapsed = 0.0  
+		_adjust_total = elapsed  
+		_running = true  
+		_frozen_value = bomb_time  
+	else:  
+		_time_left = bomb_time  
 	var scene := get_tree().current_scene
 	if scene.has_method("respawn_player"):
 		scene.respawn_player(_player)
