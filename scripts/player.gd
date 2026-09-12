@@ -25,6 +25,8 @@ extends CharacterBody2D
 @export var dash_conflict_knockback_multiplier: float = 2.0
 @export var dash_conflict_flash_color: Color = Color(1.0, 0.15, 0.15, 1.0) 
 @export var dash_conflict_flash_duration: float = 0.25 
+@export var explode_sound: AudioStream  
+@export var explode_pitch_variance: float = 0.1  
 
 @export var device_id: int = -2
 @export var keyboard_left: Key = KEY_A  
@@ -211,29 +213,34 @@ func _update_identity() -> void:
 	glow.modulate = Color(color.r, color.g, color.b, 0.7)
 	animated_sprite.modulate = Color.WHITE.lerp(color, 0.28)
 
-func play_death_animation() -> void:
+func play_death_animation(cause: String = "fall") -> void:
 	if is_dead:
 		return
 	is_dead = true
-	_death_animation_id += 1  
-	var my_id := _death_animation_id  
+	_death_animation_id += 1
+	var my_id := _death_animation_id
 	velocity = Vector2.ZERO
-	var facing := "right" if facing_right else "left"
-	animation_name = StringName("die_" + facing)
+	var anim_name: StringName
+	if cause == "explode":
+		anim_name = &"explode"
+		SfxManager.play(explode_sound, 0.0, explode_pitch_variance)  
+	else:
+		var facing := "right" if facing_right else "left"
+		anim_name = StringName("die_" + facing)
+	animation_name = anim_name
 	animated_sprite.sprite_frames.set_animation_loop(animation_name, false)
 	animated_sprite.play(animation_name)
 	await animated_sprite.animation_finished
-	if my_id != _death_animation_id:  
-		return  
+	if my_id != _death_animation_id:
+		return
 	animated_sprite.stop()
 	animated_sprite.frame = animated_sprite.sprite_frames.get_frame_count(animation_name) - 1
 	var elapsed := 0.0
 	while not is_on_floor() and elapsed < 3.0:
 		await get_tree().physics_frame
 		elapsed += get_physics_process_delta_time()
-		if my_id != _death_animation_id:  
+		if my_id != _death_animation_id:
 			return
-
 
 
 func _update_animation() -> void:

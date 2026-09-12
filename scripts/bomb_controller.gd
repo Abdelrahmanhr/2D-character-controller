@@ -98,7 +98,7 @@ func _process(delta: float) -> void:
 	elif not _expired:
 		_time_left -= delta
 		if _time_left <= 0.0:
-			player_died()  
+			player_died("explode")  
 	if _minigame_layer:
 		_minigame_layer.global_position = _player.global_position + Vector2(-100, -150)
 	_poll_right_stick()
@@ -186,7 +186,7 @@ func _explode() -> void:
 		return
 	_running = false
 	_frozen_value = 0.0
-	_do_player_died()  
+	_do_player_died("explode")  
 
 
 func detach_from_match() -> void:
@@ -209,20 +209,7 @@ func stop_timer() -> void:
 	_running = false
 	set_process(false)
 
-func eliminate_player() -> void:
-	if _expired:
-		return
-	_expired = true
-	_running = false
-	_frozen_value = 0.0
-	set_process(false)
-	stop_minigame()
-	await _player.play_death_animation()
-	MinigameDirector.player_eliminated(_player.name.to_int())
-	if _has_authority():
-		var scene := get_tree().current_scene
-		if scene.has_method("show_lose_popup"):
-			scene.show_lose_popup()
+
 
 const PLAYER_COLORS: Array[Color] = [
 	Color(1, 0.18, 0.22, 1),
@@ -338,31 +325,42 @@ func _play_bonus_sound() -> void:
 	SfxManager.play(sound, -10.0, bonus_pitch_variance)
 
 
-func player_died() -> void:
+func player_died(cause: String = "fall") -> void:  # CHANGED: added cause param
 	if _expired:
 		return
-	print("[%s] player_died() called | lives before: %d" % [_player.name, _lives_remaining])  # NEW
 	if not _is_networked():
-		_do_player_died()
+		_do_player_died(cause)
 	else:
-		_do_player_died.rpc()
+		_do_player_died.rpc(cause)
 
 @rpc("any_peer", "call_local", "reliable")
-func _do_player_died() -> void:
+func _do_player_died(cause: String = "fall") -> void:  # CHANGED: added cause param
 	if _expired:
 		return
 	_lives_remaining -= 1
-	print("[%s] _do_player_died() ran | lives after: %d | sender: %s | is_server: %s" % [_player.name, _lives_remaining, multiplayer.get_remote_sender_id(), multiplayer.is_server()])  # NEW
 	if _lives_remaining <= 0:
-		print("[%s] going to eliminate_player()" % _player.name)  # NEW
-		eliminate_player()
+		eliminate_player(cause)  # CHANGED: pass cause through
 	else:
-		print("[%s] going to _respawn()" % _player.name)  # NEW
-		_respawn()
+		_respawn(cause)  # CHANGED: pass cause through
 
-func _respawn() -> void:
+func eliminate_player(cause: String = "fall") -> void:  # CHANGED: added cause param
+	if _expired:
+		return
+	_expired = true
+	_running = false
+	_frozen_value = 0.0
 	set_process(false)
-	_player.play_death_animation()  
+	stop_minigame()
+	await _player.play_death_animation(cause)  # CHANGED: pass cause through
+	MinigameDirector.player_eliminated(_player.name.to_int())
+	if _has_authority():
+		var scene := get_tree().current_scene
+		if scene.has_method("show_lose_popup"):
+			scene.show_lose_popup()
+
+func _respawn(cause: String = "fall") -> void:  # CHANGED: added cause param
+	set_process(false)
+	_player.play_death_animation(cause)  # CHANGED: pass cause through
 	stop_minigame()
 	MinigameDirector.schedule_next_round(self)
 	await get_tree().create_timer(respawn_delay).timeout
@@ -380,6 +378,8 @@ func _respawn() -> void:
 	if scene.has_method("respawn_player"):
 		scene.respawn_player(_player)
 	_player.respawn(respawn_invulnerability_duration)
+	
+
 
 func get_lives_remaining() -> int:  
 	return _lives_remaining
