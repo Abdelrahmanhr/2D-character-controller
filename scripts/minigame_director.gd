@@ -155,6 +155,8 @@ func _report_elimination(peer_id: int) -> void:
 		_resolve_elimination(peer_id)
 
 func player_disconnected(peer_id: int) -> void:
+	if Networking.is_leaving:
+		return
 	if multiplayer.is_server():
 		_resolve_elimination(peer_id)
 
@@ -231,3 +233,7 @@ func force_start() -> void:
 		return
 	if not _counting_down and not _match_finished:
 		_begin_countdown()
+
+func schedule_next_round(bomb_controller: BombController) -> void:  
+	if _cooldowns.has(bomb_controller):
+		_cooldowns[bomb_controller] = spawn_cooldown

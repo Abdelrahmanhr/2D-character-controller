@@ -28,6 +28,7 @@ func _process(delta: float) -> void:
 		if is_instance_valid(p) and not p.is_dead:
 			live_positions.append(p.global_position)
 	if live_positions.is_empty():
+		_apply_shake(delta, zoom.x)  # NEW: keep shaking while every player is mid-death, instead of freezing it until respawn
 		return
 
 	var min_pos: Vector2 = live_positions[0]
@@ -42,7 +43,9 @@ func _process(delta: float) -> void:
 	box_size.y = maxf(box_size.y, 1.0)
 
 	var viewport_size: Vector2 = get_viewport_rect().size
-	var fit_zoom: Vector2 = viewport_size / box_size
+	var available_size: Vector2 = viewport_size - Vector2(0.0, top_ui_margin)  # NEW: usable screen space, excluding the UI band
+	available_size.y = maxf(available_size.y, 1.0)  # NEW: safety floor
+	var fit_zoom: Vector2 = available_size / box_size  # CHANGED: was "viewport_size / box_size"
 	var target_zoom_scalar: float = clampf(minf(fit_zoom.x, fit_zoom.y), min_zoom, max_zoom)
 	var target_zoom := Vector2(target_zoom_scalar, target_zoom_scalar)
 

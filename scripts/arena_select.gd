@@ -5,6 +5,7 @@ const PREVIEW_EXTENSIONS: Array[String] = [".png", ".jpg", ".jpeg", ".webp"]
 const ROW_HEIGHT := 96
 
 const ARENAS := [
+	{"id": "power_station", "name": "Power Station", "scene_path": "res://scenes/power_station.tscn", "preview": "power_station"},
 	{"id": "power_station", "name": "Power Station", "scene_path": "res://scenes/power_station2.tscn", "preview": "power_station"},
 	{"id": "residential_area", "name": "Residential Area", "scene_path": "res://scenes/residential_area.tscn", "preview": "residential_area"},
 ]

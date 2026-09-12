@@ -6,15 +6,9 @@ const PLAYER = preload("uid://dg4t5o3xnmwxn")
 const LOSE_POPUP := preload("res://scenes/lose_popup.tscn")
 const END_MENU := preload("res://scenes/end_menu.tscn")
 
-const DUMMY_NAMES: Array[String] = ["901", "902", "903"]
-const DUMMY_DEVICE_IDS: Array[int] = [0, 1, 2]
-
 var players: Array[CharacterBody2D]
 var _spectate_overlay: CanvasLayer
 var _end_menu: CanvasLayer
-var _solo_test_mode := false
-var _self_player: CharacterBody2D
-var _dummy_players: Array[CharacterBody2D] = []
 
 @onready var multiplayer_spawner: MultiplayerSpawner = $MultiplayerSpawner
 @onready var match_result: Label = $MatchResult
@@ -48,20 +42,8 @@ func _ready() -> void:
 func _on_arena_spawn_requested(slots: Dictionary) -> void:
 	if not multiplayer.is_server():
 		return
-	var local_id := multiplayer.get_unique_id()
 	for peer_id in slots.keys():
-		var spawned := multiplayer_spawner.spawn({"peer": int(peer_id), "slot": int(slots[peer_id])})
-		if int(peer_id) == local_id:
-			_self_player = spawned as CharacterBody2D
-	if slots.size() <= 1:
-		_enter_solo_test_mode()
-
-
-func _enter_solo_test_mode() -> void:
-	_solo_test_mode = true
-	process_mode = Node.PROCESS_MODE_ALWAYS
-	_spawn_dummy_players()
-	MinigameDirector.match_finished.connect(_on_solo_match_finished)
+		multiplayer_spawner.spawn({"peer": int(peer_id), "slot": int(slots[peer_id])})
 
 
 func _on_disconnected(message: String) -> void:
@@ -84,7 +66,7 @@ func _on_death_zone_body_entered(body: Node) -> void:
 	if body is CharacterBody2D and not body.is_dead:
 		_play_death_zone_zap(body.global_position)
 	if body is CharacterBody2D and (not _is_networked() or body.is_multiplayer_authority()) and not body.is_dead:
-		body.get_node("BombController").eliminate_player()
+		body.get_node("BombController").player_died() 
 
 
 @export var death_zap_sound: AudioStream
@@ -192,68 +174,6 @@ func _spawn_local_players() -> void:
 		players.append(player)
 
 
-func _spawn_dummy_players() -> void:
-	var dummy_root := Node.new()
-	dummy_root.name = "DummyPlayers"
-	add_child(dummy_root)
-	for i in DUMMY_NAMES.size():
-		var dummy := PLAYER.instantiate() as CharacterBody2D
-		dummy.name = DUMMY_NAMES[i]
-		dummy.device_id = DUMMY_DEVICE_IDS[i]
-		dummy.position = spawn_points[(i + 1) % spawn_points.size()].position
-		for other in players:
-			dummy.add_collision_exception_with(other)
-			other.add_collision_exception_with(dummy)
-		for other in _dummy_players:
-			dummy.add_collision_exception_with(other)
-			other.add_collision_exception_with(dummy)
-		dummy_root.add_child(dummy)
-		dummy.set_multiplayer_authority(multiplayer.get_unique_id())
-		var bomb_controller: Node = dummy.get_node("BombController")
-		bomb_controller.device_id = DUMMY_DEVICE_IDS[i]
-		bomb_controller.detach_from_match()
-		bomb_controller.stop_timer()
-		MinigameDirector.unregister_player(bomb_controller)
-		_dummy_players.append(dummy)
-
-
-func _on_solo_match_finished(_winner_peer_id: int) -> void:
-	call_deferred("_solo_post_match_respawn")
-
-
-func _solo_post_match_respawn() -> void:
-	get_tree().paused = false
-	if _end_menu:
-		_end_menu.queue_free()
-		_end_menu = null
-	_respawn_self()
-
-
-func _unhandled_key_input(event: InputEvent) -> void:
-	if not _solo_test_mode:
-		return
-	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_R:
-		get_tree().paused = false
-		if _end_menu:
-			_end_menu.queue_free()
-			_end_menu = null
-		_respawn_self()
-
-
-func _respawn_self() -> void:
-	if _self_player == null or not is_instance_valid(_self_player):
-		return
-	_self_player.velocity = Vector2.ZERO
-	_self_player.global_position = spawn_points[0].global_position
-	_self_player.is_dead = false
-	_self_player.is_stunned = false
-	_self_player.stun_time_left = 0.0
-	_self_player.is_dashing = false
-	_self_player.dash_time_left = 0.0
-	_self_player.is_frozen = false
-	_self_player.freeze_time_left = 0.0
-	var bomb_controller: BombController = _self_player.get_node("BombController")
-	bomb_controller.reset_for_respawn()
-	MinigameDirector.reset_match()
-	MinigameDirector.register_player(bomb_controller)
-	MinigameDirector.force_start()
+func respawn_player(player: CharacterBody2D) -> void:  
+	var slot_index: int = player.get_node("BombController").get_slot_index()
+	player.global_position = spawn_points[slot_index % spawn_points.size()].global_position

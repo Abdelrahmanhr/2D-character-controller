@@ -16,10 +16,10 @@ func _on_restart() -> void:
 	Networking.restart_game()
 
 func _on_main_menu() -> void:
-	get_tree().paused = false
-	MinigameDirector.reset_match()
 	Networking.leave_lobby()
+	get_tree().paused = false
 	SceneTransition.circle_to("res://scenes/main_menu.tscn")
 
 func _on_exit() -> void:
+	Networking.leave_lobby()
 	get_tree().quit()

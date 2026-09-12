@@ -5,8 +5,12 @@ signal player_finished_round
 
 @export var bomb_time: float = 40.0
 @export var device_id: int = 0  
+@export var respawn_delay: float = 2.0  
 @export var bonus_sounds: Array[AudioStream] = [] 
 @export var bonus_pitch_variance: float = 0.15  
+@export var max_lives: int = 5  
+@export var respawn_invulnerability_duration: float = 1.5 
+var _lives_remaining: int = 5 
 @export var input_sound: AudioStream
 @export var penalty_sound: AudioStream  
 @export var minigame_complete_sound: AudioStream
@@ -50,6 +54,7 @@ func _ready() -> void:
 	_player = get_parent()
 	_time_left = bomb_time
 	_frozen_value = bomb_time
+	_lives_remaining = max_lives
 	if _is_networked():
 		Networking.bombs_start.connect(start_at)
 	if tick_sound == null:
@@ -107,7 +112,7 @@ func _process(delta: float) -> void:
 	elif not _expired:
 		_time_left -= delta
 		if _time_left <= 0.0:
-			eliminate_player()
+			player_died("explode")  
 	if _minigame_layer:
 		_minigame_layer.global_position = _player.global_position + Vector2(-100, -150)
 	_update_tick(delta)
@@ -141,22 +146,79 @@ func _update_tick(delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if _active_minigame == null or not _has_authority() or _player.is_stunned:
 		return
-	if event is InputEventJoypadButton and event.device == device_id:
+	if event is InputEventJoypadButton and (_is_networked() or event.device == device_id):
 		var handled: bool = _active_minigame._handle_input(event)
-		get_viewport().set_input_as_handled()
-		if event.pressed:
-			if handled:
-				SfxManager.play(input_sound,-13.0,0.1)
-			_try_replicate_input(false, event.button_index)
-	elif event is InputEventKey and _player.device_id == LocalPlayers.KEYBOARD_DEVICE_ID:
+		if handled:
+			get_viewport().set_input_as_handled()
+			SfxManager.play(input_sound,-13.0,0.1)
+		_try_replicate_input(false, event.button_index)
+	elif event is InputEventKey and (_is_networked() or _player.device_id == LocalPlayers.KEYBOARD_DEVICE_ID):
 		var handled: bool = _active_minigame._handle_input(event)
-		get_viewport().set_input_as_handled()
 		if event.pressed and not event.echo:
 			if handled:
+				get_viewport().set_input_as_handled()
 				SfxManager.play(input_sound,-13.0,0.1)
 			var key: int = event.keycode if event.keycode != KEY_NONE else event.physical_keycode
 			_try_replicate_input(true, key)
 
+
+func _poll_right_stick() -> void:
+	if _active_minigame == null or not _has_authority() or _player.is_stunned:
+		return
+	
+	var poll_device: int = device_id
+	if _is_networked():
+		var pads := Input.get_connected_joypads()
+		if pads.is_empty():
+			_prev_stick_direction = ""
+			return
+		poll_device = pads[0]
+	elif device_id < 0:
+		_prev_stick_direction = ""
+		return
+	
+	var stick_x: float = PadState.get_axis(poll_device, JOY_AXIS_RIGHT_X)
+	var stick_y: float = PadState.get_axis(poll_device, JOY_AXIS_RIGHT_Y)
+	
+	var current_direction: String = ""
+	if abs(stick_x) > abs(stick_y):
+		if stick_x > STICK_THRESHOLD:
+			current_direction = "right"
+		elif stick_x < -STICK_THRESHOLD:
+			current_direction = "left"
+	else:
+		if stick_y > STICK_THRESHOLD:
+			current_direction = "down"
+		elif stick_y < -STICK_THRESHOLD:
+			current_direction = "up"
+	
+	if current_direction != "" and current_direction != _prev_stick_direction:
+		_submit_stick_direction(current_direction, poll_device)
+	
+	if current_direction == "":
+		_prev_stick_direction = ""
+	else:
+		_prev_stick_direction = current_direction
+
+
+func _submit_stick_direction(direction: String, source_device: int) -> void:
+	var button: JoyButton
+	match direction:
+		"up": button = JOY_BUTTON_DPAD_UP
+		"down": button = JOY_BUTTON_DPAD_DOWN
+		"left": button = JOY_BUTTON_DPAD_LEFT
+		"right": button = JOY_BUTTON_DPAD_RIGHT
+		_: return
+	
+	var synthetic_event := InputEventJoypadButton.new()
+	synthetic_event.device = source_device
+	synthetic_event.button_index = button
+	synthetic_event.pressed = true
+	
+	var handled: bool = _active_minigame._handle_input(synthetic_event)
+	if handled:
+		SfxManager.play(input_sound, -13.0, 0.1)
+	_try_replicate_input(false, button)
 @rpc("any_peer", "call_local", "reliable")
 func _explode() -> void:
 	var sender := multiplayer.get_remote_sender_id()
@@ -164,7 +226,7 @@ func _explode() -> void:
 		return
 	_running = false
 	_frozen_value = 0.0
-	eliminate_player()
+	_do_player_died("explode")  
 
 
 func detach_from_match() -> void:
@@ -187,20 +249,7 @@ func stop_timer() -> void:
 	_running = false
 	set_process(false)
 
-func eliminate_player() -> void:
-	if _expired:
-		return
-	_expired = true
-	_running = false
-	_frozen_value = 0.0
-	set_process(false)
-	stop_minigame()
-	await _player.play_death_animation()
-	MinigameDirector.player_eliminated(_player.name.to_int())
-	if _has_authority():
-		var scene := get_tree().current_scene
-		if scene.has_method("show_lose_popup"):
-			scene.show_lose_popup()
+
 
 const PLAYER_COLORS: Array[Color] = [
 	Color(1, 0.18, 0.22, 1),
@@ -315,50 +364,62 @@ func _play_bonus_sound() -> void:
 	var sound: AudioStream = bonus_sounds[randi() % bonus_sounds.size()]
 	SfxManager.play(sound, -10.0, bonus_pitch_variance)
 
-func _poll_right_stick() -> void:
-	if _active_minigame == null or not _has_authority() or _player.is_stunned or device_id < 0:
-		_prev_stick_direction = ""
+
+func player_died(cause: String = "fall") -> void:  # CHANGED: added cause param
+	if _expired:
 		return
-	
-	var stick_x: float = PadState.get_axis(device_id, JOY_AXIS_RIGHT_X)
-	var stick_y: float = PadState.get_axis(device_id, JOY_AXIS_RIGHT_Y)
-	
-	var current_direction: String = ""
-	if abs(stick_x) > abs(stick_y):
-		if stick_x > STICK_THRESHOLD:
-			current_direction = "right"
-		elif stick_x < -STICK_THRESHOLD:
-			current_direction = "left"
+	if not _is_networked():
+		_do_player_died(cause)
 	else:
-		if stick_y > STICK_THRESHOLD:
-			current_direction = "down"
-		elif stick_y < -STICK_THRESHOLD:
-			current_direction = "up"
-	
-	if current_direction != "" and current_direction != _prev_stick_direction:
-		_submit_stick_direction(current_direction)
-	
-	if current_direction == "":
-		_prev_stick_direction = ""
+		_do_player_died.rpc(cause)
+
+@rpc("any_peer", "call_local", "reliable")
+func _do_player_died(cause: String = "fall") -> void:  # CHANGED: added cause param
+	if _expired:
+		return
+	_lives_remaining -= 1
+	if _lives_remaining <= 0:
+		eliminate_player(cause)  # CHANGED: pass cause through
 	else:
-		_prev_stick_direction = current_direction
+		_respawn(cause)  # CHANGED: pass cause through
+
+func eliminate_player(cause: String = "fall") -> void:  # CHANGED: added cause param
+	if _expired:
+		return
+	_expired = true
+	_running = false
+	_frozen_value = 0.0
+	set_process(false)
+	stop_minigame()
+	await _player.play_death_animation(cause)  # CHANGED: pass cause through
+	MinigameDirector.player_eliminated(_player.name.to_int())
+	if _has_authority():
+		var scene := get_tree().current_scene
+		if scene.has_method("show_lose_popup"):
+			scene.show_lose_popup()
+
+func _respawn(cause: String = "fall") -> void:  # CHANGED: added cause param
+	set_process(false)
+	_player.play_death_animation(cause)  # CHANGED: pass cause through
+	stop_minigame()
+	MinigameDirector.schedule_next_round(self)
+	await get_tree().create_timer(respawn_delay).timeout
+	if _expired:
+		return
+	if _is_networked():
+		_start_time_ms = Networking.get_sync_time()
+		_adjust_total = 0.0
+		_running = true
+		_frozen_value = bomb_time
+	else:
+		_time_left = bomb_time
+	set_process(true)
+	var scene := get_tree().current_scene
+	if scene.has_method("respawn_player"):
+		scene.respawn_player(_player)
+	_player.respawn(respawn_invulnerability_duration)
+	
 
 
-func _submit_stick_direction(direction: String) -> void:
-	var button: JoyButton
-	match direction:
-		"up": button = JOY_BUTTON_DPAD_UP
-		"down": button = JOY_BUTTON_DPAD_DOWN
-		"left": button = JOY_BUTTON_DPAD_LEFT
-		"right": button = JOY_BUTTON_DPAD_RIGHT
-		_: return
-	
-	var synthetic_event := InputEventJoypadButton.new()
-	synthetic_event.device = device_id
-	synthetic_event.button_index = button
-	synthetic_event.pressed = true
-	
-	var handled: bool = _active_minigame._handle_input(synthetic_event)
-	if handled:
-		SfxManager.play(input_sound, -13.0, 0.1)
-	_try_replicate_input(false, button)
+func get_lives_remaining() -> int:  
+	return _lives_remaining

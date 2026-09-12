@@ -70,11 +70,13 @@ func _refresh_start_hint() -> void:
 	else:
 		start_hint_label.text = "Listening for input... (%d/%d minimum players)" % [count, min_players_to_start]
 
-func _try_start_match() -> void:
-	if LocalPlayers.joined_devices.size() < min_players_to_start:
-		return
-	SceneTransition.circle_to("res://scenes/power_station.tscn")
 
 func _on_back_pressed() -> void:  
 	LocalPlayers.reset()
 	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+	
+
+func _try_start_match() -> void:
+	if LocalPlayers.joined_devices.size() < min_players_to_start:
+		return
+	get_tree().change_scene_to_file(LocalPlayers.selected_arena_path) 

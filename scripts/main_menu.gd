@@ -1,6 +1,5 @@
 extends Control
 
-const EMPTY_LEVEL_SCENE := "res://scenes/power_station.tscn"
 const LOBBY_SCENE := "res://scenes/lobby.tscn"
 const ARENA_SELECT_SCENE := "res://scenes/arena_select.tscn"
 const LOCAL_LOBBY_SCENE := "res://scenes/local_lobby.tscn"
@@ -10,8 +9,8 @@ var _joining := false
 
 
 func _ready() -> void:
+	get_tree().paused = false
 	MusicManager.play(preload("res://resources/audio/MAINMENUSOUNDTRACK.ogg"), false, false)
-	$Menu/StartButton.pressed.connect(_on_start_pressed)
 	$Menu/MultiplayerButton.pressed.connect(_on_multiplayer_pressed)
 	$Menu/LocalMultiplayerButton.pressed.connect(_on_local_multiplayer_pressed)
 	$Menu/CreditsButton.pressed.connect(_on_credits_pressed)
@@ -39,18 +38,9 @@ func _on_client_joined() -> void:
 	get_tree().change_scene_to_file(LOBBY_SCENE)
 
 
-func _on_start_pressed() -> void:
-	SceneTransition.circle_to(EMPTY_LEVEL_SCENE)
 
 
-func _on_multiplayer_pressed() -> void:
-	if _joining:
-		return
-	get_tree().change_scene_to_file(ARENA_SELECT_SCENE)
 
-
-func _on_local_multiplayer_pressed() -> void:
-	get_tree().change_scene_to_file(LOCAL_LOBBY_SCENE)
 
 
 func _on_credits_pressed() -> void:
@@ -58,4 +48,15 @@ func _on_credits_pressed() -> void:
 
 
 func _on_exit_pressed() -> void:
+	Networking.leave_lobby()
 	get_tree().quit()
+
+func _on_local_multiplayer_pressed() -> void:
+	LocalPlayers.entering_arena_select_for_local = true  # NEW
+	get_tree().change_scene_to_file(ARENA_SELECT_SCENE)
+
+func _on_multiplayer_pressed() -> void:
+	if _joining:
+		return
+	LocalPlayers.entering_arena_select_for_local = false  # NEW
+	get_tree().change_scene_to_file(ARENA_SELECT_SCENE)

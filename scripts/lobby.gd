@@ -27,8 +27,12 @@ func _ready() -> void:
 	Networking.peers_changed.connect(_on_peers_changed)
 	Networking.disconnected.connect(_on_disconnected)
 
-	if Networking.is_host:
+	# Only trust is_host when a live peer actually backs it. A stale flag with no
+	# peer used to render a "Lobby created" screen stuck at 0/4 with Host disabled.
+	if Networking.is_host and Networking.is_connected_online():
 		_on_lobby_ready(true)
+	else:
+		host_button.disabled = false
 	_refresh_players()
 
 
@@ -52,6 +56,9 @@ func _exit_game() -> void:
 
 func _on_lobby_ready(is_host: bool) -> void:
 	if is_host:
+		if not Networking.is_connected_online():
+			_on_lobby_failed("Lobby created but the host connection did not open. Try hosting again.")
+			return
 		host_button.disabled = true
 		status_label.text = "Lobby created. Invite a friend via the Steam overlay. Arena: %s" % Networking.selected_arena_name
 	else:

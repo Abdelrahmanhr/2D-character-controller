@@ -1,6 +1,6 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://exgjdsdt0vkd"]
 
-[ext_resource type="Script" path="res://scripts/arena_select.gd" id="1_arena_select"]
+[ext_resource type="Script" uid="uid://ctnopn2ygflhd" path="res://scripts/arena_select.gd" id="1_arena_select"]
 [ext_resource type="Theme" uid="uid://doxgt2jeresa3" path="res://resources/themes/gravity.tres" id="2_theme"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
@@ -103,7 +103,7 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[node name="ArenaSelect" type="Control"]
+[node name="ArenaSelect" type="Control" unique_id=1459563425]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -113,7 +113,7 @@ grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_arena_select")
 
-[node name="Title" type="Label" parent="."]
+[node name="Title" type="Label" parent="." unique_id=353937082]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
@@ -130,7 +130,7 @@ theme_override_font_sizes/font_size = 40
 text = "CHOOSE ARENA"
 horizontal_alignment = 1
 
-[node name="Panel" type="VBoxContainer" parent="."]
+[node name="Panel" type="VBoxContainer" parent="." unique_id=2081739657]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -145,11 +145,11 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 16
 
-[node name="ArenaList" type="VBoxContainer" parent="Panel"]
+[node name="ArenaList" type="VBoxContainer" parent="Panel" unique_id=734765031]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="ContinueButton" type="Button" parent="Panel"]
+[node name="ContinueButton" type="Button" parent="Panel" unique_id=838335041]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.96)
@@ -163,7 +163,7 @@ theme_override_styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
 theme_override_styles/focus = SubResource("StyleBoxFlat_btn_hover")
 text = "CONTINUE"
 
-[node name="BackButton" type="Button" parent="."]
+[node name="BackButton" type="Button" parent="." unique_id=1212611704]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 1
 anchors_preset = 7
@@ -172,9 +172,9 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -140.0
-offset_top = -179.0
+offset_top = -158.0
 offset_right = 140.0
-offset_bottom = -135.0
+offset_bottom = -114.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_colors/font_color = Color(1, 1, 1, 0.96)

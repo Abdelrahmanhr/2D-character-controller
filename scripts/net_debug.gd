@@ -3,6 +3,10 @@ extends CanvasLayer
 const MAX_EVENTS := 12
 const DELAY_STEPS: Array[float] = [0.0, 2.0, 5.0, 10.0]
 
+# Dev tooling gate. On in the editor; in an exported build it is off unless the
+# game is launched with --dev (Steam -> Properties -> Launch Options) or an empty
+# file named "dev_mode" sits next to the executable.
+var dev_mode: bool = false
 var ready_delay: float = 0.0
 var allow_solo_start: bool = false
 var ack_count: int = 0
@@ -26,14 +30,24 @@ const BUTTON_NAMES: Array[String] = ["A", "B", "X", "Y", "Start"]
 func _ready() -> void:
 	layer = 200
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	dev_mode = _read_dev_mode()
 	ready_delay = _read_delay_arg()
-	allow_solo_start = OS.has_feature("editor") or OS.get_cmdline_args().has("--solo-start")
+	allow_solo_start = dev_mode or OS.get_cmdline_args().has("--solo-start")
 	_build_overlay()
 	_build_pad_overlay()
 	if ready_delay > 0.0:
 		_visible_overlay = true
 		_panel.visible = true
 		log_event("net-debug-delay = %.1fs" % ready_delay)
+
+
+func _read_dev_mode() -> bool:
+	if OS.has_feature("editor"):
+		return true
+	if OS.get_cmdline_args().has("--dev"):
+		return true
+	var marker := OS.get_executable_path().get_base_dir().path_join("dev_mode")
+	return FileAccess.file_exists(marker)
 
 
 func _read_delay_arg() -> float:
@@ -149,10 +163,13 @@ func log_event(text: String) -> void:
 	_events.append("%6.1f  %s" % [Time.get_ticks_msec() / 1000.0, text])
 	if _events.size() > MAX_EVENTS:
 		_events.remove_at(0)
-	print("[net] %s" % text)
+	if dev_mode:
+		print("[net] %s" % text)
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
+	if not dev_mode:
+		return
 	if not (event is InputEventKey and event.pressed and not event.echo):
 		return
 	if event.physical_keycode == KEY_F2:
