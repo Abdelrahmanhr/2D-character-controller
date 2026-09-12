@@ -13,6 +13,16 @@ signal player_finished_round
 
 @export var max_bomb_time: float = 60.0
 
+@export_group("Tick")
+@export var tick_sound: AudioStream
+@export var panic_time: float = 5.0
+@export var tick_interval_calm: float = 1.0
+@export var tick_interval_panic: float = 0.12
+@export var tick_volume_calm: float = -26.0
+@export var tick_volume_panic: float = -5.0
+@export var tick_pitch_calm: float = 1.0
+@export var tick_pitch_panic: float = 1.0
+
 var _time_left: float
 var _active_minigame: Control = null
 var _active_minigame_slot: Control = null
@@ -27,6 +37,8 @@ var _frozen_value: float = 0.0
 const STICK_THRESHOLD: float = 0.5  
 
 var _prev_stick_direction: String = ""
+var _tick_timer: float = 0.0
+var _tick_fallback: AudioStream
 
 var time_left: float:
 	get:
@@ -40,6 +52,8 @@ func _ready() -> void:
 	_frozen_value = bomb_time
 	if _is_networked():
 		Networking.bombs_start.connect(start_at)
+	if tick_sound == null:
+		_tick_fallback = load("res://resources/audio/Clock Tick OR Press .wav")
 	MinigameDirector.register_player(self)
 
 
@@ -96,7 +110,33 @@ func _process(delta: float) -> void:
 			eliminate_player()
 	if _minigame_layer:
 		_minigame_layer.global_position = _player.global_position + Vector2(-100, -150)
+	_update_tick(delta)
 	_poll_right_stick()
+
+func _update_tick(delta: float) -> void:
+	if _expired:
+		return
+	if _is_networked() and not _running:
+		return
+	var left: float = _compute_time_left()
+	if left <= 0.0:
+		return
+	var sfx: AudioStream = tick_sound if tick_sound else _tick_fallback
+	if sfx == null:
+		return
+	var urgency: float = 1.0 - clampf(left / maxf(panic_time, 0.01), 0.0, 1.0)
+	var ramp: float = sqrt(urgency)
+	_tick_timer -= delta
+	if _tick_timer > 0.0:
+		return
+	_tick_timer = lerpf(tick_interval_calm, tick_interval_panic, ramp)
+	SfxManager.play(
+		sfx,
+		lerpf(tick_volume_calm, tick_volume_panic, ramp),
+		0.0,
+		lerpf(tick_pitch_calm, tick_pitch_panic, ramp),
+	)
+
 
 func _input(event: InputEvent) -> void:
 	if _active_minigame == null or not _has_authority() or _player.is_stunned:

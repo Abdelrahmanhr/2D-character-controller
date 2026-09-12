@@ -22,6 +22,14 @@ extends CharacterBody2D
 @export var footstep_frames: Array[int] = [0,2]
 @export var footstep_pitch_variance: float = 0.15
 @export var footstep_debounce: float = 0.1
+@export var dash_conflict_knockback_multiplier: float = 2.0
+@export var dash_conflict_flash_color: Color = Color(1.0, 0.15, 0.15, 1.0) 
+@export var dash_conflict_flash_duration: float = 0.25 
+@export var explode_sound: AudioStream  
+@export var explode_pitch_variance: float = 0.1  
+
+@export var stun_tilt_angle_degrees: float = 25.0  
+@export var stun_tilt_speed: float = 10.0  
 
 @export var device_id: int = -2
 @export var keyboard_left: Key = KEY_A  
@@ -30,6 +38,15 @@ extends CharacterBody2D
 @export var keyboard_down: Key = KEY_S 
 @export var keyboard_jump: Key = KEY_SPACE  
 @export var keyboard_dash: Key = KEY_SHIFT  
+
+@export var invulnerability_flash_speed: float = 0.1  
+@export var player_light_energy: float = 1.0
+@export var player_light_scale: float = 2.2
+var dash_start_time_ms: int = 0  
+var is_invulnerable: bool = false 
+var _invuln_time_left: float = 0.0 
+var _invuln_flash_timer: float = 0.0 
+var _death_animation_id: int = 0  
 
 const STICK_DEADZONE: float = 0.2
 
@@ -77,6 +94,7 @@ var is_dead := false
 @onready var dash_afterimage = $DashAfterimage
 
 var _identity_slot: int = -1
+var _player_light: PointLight2D
 
 
 func _ready() -> void:
@@ -87,10 +105,11 @@ func _ready() -> void:
 	_recalculate_jump_physics()
 	_setup_glow_texture()
 	_update_identity()
+	_setup_life_hearts()
 	if _is_networked() and is_multiplayer_authority() and device_id == -2:
 		device_id = -1
 		if bomb_controller:
-			bomb_controller.device_id = -1
+			bomb_controller.device_id = device_id
 
 func _enter_tree() -> void:
 	set_multiplayer_authority(name.to_int())
@@ -110,15 +129,32 @@ func _physics_process(delta: float) -> void:
 		velocity.y += gravity * delta
 		move_and_slide()
 		return
-	if _is_networked() and not is_multiplayer_authority():
-		return
 	
+	if is_invulnerable:
+		_invuln_time_left -= delta
+		_invuln_flash_timer -= delta
+		if _invuln_flash_timer <= 0.0:
+			_invuln_flash_timer = invulnerability_flash_speed
+			animated_sprite.visible = not animated_sprite.visible
+		if _invuln_time_left <= 0.0:
+			is_invulnerable = false
+			animated_sprite.visible = true
 	
-	if is_frozen:
+	if is_stunned:
+		stun_time_left -= delta
+		if stun_time_left <= 0.0:
+			is_stunned = false
+	
+	if is_frozen: 
 		freeze_time_left -= delta
 		if freeze_time_left <= 0.0:
 			is_frozen = false
 			animated_sprite.speed_scale = 1.0
+	
+	if _is_networked() and not is_multiplayer_authority():
+		return
+	
+	if is_frozen:  
 		return
 	
 	
@@ -135,16 +171,16 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_check_landing()
 	_update_animation()
-	
 
 func _apply_stun_physics(delta: float) -> void:
-	stun_time_left -= delta
-	if stun_time_left <= 0.0:
-		is_stunned = false
-	
 	var gravity: float = rise_gravity if velocity.y < 0.0 else fall_gravity
 	velocity.y += gravity * delta
 	velocity.x = move_toward(velocity.x, 0.0, knockback_friction * delta)
+	
+	var target_tilt: float = 0.0  
+	if is_stunned and abs(velocity.x) > 10.0:  
+		target_tilt = deg_to_rad(stun_tilt_angle_degrees) * sign(velocity.x)  
+	animated_sprite.rotation = lerp_angle(animated_sprite.rotation, target_tilt, stun_tilt_speed * delta)  
 
 
 func _process(_delta: float) -> void:
@@ -170,6 +206,22 @@ func _setup_glow_texture() -> void:
 	texture.fill_from = Vector2(0.5, 0.5)
 	texture.fill_to = Vector2(0.5, 0.0)
 	glow.texture = texture
+	var glow_mat := CanvasItemMaterial.new()
+	glow_mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	glow_mat.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	glow.material = glow_mat
+	_player_light = PointLight2D.new()
+	_player_light.texture = texture
+	_player_light.texture_scale = player_light_scale
+	_player_light.energy = player_light_energy
+	add_child(_player_light)
+
+func _setup_life_hearts() -> void:
+	var hearts := LifeHearts.new()
+	hearts.name = "LifeHearts"
+	hearts.setup(self, bomb_controller)
+	add_child(hearts)
+
 
 func _update_identity() -> void:
 	if bomb_controller == null:
@@ -187,25 +239,50 @@ func _update_identity() -> void:
 	player_tag.add_theme_constant_override("shadow_outline_size", 3)
 	player_tag.add_theme_font_size_override("font_size", 13)
 	glow.modulate = Color(color.r, color.g, color.b, 0.7)
+	if _player_light:
+		_player_light.color = color
 	animated_sprite.modulate = Color.WHITE.lerp(color, 0.28)
 
-func play_death_animation() -> void:
+func _explode_anim_length() -> float:  # NEW: shake lasts exactly as long as the explosion plays
+	var frames := animated_sprite.sprite_frames
+	var speed: float = frames.get_animation_speed(&"explode")
+	if speed <= 0.0:
+		return 0.4
+	return frames.get_frame_count(&"explode") / speed
+
+
+func play_death_animation(cause: String = "fall") -> void:
 	if is_dead:
 		return
 	is_dead = true
+	_death_animation_id += 1
+	var my_id := _death_animation_id
 	velocity = Vector2.ZERO
-	var facing := "right" if facing_right else "left"
-	animation_name = StringName("die_" + facing)
+	var anim_name: StringName
+	if cause == "explode":
+		anim_name = &"explode"
+		SfxManager.play(explode_sound, 0.0, explode_pitch_variance)  
+	else:
+		var facing := "right" if facing_right else "left"
+		anim_name = StringName("die_" + facing)
+	animation_name = anim_name
 	animated_sprite.sprite_frames.set_animation_loop(animation_name, false)
 	animated_sprite.play(animation_name)
+	if cause == "explode":
+		var cam := get_viewport().get_camera_2d()
+		if cam and cam.has_method("shake"):
+			cam.shake(10.0, _explode_anim_length())
 	await animated_sprite.animation_finished
+	if my_id != _death_animation_id:
+		return
 	animated_sprite.stop()
 	animated_sprite.frame = animated_sprite.sprite_frames.get_frame_count(animation_name) - 1
 	var elapsed := 0.0
 	while not is_on_floor() and elapsed < 3.0:
 		await get_tree().physics_frame
 		elapsed += get_physics_process_delta_time()
-
+		if my_id != _death_animation_id:
+			return
 
 
 func _update_animation() -> void:
@@ -231,27 +308,52 @@ func _update_animation() -> void:
 		animated_sprite.play(animation_name)
 
 func _handle_input(delta: float) -> void:
-	var is_keyboard: bool = device_id == LocalPlayers.KEYBOARD_DEVICE_ID
-	
 	var move_x: float
 	var move_y: float
 	var jump_held: bool
 	var dash_held: bool
 	
-	if is_keyboard:
-		move_x = float(Input.is_physical_key_pressed(keyboard_right)) - float(Input.is_physical_key_pressed(keyboard_left))
-		move_y = float(Input.is_physical_key_pressed(keyboard_down)) - float(Input.is_physical_key_pressed(keyboard_up))
-		jump_held = Input.is_physical_key_pressed(keyboard_jump)
-		dash_held = Input.is_physical_key_pressed(keyboard_dash)
-	else:  
-		move_x = PadState.get_axis(device_id, JOY_AXIS_LEFT_X)
-		move_y = PadState.get_axis(device_id, JOY_AXIS_LEFT_Y)
-		if abs(move_x) < STICK_DEADZONE:  
-			move_x = 0.0  
-		if abs(move_y) < STICK_DEADZONE:
-			move_y = 0.0
-		jump_held = PadState.is_pressed(device_id, JOY_BUTTON_A)
-		dash_held = PadState.is_pressed(device_id, JOY_BUTTON_X)
+	if _is_networked():  # NEW: online players merge keyboard + first controller
+		var kb_move_x: float = float(Input.is_physical_key_pressed(keyboard_right)) - float(Input.is_physical_key_pressed(keyboard_left))
+		var kb_move_y: float = float(Input.is_physical_key_pressed(keyboard_down)) - float(Input.is_physical_key_pressed(keyboard_up))
+		var kb_jump_held: bool = Input.is_physical_key_pressed(keyboard_jump)
+		var kb_dash_held: bool = Input.is_physical_key_pressed(keyboard_dash)
+		
+		var pad_move_x: float = 0.0
+		var pad_move_y: float = 0.0
+		var pad_jump_held: bool = false
+		var pad_dash_held: bool = false
+		if not Input.get_connected_joypads().is_empty():
+			var pad_id: int = Input.get_connected_joypads()[0]
+			pad_move_x = PadState.get_axis(pad_id, JOY_AXIS_LEFT_X)
+			pad_move_y = PadState.get_axis(pad_id, JOY_AXIS_LEFT_Y)
+			if abs(pad_move_x) < STICK_DEADZONE:
+				pad_move_x = 0.0
+			if abs(pad_move_y) < STICK_DEADZONE:
+				pad_move_y = 0.0
+			pad_jump_held = PadState.is_pressed(pad_id, JOY_BUTTON_A)
+			pad_dash_held = PadState.is_pressed(pad_id, JOY_BUTTON_X)
+		
+		move_x = pad_move_x if pad_move_x != 0.0 else kb_move_x
+		move_y = pad_move_y if pad_move_y != 0.0 else kb_move_y
+		jump_held = kb_jump_held or pad_jump_held
+		dash_held = kb_dash_held or pad_dash_held
+	else:  # CHANGED: unchanged local-multiplayer logic, exactly as it was before
+		var is_keyboard: bool = device_id == LocalPlayers.KEYBOARD_DEVICE_ID
+		if is_keyboard:
+			move_x = float(Input.is_physical_key_pressed(keyboard_right)) - float(Input.is_physical_key_pressed(keyboard_left))
+			move_y = float(Input.is_physical_key_pressed(keyboard_down)) - float(Input.is_physical_key_pressed(keyboard_up))
+			jump_held = Input.is_physical_key_pressed(keyboard_jump)
+			dash_held = Input.is_physical_key_pressed(keyboard_dash)
+		else:
+			move_x = PadState.get_axis(device_id, JOY_AXIS_LEFT_X)
+			move_y = PadState.get_axis(device_id, JOY_AXIS_LEFT_Y)
+			if abs(move_x) < STICK_DEADZONE:
+				move_x = 0.0
+			if abs(move_y) < STICK_DEADZONE:
+				move_y = 0.0
+			jump_held = PadState.is_pressed(device_id, JOY_BUTTON_A)
+			dash_held = PadState.is_pressed(device_id, JOY_BUTTON_X)
 	
 	direction = move_x
 	_last_move_input = Vector2(move_x, move_y)
@@ -259,8 +361,8 @@ func _handle_input(delta: float) -> void:
 	var jump_just_pressed: bool = jump_held and not _prev_jump_held
 	var jump_just_released: bool = not jump_held and _prev_jump_held
 	var dash_just_pressed: bool = dash_held and not _prev_dash_held
-	_prev_jump_held = jump_held  
-	_prev_dash_held = dash_held 
+	_prev_jump_held = jump_held
+	_prev_dash_held = dash_held
 	
 	if dash_just_pressed and not is_dashing and dash_cooldown_left <= 0.0:
 		_start_dash()
@@ -279,7 +381,7 @@ func _handle_input(delta: float) -> void:
 		jump_pressed = true
 		jump_buffer_counter = 0.0
 		coyote_time_counter = 0.0
-
+	
 	if jump_just_released and velocity.y < 0.0:
 		cut_jump = true
 
@@ -329,11 +431,12 @@ func _start_dash() -> void:
 	dash_time_left = dash_duration
 	dash_cooldown_left = dash_cooldown
 	dash_direction = _get_dash_direction()
+	dash_start_time_ms = _get_timestamp()  
 	velocity = dash_direction * dash_speed
 	dash_hitbox.monitoring = true
 	SfxManager.play(dash_sound,-15.0)
 	dash_afterimage.start()
-
+	
 func _end_dash_immediately() -> void:
 	is_dashing = false
 	dash_hitbox.monitoring = false
@@ -344,26 +447,49 @@ func _on_dash_hitbox_body_entered(body: Node) -> void:
 		return
 	if not body.is_in_group("players"):
 		return
+	if body.has_method("is_invulnerable") or "is_invulnerable" in body:
+		if body.is_invulnerable:
+			return
+	
+	if body.get("is_dashing") == true:
+		if dash_start_time_ms <= body.dash_start_time_ms:
+			return
+		if body.has_method("apply_stun"):
+			body.apply_stun(dash_direction, dash_conflict_knockback_multiplier)
+		if body.has_method("apply_hitstop"):
+			body.apply_hitstop(hitstop_duration)
+		if body.has_method("flash_dash_loss"): 
+			body.flash_dash_loss()  
+		return
+	
 	if body.has_method("apply_stun"):
 		body.apply_stun(dash_direction)
 	apply_hitstop(hitstop_duration)
 	if body.has_method("apply_hitstop"):
 		body.apply_hitstop(hitstop_duration)
-
-
-func apply_stun(from_direction: Vector2) -> void:
+		
+func apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0) -> void:
 	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
-		_do_apply_stun(from_direction)
+		_do_apply_stun(from_direction, knockback_multiplier)
 	else:
-		_do_apply_stun.rpc(from_direction)
+		_do_apply_stun.rpc(from_direction, knockback_multiplier)
 
 @rpc("any_peer", "call_local", "reliable")
-func _do_apply_stun(from_direction: Vector2) -> void:
+func _do_apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0) -> void:
+	is_dashing = false
+	dash_hitbox.monitoring = false
+	dash_afterimage.stop()
 	is_stunned = true
 	stun_time_left = stun_duration
-	velocity = from_direction * knockback_speed
+	velocity = from_direction * knockback_speed * knockback_multiplier
 	SfxManager.play(slam_sound, -10.0, 0.1)
-	
+	_tilt_on_stun(from_direction)  
+
+func _tilt_on_stun(from_direction: Vector2) -> void:  
+	var tilt_angle: float = deg_to_rad(stun_tilt_angle_degrees) * sign(from_direction.x if from_direction.x != 0.0 else 1.0)
+	var tween := create_tween()
+	tween.tween_property(animated_sprite, "rotation", tilt_angle, 0.08)
+	tween.tween_property(animated_sprite, "rotation", 0.0, stun_duration - 0.08)
 
 func apply_hitstop(duration: float) -> void:
 	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
@@ -397,3 +523,43 @@ func _check_landing() -> void:
 	if on_floor_now and not _was_on_floor:
 		SfxManager.play(land_sound,-20.0,0.2)
 	_was_on_floor = on_floor_now
+
+func respawn(invuln_duration: float) -> void:
+	_death_animation_id += 1
+	is_dead = false
+	velocity = Vector2.ZERO
+	is_stunned = false
+	is_frozen = false
+	is_dashing = false  
+	dash_time_left = 0.0  
+	dash_hitbox.monitoring = false  
+	dash_afterimage.stop()  
+	animated_sprite.speed_scale = 1.0
+	animated_sprite.modulate.a = 1.0
+	visible = true
+	animation_name = StringName("idle_right" if facing_right else "idle_left")
+	is_invulnerable = true
+	_invuln_time_left = invuln_duration
+	_invuln_flash_timer = 0.0
+
+func _get_timestamp() -> int:  
+	if _is_networked():
+		return Networking.get_sync_time()
+	return Time.get_ticks_msec()
+
+func flash_dash_loss() -> void:  # NEW
+	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		_do_flash_dash_loss()
+	else:
+		_do_flash_dash_loss.rpc()
+
+@rpc("any_peer", "call_local", "reliable") 
+func _do_flash_dash_loss() -> void:  
+	var tween := create_tween()
+	tween.tween_property(animated_sprite, "modulate", dash_conflict_flash_color, dash_conflict_flash_duration * 0.3)
+	tween.tween_property(animated_sprite, "modulate", Color.WHITE.lerp(_current_identity_color(), 0.28), dash_conflict_flash_duration * 0.7)
+	
+func _current_identity_color() -> Color:  # NEW
+	if bomb_controller:
+		return bomb_controller.get_player_color()
+	return Color.WHITE

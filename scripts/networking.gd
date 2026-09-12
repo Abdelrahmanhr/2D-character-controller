@@ -13,7 +13,7 @@ signal bombs_start(start_time_ms: int)
 
 const LOBBY_TYPE := Steam.LobbyType.LOBBY_TYPE_FRIENDS_ONLY
 const MAX_MEMBERS := 4
-const DEFAULT_ARENA_SCENE := "res://scenes/power_station.tscn"
+const DEFAULT_ARENA_SCENE := "res://scenes/power_station2.tscn"
 const DEFAULT_ARENA_NAME := "Power Station"
 const ARENA_READY_TIMEOUT := 8.0
 const CLOCK_SAMPLE_COUNT := 5

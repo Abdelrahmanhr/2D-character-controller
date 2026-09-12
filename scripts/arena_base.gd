@@ -81,8 +81,25 @@ func _is_networked() -> bool:
 
 
 func _on_death_zone_body_entered(body: Node) -> void:
+	if body is CharacterBody2D and not body.is_dead:
+		_play_death_zone_zap(body.global_position)
 	if body is CharacterBody2D and (not _is_networked() or body.is_multiplayer_authority()) and not body.is_dead:
 		body.get_node("BombController").eliminate_player()
+
+
+@export var death_zap_sound: AudioStream
+@export var death_zap_volume_db: float = -6.0
+
+
+func _play_death_zone_zap(at: Vector2) -> void:
+	if death_zap_sound:
+		SfxManager.play(death_zap_sound, death_zap_volume_db, 0.12)
+	var rail := get_tree().get_first_node_in_group("lightning_emitters")
+	if rail and rail.has_method("strike_global"):
+		rail.strike_global(Vector2(at.x, rail.global_position.y), at)
+	var cam := get_viewport().get_camera_2d()
+	if cam and cam.has_method("shake"):
+		cam.shake(14.0)
 
 
 func show_lose_popup() -> void:

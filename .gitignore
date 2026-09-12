@@ -1,3 +1,12 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+# Godot/Windows GDExtension hot-reload leftovers
+addons/godotsteam/**/~*
+
+# Exported build output (repo root only - the addons/godotsteam DLLs stay tracked)
+/*.exe
+/*.dll
+/*.pck
+/*.console.bat

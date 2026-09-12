@@ -1,6 +1,7 @@
 extends Node
 
-
+var selected_arena_path: String = "res://scenes/power_station2.tscn" 
+var entering_arena_select_for_local: bool = false  
 const MAX_PLAYERS: int = 4
 const KEYBOARD_DEVICE_ID: int = -1
 
