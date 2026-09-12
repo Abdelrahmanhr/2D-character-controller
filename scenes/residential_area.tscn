@@ -470,7 +470,7 @@ min_zoom = 0.4
 max_zoom = 0.9
 position_lerp_speed = 6.0
 zoom_lerp_speed = 5.0
-world_bounds = Rect2(40, 40, 1520, 960)
+world_bounds = Rect2(40, 310, 1520, 580)
 
 [node name="tiles" type="Node2D" parent="." unique_id=1759449181]
 position = Vector2(68, 0)
@@ -620,6 +620,7 @@ position = Vector2(1314, 922)
 texture = ExtResource("18_gucx2")
 
 [node name="4" type="Sprite2D" parent="." unique_id=24026569]
+visible = false
 position = Vector2(22, 807)
 texture = ExtResource("20_1o0l6")
 
@@ -632,5 +633,6 @@ position = Vector2(1636, 455)
 texture = ExtResource("20_1o0l6")
 
 [node name="7" type="Sprite2D" parent="." unique_id=1515381710]
+visible = false
 position = Vector2(1686, 807)
 texture = ExtResource("20_1o0l6")

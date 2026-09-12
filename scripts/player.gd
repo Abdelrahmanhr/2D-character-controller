@@ -221,6 +221,14 @@ func _update_identity() -> void:
 	glow.modulate = Color(color.r, color.g, color.b, 0.7)
 	animated_sprite.modulate = Color.WHITE.lerp(color, 0.28)
 
+func _explode_anim_length() -> float:  # NEW: shake lasts exactly as long as the explosion plays
+	var frames := animated_sprite.sprite_frames
+	var speed: float = frames.get_animation_speed(&"explode")
+	if speed <= 0.0:
+		return 0.4
+	return frames.get_frame_count(&"explode") / speed
+
+
 func play_death_animation(cause: String = "fall") -> void:
 	if is_dead:
 		return
@@ -238,6 +246,10 @@ func play_death_animation(cause: String = "fall") -> void:
 	animation_name = anim_name
 	animated_sprite.sprite_frames.set_animation_loop(animation_name, false)
 	animated_sprite.play(animation_name)
+	if cause == "explode":
+		var cam := get_viewport().get_camera_2d()
+		if cam and cam.has_method("shake"):
+			cam.shake(10.0, _explode_anim_length())
 	await animated_sprite.animation_finished
 	if my_id != _death_animation_id:
 		return

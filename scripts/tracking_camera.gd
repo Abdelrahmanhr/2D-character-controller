@@ -7,6 +7,18 @@ extends Camera2D
 @export var zoom_lerp_speed: float = 4.0
 @export var world_bounds: Rect2 = Rect2(100, 100, 2200, 1200)
 @export var top_ui_margin: float = 160.0  # NEW: screen-space pixels reserved at the top for the minigame UI
+@export var shake_duration: float = 0.4  # NEW: matches the 8-frame explode animation at speed 20
+
+var _base_offset_y := 0.0  # NEW: the UI-band offset, kept separate so shake never feeds back into its lerp
+var _shake := 0.0
+var _shake_left := 0.0
+var _shake_span := 0.0
+
+
+func shake(amount: float = 10.0, duration: float = -1.0) -> void:  # NEW: strongest active shake wins, so overlapping hits do not stack into a mess
+	_shake = maxf(_shake, amount)
+	_shake_left = maxf(_shake_left, duration if duration > 0.0 else shake_duration)
+	_shake_span = maxf(_shake_span, _shake_left)
 
 func _process(delta: float) -> void:
 	var players := get_tree().get_nodes_in_group("players")
@@ -15,6 +27,7 @@ func _process(delta: float) -> void:
 		if is_instance_valid(p) and not p.is_dead:
 			live_positions.append(p.global_position)
 	if live_positions.is_empty():
+		_apply_shake(delta, zoom.x)  # NEW: keep shaking while every player is mid-death, instead of freezing it until respawn
 		return
 
 	var min_pos: Vector2 = live_positions[0]
@@ -48,4 +61,12 @@ func _process(delta: float) -> void:
 
 	global_position = global_position.lerp(target_center, clampf(position_lerp_speed * delta, 0.0, 1.0))
 	zoom = zoom.lerp(target_zoom, clampf(zoom_lerp_speed * delta, 0.0, 1.0))
-	offset.y = lerpf(offset.y, -(top_ui_margin * 0.5) / target_zoom_scalar, clampf(zoom_lerp_speed * delta, 0.0, 1.0))  # NEW: shifts framing down so the reserved band stays empty at the top
+	_base_offset_y = lerpf(_base_offset_y, -(top_ui_margin * 0.5) / target_zoom_scalar, clampf(zoom_lerp_speed * delta, 0.0, 1.0))  # NEW: shifts framing down so the reserved band stays empty at the top
+	_apply_shake(delta, target_zoom_scalar)
+
+
+func _apply_shake(delta: float, zoom_scalar: float) -> void:
+	_shake_left = maxf(_shake_left - delta, 0.0)  # NEW: eases out evenly across the animation instead of ending early
+	var falloff: float = (_shake_left / _shake_span) if _shake_span > 0.0 else 0.0
+	var jolt: float = _shake * falloff / maxf(zoom_scalar, 0.01)  # NEW: keeps the shake the same size on screen at any zoom
+	offset = Vector2(0.0, _base_offset_y) + Vector2(randf_range(-jolt, jolt), randf_range(-jolt, jolt))

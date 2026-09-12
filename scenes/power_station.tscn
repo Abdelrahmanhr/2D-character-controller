@@ -714,16 +714,16 @@ stretch_mode = 6
 [node name="PauseMenu" parent="." unique_id=699686374 instance=ExtResource("2")]
 
 [node name="SpawnPoint1" type="Marker2D" parent="." unique_id=47199142]
-position = Vector2(248, 407)
+position = Vector2(240, 402)
 
 [node name="SpawnPoint2" type="Marker2D" parent="." unique_id=47199143]
-position = Vector2(1208, 407)
+position = Vector2(1200, 402)
 
 [node name="SpawnPoint3" type="Marker2D" parent="." unique_id=47199144]
-position = Vector2(186, 247)
+position = Vector2(178, 242)
 
 [node name="SpawnPoint4" type="Marker2D" parent="." unique_id=47199145]
-position = Vector2(1286, 247)
+position = Vector2(1278, 242)
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=1874139806]
 _spawnable_scenes = PackedStringArray("uid://dg4t5o3xnmwxn")
@@ -735,7 +735,7 @@ spawn_path = NodePath("..")
 position = Vector2(792, 1054)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="DeathBox" unique_id=791328526]
-position = Vector2(-79, 0)
+position = Vector2(-81, -349)
 shape = SubResource("RectangleShape2D_deathbox")
 
 [node name="MatchResult" type="Label" parent="." unique_id=2050580856]
@@ -812,18 +812,19 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot3")
 
 [node name="TrackingCamera" type="Camera2D" parent="." unique_id=164902931]
-position = Vector2(736, 459)
 script = ExtResource("7_camera")
 margin = 120.0
-min_zoom = 0.2
+max_zoom = 0.9
 position_lerp_speed = 6.0
 zoom_lerp_speed = 5.0
 world_bounds = Rect2(40, 40, 1700, 1100)
 top_ui_margin = 200.0
 
 [node name="props" type="Node2D" parent="." unique_id=781998622]
+position = Vector2(-8, -5)
 
 [node name="StaticBody2D" type="StaticBody2D" parent="props" unique_id=1196013787]
+visible = false
 
 [node name="5" type="Sprite2D" parent="props/StaticBody2D" unique_id=806415354]
 visible = false
@@ -839,6 +840,7 @@ polygon = PackedVector2Array(-2.9000015, -95.8, -2.2000008, -96, 8.900002, -96, 
 disabled = true
 
 [node name="StaticBody2D2" type="StaticBody2D" parent="props" unique_id=742303427]
+visible = false
 
 [node name="3" type="Sprite2D" parent="props/StaticBody2D2" unique_id=1942301072]
 visible = false
@@ -853,6 +855,7 @@ polygon = PackedVector2Array(6.9000015, -95.8, 6.200001, -96, -5.8999996, -96, -
 disabled = true
 
 [node name="StaticBody2D3" type="StaticBody2D" parent="props" unique_id=2060499859]
+visible = false
 
 [node name="4" type="Sprite2D" parent="props/StaticBody2D3" unique_id=529884014]
 visible = false
@@ -936,6 +939,7 @@ position = Vector2(302, 438)
 texture = ExtResource("27_eeu8s")
 
 [node name="tiles" type="Node2D" parent="." unique_id=800043697]
+position = Vector2(-8, -5)
 
 [node name="TileMapLayer" type="TileMapLayer" parent="tiles" unique_id=675125612]
 visible = false
