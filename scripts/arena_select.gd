@@ -6,12 +6,14 @@ const ARENAS := [
 ]
 
 var selected_index := 0
+var _for_local_play := false  # NEW
 
 @onready var arena_list: VBoxContainer = $Panel/ArenaList
 @onready var continue_button: Button = $Panel/ContinueButton
 @onready var back_button: Button = $BackButton
 
 func _ready() -> void:
+	_for_local_play = LocalPlayers.entering_arena_select_for_local  
 	_populate_arena_list()
 	continue_button.pressed.connect(_on_continue_pressed)
 	back_button.pressed.connect(_on_back_pressed)
@@ -66,9 +68,16 @@ func _on_arena_pressed(index: int) -> void:
 
 func _on_continue_pressed() -> void:
 	var arena: Dictionary = ARENAS[selected_index]
-	Networking.set_arena(arena["scene_path"], arena["name"])
-	get_tree().change_scene_to_file("res://scenes/lobby.tscn")
+	if _for_local_play:  
+		LocalPlayers.selected_arena_path = arena["scene_path"]  
+		get_tree().change_scene_to_file("res://scenes/local_lobby.tscn")  
+	else:
+		Networking.set_arena(arena["scene_path"], arena["name"])
+		get_tree().change_scene_to_file("res://scenes/lobby.tscn")
 
 func _on_back_pressed() -> void:
-	Networking.leave_lobby()
-	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+	if _for_local_play:  
+		get_tree().change_scene_to_file("res://scenes/main_menu.tscn")  
+	else:
+		Networking.leave_lobby()
+		get_tree().change_scene_to_file("res://scenes/main_menu.tscn")

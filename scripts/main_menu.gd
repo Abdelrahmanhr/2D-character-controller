@@ -38,14 +38,9 @@ func _on_client_joined() -> void:
 	get_tree().change_scene_to_file(LOBBY_SCENE)
 
 
-func _on_multiplayer_pressed() -> void:
-	if _joining:
-		return
-	get_tree().change_scene_to_file(ARENA_SELECT_SCENE)
 
 
-func _on_local_multiplayer_pressed() -> void:
-	get_tree().change_scene_to_file(LOCAL_LOBBY_SCENE)
+
 
 
 func _on_credits_pressed() -> void:
@@ -55,3 +50,13 @@ func _on_credits_pressed() -> void:
 func _on_exit_pressed() -> void:
 	Networking.leave_lobby()
 	get_tree().quit()
+
+func _on_local_multiplayer_pressed() -> void:
+	LocalPlayers.entering_arena_select_for_local = true  # NEW
+	get_tree().change_scene_to_file(ARENA_SELECT_SCENE)
+
+func _on_multiplayer_pressed() -> void:
+	if _joining:
+		return
+	LocalPlayers.entering_arena_select_for_local = false  # NEW
+	get_tree().change_scene_to_file(ARENA_SELECT_SCENE)
