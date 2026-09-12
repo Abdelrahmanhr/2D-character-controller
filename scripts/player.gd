@@ -28,6 +28,9 @@ extends CharacterBody2D
 @export var explode_sound: AudioStream  
 @export var explode_pitch_variance: float = 0.1  
 
+@export var stun_tilt_angle_degrees: float = 25.0  
+@export var stun_tilt_speed: float = 10.0  
+
 @export var device_id: int = -2
 @export var keyboard_left: Key = KEY_A  
 @export var keyboard_right: Key = KEY_D  
@@ -169,6 +172,11 @@ func _apply_stun_physics(delta: float) -> void:
 	var gravity: float = rise_gravity if velocity.y < 0.0 else fall_gravity
 	velocity.y += gravity * delta
 	velocity.x = move_toward(velocity.x, 0.0, knockback_friction * delta)
+	
+	var target_tilt: float = 0.0  
+	if is_stunned and abs(velocity.x) > 10.0:  
+		target_tilt = deg_to_rad(stun_tilt_angle_degrees) * sign(velocity.x)  
+	animated_sprite.rotation = lerp_angle(animated_sprite.rotation, target_tilt, stun_tilt_speed * delta)  
 
 
 func _process(_delta: float) -> void:
@@ -426,21 +434,28 @@ func _on_dash_hitbox_body_entered(body: Node) -> void:
 	if body.has_method("apply_hitstop"):
 		body.apply_hitstop(hitstop_duration)
 		
-func apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0) -> void: 
+func apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0) -> void:
 	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
-		_do_apply_stun(from_direction, knockback_multiplier)  
+		_do_apply_stun(from_direction, knockback_multiplier)
 	else:
-		_do_apply_stun.rpc(from_direction, knockback_multiplier)  
+		_do_apply_stun.rpc(from_direction, knockback_multiplier)
 
 @rpc("any_peer", "call_local", "reliable")
 func _do_apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0) -> void:
-	is_dashing = false 
-	dash_hitbox.monitoring = false  
-	dash_afterimage.stop()  
+	is_dashing = false
+	dash_hitbox.monitoring = false
+	dash_afterimage.stop()
 	is_stunned = true
 	stun_time_left = stun_duration
 	velocity = from_direction * knockback_speed * knockback_multiplier
 	SfxManager.play(slam_sound, -10.0, 0.1)
+	_tilt_on_stun(from_direction)  
+
+func _tilt_on_stun(from_direction: Vector2) -> void:  
+	var tilt_angle: float = deg_to_rad(stun_tilt_angle_degrees) * sign(from_direction.x if from_direction.x != 0.0 else 1.0)
+	var tween := create_tween()
+	tween.tween_property(animated_sprite, "rotation", tilt_angle, 0.08)
+	tween.tween_property(animated_sprite, "rotation", 0.0, stun_duration - 0.08)
 
 func apply_hitstop(duration: float) -> void:
 	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
