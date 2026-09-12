@@ -121,7 +121,7 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 	
-	if is_invulnerable:  
+	if is_invulnerable:
 		_invuln_time_left -= delta
 		_invuln_flash_timer -= delta
 		if _invuln_flash_timer <= 0.0:
@@ -130,6 +130,11 @@ func _physics_process(delta: float) -> void:
 		if _invuln_time_left <= 0.0:
 			is_invulnerable = false
 			animated_sprite.visible = true
+	
+	if is_stunned:  # NEW: tick the state down for every peer, not just the owner
+		stun_time_left -= delta
+		if stun_time_left <= 0.0:
+			is_stunned = false
 	
 	if _is_networked() and not is_multiplayer_authority():
 		return
@@ -155,13 +160,8 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_check_landing()
 	_update_animation()
-	
 
-func _apply_stun_physics(delta: float) -> void:
-	stun_time_left -= delta
-	if stun_time_left <= 0.0:
-		is_stunned = false
-	
+func _apply_stun_physics(delta: float) -> void:  # CHANGED: countdown removed, now handled above for every peer
 	var gravity: float = rise_gravity if velocity.y < 0.0 else fall_gravity
 	velocity.y += gravity * delta
 	velocity.x = move_toward(velocity.x, 0.0, knockback_friction * delta)
