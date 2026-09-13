@@ -4,9 +4,9 @@ static var _font: Font
 
 const SHAKE_STRENGTH: float = 6.0
 const SHAKE_DURATION: float = 0.15
-const WRONG_COLOR: Color = Color(1.0, 0.3, 0.3)  
+const WRONG_COLOR: Color = Color(1, 0.4118, 0.3529)  
 const DEFAULT_FONT_COLOR: Color = Color(1, 1, 1, 0.96) 
-const CORRECT_COLOR: Color = Color(0.35, 1.0, 0.35)
+const CORRECT_COLOR: Color = Color(0.549, 1, 0.6078)
 const HIGHLIGHT_DURATION: float = 0.12
 const ANSWER_SHAKE_STRENGTH: float = 10.0 
 
@@ -18,7 +18,7 @@ const FLOAT_TEXT_VERTICAL_OFFSET: float = 12.0
 
 static func game_font() -> Font:  
 	if _font == null:
-		_font = load("res://resources/boldpixels.ttf")  
+		_font = load("res://resources/fonts/boldpixels.ttf")
 	return _font
 
 static func spawn_floating_bonus(label: Label, amount: float, forced_side: float = 0.0, vertical_offset: float = FLOAT_TEXT_VERTICAL_OFFSET, rise_distance: float = FLOAT_TEXT_RISE) -> void:
@@ -90,7 +90,7 @@ static func player_color_for(player: Node) -> Color:
 	var bomb := player.get_node_or_null("BombController") as BombController
 	if bomb:
 		return bomb.get_player_color()
-	return Color(1, 0.95, 0.15, 1)
+	return Color(1, 0.8784, 0.5686, 1)
 
 # CHANGED: removed the second, duplicate game_font() that was here (the SystemFont version) — game_font() now only exists once, near the top of the file
 
@@ -124,12 +124,12 @@ static func shuffle(values: Array, rng: RandomNumberGenerator) -> void:
 		values[i] = values[j]
 		values[j] = temp
 
-static func style_label(label: Label, color: Color, font_size: int = 20) -> void:
+static func style_label(label: Label, _color: Color, font_size: int = 20) -> void:
 	label.add_theme_font_override("font", game_font())
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", Color(1, 1, 1, 0.96))
-	label.add_theme_color_override("font_outline_color", Color(color.r, color.g, color.b, 0.8))
-	label.add_theme_constant_override("outline_size", 4)
+	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	label.add_theme_constant_override("outline_size", 5)
 	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.7))
 	label.add_theme_constant_override("shadow_offset_x", 1)
 	label.add_theme_constant_override("shadow_offset_y", 1)

@@ -22,6 +22,7 @@ func _ready() -> void:
 	_layout_viewport_content()
 	MinigameDirector.reset_match()
 	MinigameDirector.match_finished.connect(_on_match_finished)
+	_setup_minigame_screens()
 	multiplayer_spawner.spawn_function = _spawn_player
 	$DeathBox.body_entered.connect(_on_death_zone_body_entered)
 
@@ -44,6 +45,17 @@ func _on_arena_spawn_requested(slots: Dictionary) -> void:
 		return
 	for peer_id in slots.keys():
 		multiplayer_spawner.spawn({"peer": int(peer_id), "slot": int(slots[peer_id])})
+
+
+func _setup_minigame_screens() -> void:
+	var layout := get_node_or_null("MinigameLayout/Layout")
+	if layout == null:
+		return
+	var screens := MinigameScreens.new()
+	screens.name = "MinigameScreens"
+	add_child(screens)
+	screens.build(layout)
+	MinigameDirector.match_started.connect(screens.play_entrance)
 
 
 func _on_disconnected(message: String) -> void:
@@ -100,7 +112,7 @@ func _on_match_finished(winner_peer_id: int) -> void:
 
 	if winner_peer_id == 0:
 		title = "DRAW"
-		color = Color(1, 0.95, 0.15, 1)
+		color = Color(1, 0.8784, 0.5686, 1)
 	elif not _is_networked():
 		var winner_slot: int = winner_peer_id - 1
 		var winner_color: Color = BombController.PLAYER_COLORS[clampi(winner_slot, 0, 3)]
@@ -109,10 +121,10 @@ func _on_match_finished(winner_peer_id: int) -> void:
 	else:
 		if winner_peer_id == multiplayer.get_unique_id():
 			title = "YOU WIN"
-			color = Color(0.15, 1, 0.4, 1)
+			color = Color(0.549, 1, 0.6078, 1)
 		else:
 			title = "YOU LOSE"
-			color = Color(1, 0.18, 0.22, 1)
+			color = Color(1, 0.4118, 0.3529, 1)
 
 	get_tree().paused = true
 	_end_menu = END_MENU.instantiate()

@@ -2,7 +2,7 @@ extends Line2D
 class_name LightningBolt
 
 
-const TEAL := Color(0.2, 0.95, 1.0)
+const TEAL := Color(0.1529, 0.8275, 0.7961)
 
 @export var divider: float = 40.0
 @export var sway_divider: float = 40.0
@@ -47,7 +47,7 @@ func _build_light() -> void:
 	tex.fill_to = Vector2(0.5, 0.0)
 	_light = PointLight2D.new()
 	_light.texture = tex
-	_light.color = Color(0.55, 0.95, 1.0)
+	_light.color = Color(0.549, 0.8549, 1)
 	_light.energy = 0.0
 	add_child(_light)
 
@@ -66,7 +66,7 @@ func _build_gradient() -> void:
 	grad.offsets = PackedFloat32Array([0.0, 0.5, 1.0])
 	grad.colors = PackedColorArray([
 		Color(1, 1, 1, 1),
-		Color(0.75, 1, 1, 1),
+		Color(0.7569, 0.851, 0.949, 1),
 		Color(TEAL.r, TEAL.g, TEAL.b, 1),
 	])
 	gradient = grad

@@ -22,7 +22,7 @@ const ARROW_SYMBOLS := {"up": "^", "down": "v", "left": "<", "right": ">"}
 
 var _player: Node
 var _rng: RandomNumberGenerator
-var _accent: Color = Color(1, 0.95, 0.2, 1)
+var _accent: Color = Color(1, 0.8784, 0.5686, 1)
 var _correct_count: int = 0
 var _round_finished: bool = false
 var _arrow_queue: Array[Label] = []
@@ -88,10 +88,10 @@ func _refresh_active_style() -> void:
 	for i in _arrow_queue.size():
 		var arrow := _arrow_queue[i]
 		var is_active := i == last_index
-		arrow.add_theme_color_override("font_color", _accent if is_active else INACTIVE_COLOR)
+		arrow.add_theme_color_override("font_color", Color(1, 1, 1, 0.98) if is_active else Color(1, 1, 1, 0.45))
 		arrow.add_theme_font_size_override("font_size", 28 if is_active else 18)
-		arrow.add_theme_color_override("font_outline_color", Color(_accent.r, _accent.g, _accent.b, 0.7 if is_active else 0.25))
-		arrow.add_theme_constant_override("outline_size", 4 if is_active else 2)
+		arrow.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9 if is_active else 0.6))
+		arrow.add_theme_constant_override("outline_size", 5 if is_active else 3)
 
 func _consume_active_arrow() -> void:
 	var arrow: Label = _arrow_queue.pop_back()
@@ -151,7 +151,7 @@ func _spawn_sequence_popup(arrow: Label, amount: float) -> void:
 	popup.text = "%+.1f" % amount
 	popup.add_theme_font_override("font", MinigameUI.game_font())
 	popup.add_theme_font_size_override("font_size", 18)
-	popup.add_theme_color_override("font_color", Color(0.35, 1.0, 0.35) if amount > 0.0 else Color(1.0, 0.3, 0.3))
+	popup.add_theme_color_override("font_color", Color(0.549, 1, 0.6078) if amount > 0.0 else Color(1, 0.4118, 0.3529))
 	popup.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
 	popup.add_theme_constant_override("outline_size", 3)
 	popup.z_index = 10

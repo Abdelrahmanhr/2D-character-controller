@@ -16,7 +16,7 @@ func _ready() -> void:
 
 	_players_label = Label.new()
 	_players_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_players_label.add_theme_color_override("font_color", Color(0.75, 1, 1, 1))
+	_players_label.add_theme_color_override("font_color", Color(0.7569, 0.851, 0.949, 1))
 	$Panel.add_child(_players_label)
 	$Panel.move_child(_players_label, status_label.get_index())
 

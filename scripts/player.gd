@@ -1,5 +1,17 @@
 extends CharacterBody2D
 @export var speed: float = 300.0
+@export var acceleration: float = 2600.0
+@export var friction: float = 3200.0
+@export var air_acceleration: float = 1800.0
+@export var air_friction: float = 900.0
+@export var turn_acceleration: float = 4500.0
+@export var apex_threshold: float = 60.0
+@export var apex_gravity_mult: float = 0.55
+@export var fast_fall_gravity_mult: float = 2.4
+@export var fast_fall_max_speed: float = 1100.0
+@export var land_impact_reference: float = 900.0
+@export var dust_color: Color = Color(0.7569, 0.851, 0.949, 0.9)
+@export var dust_offset_y: float = 22.0
 @export var jump_height: float = 64.0
 @export var time_to_peak: float = 0.35
 @export var time_to_descent: float = 0.28
@@ -23,7 +35,7 @@ extends CharacterBody2D
 @export var footstep_pitch_variance: float = 0.15
 @export var footstep_debounce: float = 0.1
 @export var dash_conflict_knockback_multiplier: float = 2.0
-@export var dash_conflict_flash_color: Color = Color(1.0, 0.15, 0.15, 1.0) 
+@export var dash_conflict_flash_color: Color = Color(0.8667, 0.2157, 0.2706, 1.0) 
 @export var dash_conflict_flash_duration: float = 0.25 
 @export var explode_sound: AudioStream  
 @export var explode_pitch_variance: float = 0.1  
@@ -94,6 +106,11 @@ var is_dead := false
 @onready var dash_afterimage = $DashAfterimage
 
 var _identity_slot: int = -1
+var _sprite_base_scale: Vector2 = Vector2.ONE
+var _fall_speed: float = 0.0
+var _land_dust: CPUParticles2D
+var _jump_dust: CPUParticles2D
+var _run_dust: CPUParticles2D
 var _player_light: PointLight2D
 
 
@@ -106,6 +123,8 @@ func _ready() -> void:
 	_setup_glow_texture()
 	_update_identity()
 	_setup_life_hearts()
+	_sprite_base_scale = animated_sprite.scale
+	_setup_dust()
 	if _is_networked() and is_multiplayer_authority() and device_id == -2:
 		device_id = -1
 		if bomb_controller:
@@ -168,6 +187,7 @@ func _physics_process(delta: float) -> void:
 	
 	_handle_input(delta)
 	_apply_movement(delta)
+	_fall_speed = velocity.y
 	move_and_slide()
 	_check_landing()
 	_update_animation()
@@ -215,6 +235,81 @@ func _setup_glow_texture() -> void:
 	_player_light.texture_scale = player_light_scale
 	_player_light.energy = player_light_energy
 	add_child(_player_light)
+
+func _squash(x_mult: float, y_mult: float, duration: float) -> void:
+	animated_sprite.scale = _sprite_base_scale * Vector2(x_mult, y_mult)
+	var tw := create_tween()
+	tw.tween_property(animated_sprite, "scale", _sprite_base_scale, duration) 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _dust_texture() -> Texture2D:
+	var img := Image.create(3, 3, false, Image.FORMAT_RGBA8)
+	img.fill(Color.WHITE)
+	return ImageTexture.create_from_image(img)
+
+
+func _make_dust(amount: int, lifetime: float, spread: float, vmin: float, vmax: float) -> CPUParticles2D:
+	var dust := CPUParticles2D.new()
+	dust.texture = _dust_texture()
+	dust.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	dust.emitting = false
+	dust.one_shot = true
+	dust.explosiveness = 0.9
+	dust.amount = amount
+	dust.lifetime = lifetime
+	dust.spread = spread
+	dust.initial_velocity_min = vmin
+	dust.initial_velocity_max = vmax
+	dust.gravity = Vector2(0.0, 320.0)
+	dust.scale_amount_min = 1.0
+	dust.scale_amount_max = 2.5
+	dust.damping_min = 40.0
+	dust.damping_max = 90.0
+	dust.color = dust_color
+	dust.position = Vector2(0.0, dust_offset_y)
+	dust.z_index = -1
+	add_child(dust)
+	return dust
+
+
+func _setup_dust() -> void:
+	_land_dust = _make_dust(12, 0.45, 70.0, 60.0, 150.0)
+	_land_dust.direction = Vector2(1.0, -0.35)
+	_jump_dust = _make_dust(8, 0.35, 45.0, 50.0, 110.0)
+	_jump_dust.direction = Vector2(0.0, 1.0)
+	_run_dust = _make_dust(3, 0.3, 35.0, 30.0, 70.0)
+	_run_dust.direction = Vector2(-1.0, -0.4)
+
+
+func _fx_jump_net() -> void:
+	if _is_networked():
+		_fx_jump.rpc()
+	else:
+		_fx_jump()
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _fx_jump() -> void:
+	_squash(0.78, 1.28, 0.18)
+	if _jump_dust:
+		_jump_dust.restart()
+
+
+func _fx_land_net(impact: float) -> void:
+	if _is_networked():
+		_fx_land.rpc(impact)
+	else:
+		_fx_land(impact)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _fx_land(impact: float) -> void:
+	_squash(lerpf(1.0, 1.38, impact), lerpf(1.0, 0.66, impact), 0.22)
+	if _land_dust and impact > 0.08:
+		_land_dust.amount = int(lerpf(4.0, 14.0, impact))
+		_land_dust.initial_velocity_max = lerpf(80.0, 190.0, impact)
+		_land_dust.restart()
+
 
 func _setup_life_hearts() -> void:
 	var hearts := LifeHearts.new()
@@ -400,21 +495,39 @@ func _apply_movement(delta: float) -> void:
 			dash_afterimage.stop()
 		return
 	
-	velocity.x = direction * speed
-	if is_on_floor() and not jump_pressed:
+	var grounded: bool = is_on_floor()
+	var target_x: float = direction * speed
+	var rate: float
+	if is_zero_approx(direction):
+		rate = friction if grounded else air_friction
+	elif not is_zero_approx(velocity.x) and signf(direction) != signf(velocity.x):
+		rate = turn_acceleration
+	else:
+		rate = acceleration if grounded else air_acceleration
+	velocity.x = move_toward(velocity.x, target_x, rate * delta)
+
+	if grounded and not jump_pressed:
 		velocity.y = 0.0
 	
 	if jump_pressed:
 		velocity.y = jump_velocity
 		jump_pressed = false
 		SfxManager.play(jump_sound,-10.0,0.1) 
+		_fx_jump_net()
 	
 	if cut_jump:
 		velocity.y *= jump_cut_off
 		cut_jump = false
 	
+	var fast_falling: bool = not grounded and _last_move_input.y > 0.5 and velocity.y > 0.0
 	var gravity: float = rise_gravity if velocity.y < 0.0 else fall_gravity
+	if fast_falling:
+		gravity *= fast_fall_gravity_mult
+	elif not grounded and absf(velocity.y) < apex_threshold:
+		gravity *= apex_gravity_mult
 	velocity.y += gravity * delta
+	if fast_falling:
+		velocity.y = minf(velocity.y, fast_fall_max_speed)
 
 func _get_dash_direction() -> Vector2:
 	var raw := _last_move_input
@@ -435,6 +548,7 @@ func _start_dash() -> void:
 	velocity = dash_direction * dash_speed
 	dash_hitbox.monitoring = true
 	SfxManager.play(dash_sound,-15.0)
+	_squash(1.3, 0.75, 0.2)
 	dash_afterimage.start()
 	
 func _end_dash_immediately() -> void:
@@ -516,12 +630,16 @@ func _play_footstep() -> void:
 		return
 	_last_footstep_time = now
 	SfxManager.play(footstep_sound, -4.0 + randf_range(-2.0, 2.0), footstep_pitch_variance)
+	if _run_dust:
+		_run_dust.direction = Vector2(-1.0 if facing_right else 1.0, -0.4)
+		_run_dust.restart()
 
 
 func _check_landing() -> void:
 	var on_floor_now := is_on_floor()
 	if on_floor_now and not _was_on_floor:
 		SfxManager.play(land_sound,-20.0,0.2)
+		_fx_land_net(clampf(_fall_speed / land_impact_reference, 0.0, 1.0))
 	_was_on_floor = on_floor_now
 
 func respawn(invuln_duration: float) -> void:
@@ -536,6 +654,7 @@ func respawn(invuln_duration: float) -> void:
 	dash_afterimage.stop()  
 	animated_sprite.speed_scale = 1.0
 	animated_sprite.modulate.a = 1.0
+	animated_sprite.scale = _sprite_base_scale
 	visible = true
 	animation_name = StringName("idle_right" if facing_right else "idle_left")
 	is_invulnerable = true

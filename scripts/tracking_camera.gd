@@ -75,6 +75,9 @@ func _framing_bounds() -> Rect2:
 
 func _apply_shake(delta: float, zoom_scalar: float) -> void:
 	_shake_left = maxf(_shake_left - delta, 0.0)  # NEW: eases out evenly across the animation instead of ending early
+	if _shake_left <= 0.0:
+		_shake = 0.0
+		_shake_span = 0.0
 	var falloff: float = (_shake_left / _shake_span) if _shake_span > 0.0 else 0.0
 	var jolt: float = _shake * falloff / maxf(zoom_scalar, 0.01)  # NEW: keeps the shake the same size on screen at any zoom
 	offset = Vector2(0.0, _base_offset_y) + Vector2(randf_range(-jolt, jolt), randf_range(-jolt, jolt))

@@ -348,6 +348,8 @@ properties/1/replication_mode = 0
 
 [node name="Player" type="CharacterBody2D" unique_id=1169704896]
 script = ExtResource("1_g2els")
+acceleration = 3500.0
+air_acceleration = 2200.0
 jump_height = 150.0
 dash_speed = 500.0
 dash_cooldown = 1.0

@@ -70,7 +70,7 @@ func _update_slot(slot: Dictionary, bomb: BombController) -> void:
 	bar.max_value = max_time
 	bar.value = time_left
 	var bg_style := StyleBoxFlat.new()
-	bg_style.bg_color = Color(0.05, 0.05, 0.05, 0.95)
+	bg_style.bg_color = Color(0, 0, 0, 0.95)
 	bg_style.set_border_width_all(1)
 	bg_style.border_color = Color(color.r, color.g, color.b, 0.55)
 	bg_style.set_corner_radius_all(2)
@@ -82,9 +82,9 @@ func _update_slot(slot: Dictionary, bomb: BombController) -> void:
 	var urgency := clampf(time_left / max_time, 0.0, 1.0)
 	var bar_color := color
 	if urgency < 0.25:
-		bar_color = color.lerp(Color(1.0, 0.25, 0.08, 1.0), 0.65)
+		bar_color = color.lerp(Color(0.8667, 0.2157, 0.2706, 1.0), 0.65)
 	elif urgency < 0.5:
-		bar_color = color.lerp(Color(1.0, 0.55, 0.1, 1.0), 0.4)
+		bar_color = color.lerp(Color(1, 0.4118, 0.3529, 1.0), 0.4)
 	var fill_style := StyleBoxFlat.new()
 	fill_style.bg_color = bar_color
 	fill_style.set_corner_radius_all(1)
@@ -95,7 +95,7 @@ func _update_slot(slot: Dictionary, bomb: BombController) -> void:
 	var eliminated := false
 	if player is CharacterBody2D:
 		eliminated = player.is_dead
-	root.modulate = Color(0.55, 0.55, 0.55, 0.75) if eliminated else Color.WHITE
+	root.modulate = Color(0.5961, 0.5608, 0.3922, 0.75) if eliminated else Color.WHITE
 
 func _apply_neon_label(label: Label, color: Color) -> void:
 	label.add_theme_color_override("font_color", color)

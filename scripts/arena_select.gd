@@ -65,18 +65,18 @@ func _load_preview(base_name: String) -> Texture2D:
 
 func _style_menu_button(button: Button, over_art: bool = false) -> void:
 	button.add_theme_color_override("font_color", Color(1, 1, 1, 0.96))
-	button.add_theme_color_override("font_hover_color", Color(0.2, 0.95, 1, 1))
+	button.add_theme_color_override("font_hover_color", Color(0.1529, 0.8275, 0.7961, 1))
 	button.add_theme_color_override("font_pressed_color", Color(1, 1, 1, 1))
 	button.add_theme_color_override("font_hover_pressed_color", Color(1, 1, 1, 1))
 	button.add_theme_color_override("font_focus_color", Color(1, 1, 1, 1))
-	button.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9) if over_art else Color(0.2, 0.95, 1, 0.7))
+	button.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9) if over_art else Color(0.1529, 0.8275, 0.7961, 0.7))
 	button.add_theme_constant_override("outline_size", 6 if over_art else 3)
-	var idle_bg := Color(0, 0, 0, 0.45) if over_art else Color(0.02, 0.06, 0.08, 0.3)
-	var press_bg := Color(0.2, 0.95, 1, 0.3) if over_art else Color(0.2, 0.95, 1, 0.25)
-	button.add_theme_stylebox_override("normal", _make_stylebox(idle_bg, Color(0.2, 0.95, 1, 0.45)))
-	button.add_theme_stylebox_override("pressed", _make_stylebox(press_bg, Color(0.75, 1, 1, 1)))
+	var idle_bg := Color(0, 0, 0, 0.45) if over_art else Color(0, 0, 0, 0.3)
+	var press_bg := Color(0.1529, 0.8275, 0.7961, 0.3) if over_art else Color(0.1529, 0.8275, 0.7961, 0.25)
+	button.add_theme_stylebox_override("normal", _make_stylebox(idle_bg, Color(0.1529, 0.8275, 0.7961, 0.45)))
+	button.add_theme_stylebox_override("pressed", _make_stylebox(press_bg, Color(0.7569, 0.851, 0.949, 1)))
 	button.add_theme_stylebox_override("hover", _make_hover_stylebox(over_art))
-	button.add_theme_stylebox_override("disabled", _make_stylebox(Color(0.03, 0.05, 0.06, 0.2), Color(0.3, 0.4, 0.42, 0.35)))
+	button.add_theme_stylebox_override("disabled", _make_stylebox(Color(0, 0, 0, 0.2), Color(0.2314, 0.4627, 0.5608, 0.35)))
 	button.add_theme_stylebox_override("focus", _make_hover_stylebox(over_art))
 
 func _make_stylebox(bg_color: Color, border_color: Color) -> StyleBoxFlat:
@@ -94,9 +94,9 @@ func _make_stylebox(bg_color: Color, border_color: Color) -> StyleBoxFlat:
 	return box
 
 func _make_hover_stylebox(over_art: bool = false) -> StyleBoxFlat:
-	var bg := Color(0, 0, 0, 0.25) if over_art else Color(0.04, 0.13, 0.16, 0.55)
-	var box := _make_stylebox(bg, Color(0.2, 0.95, 1, 1))
-	box.shadow_color = Color(0.2, 0.95, 1, 0.4)
+	var bg := Color(0, 0, 0, 0.25) if over_art else Color(0.0392, 0.1647, 0.2, 0.55)
+	var box := _make_stylebox(bg, Color(0.1529, 0.8275, 0.7961, 1))
+	box.shadow_color = Color(0.1529, 0.8275, 0.7961, 0.4)
 	box.shadow_size = 10
 	return box
 

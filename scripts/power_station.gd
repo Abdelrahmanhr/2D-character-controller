@@ -1,13 +1,13 @@
 extends ArenaBase
 
-@export var ambient_tint: Color = Color(0.62, 0.66, 0.78)
+@export var ambient_tint: Color = Color(0.6353, 0.5765, 0.7686)
 
 @export var platform_lift: float = 1.25
-@export var platform_tint: Color = Color(0.88, 0.97, 1.0)
+@export var platform_tint: Color = Color(1, 1, 1)
 
 @export var glow_layer_path: NodePath = ^"tiles/TileMapLayer4"
 @export var glow_layer_lift: float = 1.7
-@export var glow_layer_tint: Color = Color(0.62, 0.95, 1.0)
+@export var glow_layer_tint: Color = Color(0.549, 0.8549, 1)
 @export var glow_layer_additive: bool = false
 
 

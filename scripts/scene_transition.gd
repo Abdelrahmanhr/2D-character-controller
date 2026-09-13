@@ -4,6 +4,7 @@ const MAX_R := 1.6
 
 @onready var rect: ColorRect = $Rect
 var _mat: ShaderMaterial
+var _boot_done := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -16,6 +17,19 @@ func _ready() -> void:
 func _update_aspect() -> void:
 	var s := get_viewport().get_visible_rect().size
 	_mat.set_shader_parameter("aspect", s.x / s.y)
+
+func boot_reveal(duration: float = 0.7) -> void:
+	if _boot_done:
+		return
+	_boot_done = true
+	rect.visible = true
+	_set_radius(0.0)
+	await get_tree().process_frame
+	var tw := create_tween()
+	tw.tween_method(_set_radius, 0.0, MAX_R, duration)
+	await tw.finished
+	rect.visible = false
+
 
 func circle_to(scene_path: String, duration: float = 0.5) -> void:
 	rect.visible = true

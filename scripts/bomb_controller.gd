@@ -30,6 +30,7 @@ var _lives_remaining: int = 5
 var _time_left: float
 var _active_minigame: Control = null
 var _active_minigame_slot: Control = null
+var _active_slot_index: int = -1
 var _player: Node
 var _expired := false
 
@@ -252,10 +253,10 @@ func stop_timer() -> void:
 
 
 const PLAYER_COLORS: Array[Color] = [
-	Color(1, 0.18, 0.22, 1),
-	Color(1, 0.95, 0.15, 1),
-	Color(0.2, 0.55, 1, 1),
-	Color(0.15, 1, 0.4, 1),
+	Color(1, 0.4118, 0.3529, 1),
+	Color(1, 0.8784, 0.5686, 1),
+	Color(0.3137, 0.7255, 0.9216, 1),
+	Color(0.549, 1, 0.6078, 1),
 ]
 
 func get_slot_index() -> int:
@@ -288,6 +289,13 @@ func stop_minigame() -> void:
 	else:
 		_clear_minigame()
 
+
+func finish_minigame() -> void:
+	if _has_authority() and _is_networked():
+		_power_off_minigame.rpc()
+	else:
+		_power_off_minigame()
+
 @rpc("any_peer", "call_local", "reliable")
 func _show_minigame(slot_index: int, scene_index: int, rng_seed: int = 0) -> void:
 	_clear_minigame()
@@ -299,9 +307,15 @@ func _show_minigame(slot_index: int, scene_index: int, rng_seed: int = 0) -> voi
 	var scene: PackedScene = MinigameDirector.minigame_order[scene_index]
 	_active_minigame = scene.instantiate()
 	_active_minigame_slot = slot
-	_active_minigame_slot.visible = true
+	_active_slot_index = slot_index
 	slot.add_child(_active_minigame)
-	_active_minigame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var screens := _minigame_screens()
+	if screens:
+		screens.fit_content(slot_index, _active_minigame)
+		screens.power_on(slot_index)
+	else:
+		_active_minigame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		slot.visible = true
 	_active_minigame.setup(_player, rng_seed)
 	if _has_authority():
 		_active_minigame.bomb_time_delta.connect(_on_bomb_time_delta)
@@ -329,21 +343,43 @@ func _replicate_minigame_input(is_key: bool, code: int) -> void:
 		pad_event.button_index = code as JoyButton
 		_active_minigame._handle_input(pad_event)
 
+func _minigame_screens() -> Node:
+	return get_tree().get_first_node_in_group("minigame_screens")
+
+
 @rpc("any_peer", "call_local", "reliable")
 func _clear_minigame() -> void:
+	var screens := _minigame_screens()
+	if screens and _active_slot_index >= 0:
+		screens.snap_off(_active_slot_index)
 	if _active_minigame:
 		_active_minigame.queue_free()
 		_active_minigame = null
 	if _active_minigame_slot:
 		_active_minigame_slot.visible = false
 		_active_minigame_slot = null
+	_active_slot_index = -1
+
+
+@rpc("any_peer", "call_local", "reliable")
+func _power_off_minigame() -> void:
+	var dying := _active_minigame
+	var slot_index := _active_slot_index
+	_active_minigame = null
+	_active_minigame_slot = null
+	_active_slot_index = -1
+	var screens := _minigame_screens()
+	if screens and slot_index >= 0:
+		await screens.power_off(slot_index)
+	if is_instance_valid(dying):
+		dying.queue_free()
 
 
 func _on_minigame_finished() -> void:
 	if _active_minigame == null:
 		return
 	SfxManager.play(minigame_complete_sound,-10.0,0.2)
-	stop_minigame()
+	finish_minigame()
 	player_finished_round.emit()
 
 func _on_bomb_time_delta(seconds: float) -> void:

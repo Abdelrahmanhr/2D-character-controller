@@ -13,7 +13,7 @@ const HEART_ROWS: Array[String] = [
 
 const FLASH_TIMEOUT := 3.0
 
-@export var heart_color: Color = Color(1.0, 0.25, 0.35)
+@export var heart_color: Color = Color(0.8667, 0.2157, 0.2706)
 @export var heart_scale: float = 2.0
 @export var spacing: float = 2.0
 @export var height_above_player: float = -66.0

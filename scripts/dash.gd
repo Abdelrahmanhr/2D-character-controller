@@ -1,6 +1,6 @@
 extends Node2D
 
-@export var ghost_color: Color = Color(0.4, 0.8, 1.0, 0.9) 
+@export var ghost_color: Color = Color(0.3137, 0.7255, 0.9216, 0.9) 
 @export var fade_time: float = 0.45                
 @export var interval: float = 0.02                     
 

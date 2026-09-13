@@ -2,10 +2,10 @@ extends PanelContainer
 class_name PlayerSlotUI
 
 const SLOT_COLORS: Array[Color] = [
-	Color(1, 0.18, 0.22, 1),
-	Color(1, 0.95, 0.15, 1),
-	Color(0.2, 0.55, 1, 1),
-	Color(0.15, 1, 0.4, 1),
+	Color(1, 0.4118, 0.3529, 1),
+	Color(1, 0.8784, 0.5686, 1),
+	Color(0.3137, 0.7255, 0.9216, 1),
+	Color(0.549, 1, 0.6078, 1),
 ]
 
 @onready var color_bar: ColorRect = $ColorBar

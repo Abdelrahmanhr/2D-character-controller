@@ -63,13 +63,13 @@ func _build_overlay() -> void:
 	_panel.visible = false
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0, 0, 0, 0.72)
-	style.border_color = Color(0.2, 0.95, 1, 0.6)
+	style.border_color = Color(0.1529, 0.8275, 0.7961, 0.6)
 	style.set_border_width_all(1)
 	style.set_content_margin_all(8)
 	_panel.add_theme_stylebox_override("panel", style)
 	_label = Label.new()
 	_label.add_theme_font_size_override("font_size", 12)
-	_label.add_theme_color_override("font_color", Color(0.75, 1, 1, 1))
+	_label.add_theme_color_override("font_color", Color(0.7569, 0.851, 0.949, 1))
 	_panel.add_child(_label)
 	add_child(_panel)
 
@@ -80,13 +80,13 @@ func _build_pad_overlay() -> void:
 	_pad_panel.visible = false
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0, 0, 0, 0.78)
-	style.border_color = Color(1, 0.8, 0.2, 0.7)
+	style.border_color = Color(1, 0.6667, 0.4314, 0.7)
 	style.set_border_width_all(1)
 	style.set_content_margin_all(8)
 	_pad_panel.add_theme_stylebox_override("panel", style)
 	_pad_label = Label.new()
 	_pad_label.add_theme_font_size_override("font_size", 12)
-	_pad_label.add_theme_color_override("font_color", Color(1, 0.95, 0.8, 1))
+	_pad_label.add_theme_color_override("font_color", Color(1, 0.8275, 0.6784, 1))
 	_pad_panel.add_child(_pad_label)
 	add_child(_pad_panel)
 
