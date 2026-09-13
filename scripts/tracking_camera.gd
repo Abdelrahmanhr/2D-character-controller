@@ -15,6 +15,12 @@ var _shake := 0.0
 var _shake_left := 0.0
 var _shake_span := 0.0
 
+# The roster only changes on spawn/despawn, so the group scan and the positions
+# array are kept instead of rebuilt every frame.
+var _players: Array[Node] = []
+var _players_population: int = -1
+var _live_positions: Array[Vector2] = []
+
 
 func shake(amount: float = 10.0, duration: float = -1.0) -> void:  # NEW: strongest active shake wins, so overlapping hits do not stack into a mess
 	_shake = maxf(_shake, amount)
@@ -22,9 +28,13 @@ func shake(amount: float = 10.0, duration: float = -1.0) -> void:  # NEW: strong
 	_shake_span = maxf(_shake_span, _shake_left)
 
 func _process(delta: float) -> void:
-	var players := get_tree().get_nodes_in_group("players")
-	var live_positions: Array[Vector2] = []
-	for p in players:
+	var population: int = get_tree().get_node_count_in_group("players")
+	if population != _players_population:
+		_players_population = population
+		_players = get_tree().get_nodes_in_group("players")
+	var live_positions: Array[Vector2] = _live_positions
+	live_positions.clear()
+	for p in _players:
 		if is_instance_valid(p) and not p.is_dead:
 			live_positions.append(p.global_position)
 	if live_positions.is_empty():

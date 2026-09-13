@@ -5,7 +5,8 @@ extends ArenaBase
 @export var ambient_tint: Color = Color(0.8706, 0.7412, 0.6863)
 
 @export_group("Tiles")
-@export var tile_lift: float = 1.45
+# Lifted slightly to make up for the neon signs no longer spilling light on the tiles.
+@export var tile_lift: float = 1.6
 @export var tile_tint: Color = Color(1, 0.9686, 0.9333)
 
 @export_group("Parallax")
@@ -26,7 +27,10 @@ extends ArenaBase
 
 @export_group("Layer Shadow")
 @export var shadow_layer_path: NodePath = ^"tiles/TileMapLayer"
-@export var shadow_enabled: bool = true
+# Off: this duplicated the 2,847-cell TileMapLayer at runtime for a fake drop
+# shadow - a whole second rasterization of the largest layer. Flip back to true
+# if the flat look turns out to matter.
+@export var shadow_enabled: bool = false
 @export_range(0, 8) var shadow_steps: int = 1
 @export var shadow_offset: Vector2 = Vector2(3.0, 5.0)
 @export_range(0.0, 1.0, 0.01) var shadow_opacity: float = 0.25

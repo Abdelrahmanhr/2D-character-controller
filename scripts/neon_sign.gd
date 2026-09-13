@@ -16,7 +16,10 @@ const SYMBOL_COUNT := 21
 @export_range(0.1, 8.0, 0.05) var halo_size: float = 0.45: set = _set_halo_size
 
 @export_group("Cast light")
-@export var cast_light: bool = true: set = _set_cast_light
+# Off by default: under the GL Compatibility renderer every Light2D costs an extra
+# draw pass over everything it overlaps, and the residential arena carries 44 signs.
+# The additive Halo sprite plus the WorldEnvironment glow carry the look instead.
+@export var cast_light: bool = false: set = _set_cast_light
 @export_range(0.0, 4.0, 0.05) var light_energy: float = 0.7: set = _set_light_energy
 @export_range(0.1, 12.0, 0.05) var light_radius: float = 0.9: set = _set_light_radius
 
@@ -43,6 +46,10 @@ var _queued_flicker: bool = false
 var _pulse_phase: float = 0.0
 var _pulse_speed: float = 0.0
 var _pulse_depth: float = 0.0
+var _applied_level: float = -1.0
+var _loaded_symbol_index: int = -1
+
+const LEVEL_EPSILON: float = 0.002
 
 
 func _ready() -> void:
@@ -50,6 +57,8 @@ func _ready() -> void:
 	_pulse_speed = pulse_speed * randf_range(1.0 - pulse_variance, 1.0 + pulse_variance)
 	_pulse_depth = pulse_depth * randf_range(1.0 - pulse_variance, 1.0 + pulse_variance)
 	_refresh()
+	# A sign that neither flickers nor pulses is static art - it needs no frame budget.
+	set_process(flicker or pulse)
 
 
 func _process(delta: float) -> void:
@@ -91,11 +100,17 @@ func _start_flicker() -> void:
 func _apply_intensity(level: float) -> void:
 	if _symbol == null:
 		return
+	# The pulse moves by a fraction of a percent per frame, so most frames would
+	# re-upload an identical shader uniform. Skip those.
+	if absf(level - _applied_level) < LEVEL_EPSILON:
+		return
+	_applied_level = level
 	var mat := _symbol.material as ShaderMaterial
 	if mat:
 		mat.set_shader_parameter("brightness", brightness * level)
 	_halo.modulate.a = halo_strength * level
-	_light.energy = light_energy * level
+	if cast_light:
+		_light.energy = light_energy * level
 
 
 func _refresh() -> void:
@@ -108,7 +123,11 @@ func _refresh() -> void:
 	if _symbol == null or _halo == null or _light == null:
 		return
 
-	_symbol.texture = load(SYMBOL_PATH % symbol_index)
+	# _refresh() fires from nine setters, so every property applied at scene load used
+	# to trigger a ResourceLoader round-trip. Only reload when the symbol changed.
+	if symbol_index != _loaded_symbol_index:
+		_loaded_symbol_index = symbol_index
+		_symbol.texture = load(SYMBOL_PATH % symbol_index)
 	_symbol.scale = Vector2.ONE * sign_scale
 	_symbol.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
@@ -120,6 +139,7 @@ func _refresh() -> void:
 	_halo.scale = Vector2.ONE * halo_size
 	_halo.modulate = Color(neon_color.r, neon_color.g, neon_color.b, halo_strength)
 
+	_applied_level = -1.0
 	_light.enabled = cast_light
 	_light.color = neon_color
 	_light.energy = light_energy

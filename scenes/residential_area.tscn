@@ -234,7 +234,7 @@ sources/0 = SubResource("TileSetAtlasSource_b0xx7")
 glow_enabled = true
 glow_intensity = 2.2
 glow_bloom = 0.1
-glow_hdr_threshold = 0.9
+glow_hdr_threshold = 1.0
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_dust"]
 particle_flag_disable_z = true
@@ -257,6 +257,7 @@ visible = false
 [node name="GPUParticles2D" type="GPUParticles2D" parent="background" unique_id=691925662]
 visible = false
 position = Vector2(576, -30)
+emitting = false
 amount = 200
 lifetime = 2.0
 process_material = SubResource("ParticleProcessMaterial_7ptiw")
@@ -459,7 +460,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_slot3")
 position = Vector2(736, 459)
 script = ExtResource("7_camera")
 margin = 120.0
-min_zoom = 1.0
+min_zoom = 0.8
 max_zoom = 1.0
 position_lerp_speed = 6.0
 zoom_lerp_speed = 5.0
@@ -497,6 +498,7 @@ z_index = 1
 texture_filter = 1
 material = SubResource("CanvasItemMaterial_overlay")
 position = Vector2(800, 430)
+emitting = false
 amount = 109
 amount_ratio = 0.4225
 texture = ExtResource("58_dot")
@@ -506,6 +508,7 @@ randomness = 0.6
 process_material = SubResource("ParticleProcessMaterial_dust")
 
 [node name="ForegroundHaze" type="CanvasLayer" parent="." unique_id=1225690202]
+visible = false
 layer = 0
 
 [node name="Haze" type="TextureRect" parent="ForegroundHaze" unique_id=398154638]

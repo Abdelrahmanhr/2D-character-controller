@@ -32,6 +32,7 @@ scale = Vector2(3, 3)
 texture = ExtResource("3_symbol")
 
 [node name="Light" type="PointLight2D" parent="."]
+enabled = false
 color = Color(1, 0.35, 0.85, 1)
 energy = 0.7
 texture = ExtResource("4_glow")

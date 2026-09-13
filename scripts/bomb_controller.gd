@@ -42,6 +42,8 @@ var _frozen_value: float = 0.0
 const STICK_THRESHOLD: float = 0.5  
 
 var _prev_stick_direction: String = ""
+var _slot_index: int = -1
+var _slot_cache_population: int = -1
 var _tick_timer: float = 0.0
 var _tick_fallback: AudioStream
 
@@ -127,14 +129,16 @@ func _update_tick(delta: float) -> void:
 	var left: float = _compute_time_left()
 	if left <= 0.0:
 		return
+	# Count down first and bail early: the urgency/ramp math and the stream lookup
+	# below only matter on the frame a tick actually fires.
+	_tick_timer -= delta
+	if _tick_timer > 0.0:
+		return
 	var sfx: AudioStream = tick_sound if tick_sound else _tick_fallback
 	if sfx == null:
 		return
 	var urgency: float = 1.0 - clampf(left / maxf(panic_time, 0.01), 0.0, 1.0)
 	var ramp: float = sqrt(urgency)
-	_tick_timer -= delta
-	if _tick_timer > 0.0:
-		return
 	_tick_timer = lerpf(tick_interval_calm, tick_interval_panic, ramp)
 	SfxManager.play(
 		sfx,
@@ -259,12 +263,21 @@ const PLAYER_COLORS: Array[Color] = [
 	Color(0.549, 1, 0.6078, 1),
 ]
 
+# The slot is derived from the sorted peer/player ids, which only change when a
+# player joins or leaves. Recomputing it scanned and sorted the whole "players"
+# group, and it was called ~3x per player per frame (match_hud, player identity),
+# so the result is cached and only rebuilt when the group size changes.
 func get_slot_index() -> int:
+	var count: int = get_tree().get_node_count_in_group("players")
+	if _slot_index >= 0 and count == _slot_cache_population:
+		return _slot_index
 	var ids: Array[int] = []
 	for node in get_tree().get_nodes_in_group("players"):
 		ids.append(node.name.to_int())
 	ids.sort()
-	return clampi(ids.find(_player.name.to_int()), 0, 3)
+	_slot_index = clampi(ids.find(_player.name.to_int()), 0, 3)
+	_slot_cache_population = count
+	return _slot_index
 
 func get_player_color() -> Color:
 	return PLAYER_COLORS[get_slot_index()]

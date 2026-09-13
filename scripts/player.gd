@@ -105,6 +105,13 @@ var jump_velocity: float
 var facing_right := true
 var animation_name: StringName = &"idle_right"
 
+# Preallocated so the per-tick animation pick costs no String concat + StringName
+# interning. Indexed as ANIM_<state>[facing_right].
+const ANIM_IDLE: Array[StringName] = [&"idle_left", &"idle_right"]
+const ANIM_WALK: Array[StringName] = [&"walk_left", &"walk_right"]
+const ANIM_JUMP: Array[StringName] = [&"jump_left", &"jump_right"]
+const ANIM_DIE: Array[StringName] = [&"die_left", &"die_right"]
+
 var is_dead := false
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -450,8 +457,7 @@ func play_death_animation(cause: String = "fall") -> void:
 		anim_name = &"explode"
 		SfxManager.play(explode_sound, 0.0, explode_pitch_variance)  
 	else:
-		var facing := "right" if facing_right else "left"
-		anim_name = StringName("die_" + facing)
+		anim_name = ANIM_DIE[1 if facing_right else 0]
 	animation_name = anim_name
 	animated_sprite.sprite_frames.set_animation_loop(animation_name, false)
 	animated_sprite.play(animation_name)
@@ -460,32 +466,35 @@ func play_death_animation(cause: String = "fall") -> void:
 		if cam and cam.has_method("shake"):
 			cam.shake(10.0, _explode_anim_length())
 	await animated_sprite.animation_finished
-	if my_id != _death_animation_id:
+	# The node can be freed mid-await (round end, arena unload, peer disconnect),
+	# at which point get_tree() below would return null.
+	if not is_inside_tree() or my_id != _death_animation_id:
 		return
 	animated_sprite.stop()
 	animated_sprite.frame = animated_sprite.sprite_frames.get_frame_count(animation_name) - 1
 	var elapsed := 0.0
 	while not is_on_floor() and elapsed < 3.0:
 		await get_tree().physics_frame
-		elapsed += get_physics_process_delta_time()
-		if my_id != _death_animation_id:
+		if not is_inside_tree() or my_id != _death_animation_id:
 			return
+		elapsed += get_physics_process_delta_time()
 
 
 func _update_animation() -> void:
 	if direction != 0.0:
 		facing_right = direction > 0.0
 
-	var facing := "right" if facing_right else "left"
+	var facing: int = 1 if facing_right else 0
 	var next_animation: StringName
+	var is_walking_now := false
 	if not is_on_floor():
-		next_animation = StringName("jump_" + facing)
+		next_animation = ANIM_JUMP[facing]
 	elif direction != 0.0:
-		next_animation = StringName("walk_" + facing)
+		next_animation = ANIM_WALK[facing]
+		is_walking_now = true
 	else:
-		next_animation = StringName("idle_" + facing)
+		next_animation = ANIM_IDLE[facing]
 
-	var is_walking_now := next_animation.begins_with("walk_")
 	if is_walking_now and not _was_walking:
 		_play_footstep()
 	_was_walking = is_walking_now
@@ -510,8 +519,9 @@ func _handle_input(delta: float) -> void:
 		var pad_move_y: float = 0.0
 		var pad_jump_held: bool = false
 		var pad_dash_held: bool = false
-		if not Input.get_connected_joypads().is_empty():
-			var pad_id: int = Input.get_connected_joypads()[0]
+		var pads: Array[int] = Input.get_connected_joypads()
+		if not pads.is_empty():
+			var pad_id: int = pads[0]
 			pad_move_x = PadState.get_axis(pad_id, JOY_AXIS_LEFT_X)
 			pad_move_y = PadState.get_axis(pad_id, JOY_AXIS_LEFT_Y)
 			if abs(pad_move_x) < STICK_DEADZONE:
@@ -710,7 +720,7 @@ func _do_apply_hitstop(duration: float) -> void:
 
 
 func _on_animation_frame_changed() -> void:
-	if not animation_name.begins_with("walk_"):
+	if animation_name != ANIM_WALK[0] and animation_name != ANIM_WALK[1]:
 		return
 	if animated_sprite.frame in footstep_frames:
 		_play_footstep()
@@ -750,7 +760,7 @@ func respawn(invuln_duration: float) -> void:
 	animated_sprite.modulate.a = 1.0
 	animated_sprite.scale = _sprite_base_scale
 	visible = true
-	animation_name = StringName("idle_right" if facing_right else "idle_left")
+	animation_name = ANIM_IDLE[1 if facing_right else 0]
 	is_invulnerable = true
 	_invuln_time_left = invuln_duration
 	_invuln_flash_timer = 0.0

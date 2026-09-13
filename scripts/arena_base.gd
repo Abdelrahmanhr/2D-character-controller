@@ -16,6 +16,7 @@ var _end_menu: CanvasLayer
 
 
 func _ready() -> void:
+	_set_global_parallax_active(false)
 	MusicManager.play(preload("res://resources/audio/ARENA SOUNDTRACK.ogg"), false, true, -25.0)
 	$PauseMenu.process_mode = Node.PROCESS_MODE_ALWAYS
 	get_viewport().size_changed.connect(_layout_viewport_content)
@@ -38,6 +39,21 @@ func _ready() -> void:
 	if multiplayer.is_server():
 		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	Networking.notify_arena_ready()
+
+
+func _exit_tree() -> void:
+	_set_global_parallax_active(true)
+
+
+# Every arena draws its own LocalParallax, so the GlobalParallax autoload sitting at
+# layer -10 underneath it is 15 full-screen quads of pure overdraw, repositioned
+# every frame. Park it for the duration of the match.
+func _set_global_parallax_active(active: bool) -> void:
+	var global_parallax := get_node_or_null("/root/GlobalParallax") as CanvasLayer
+	if global_parallax == null:
+		return
+	global_parallax.visible = active
+	global_parallax.process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
 
 
 func _on_arena_spawn_requested(slots: Dictionary) -> void:

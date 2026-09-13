@@ -203,6 +203,14 @@ func _compose_text() -> String:
 	var mp := multiplayer
 	var is_online: bool = mp.multiplayer_peer != null and not (mp.multiplayer_peer is OfflineMultiplayerPeer)
 	lines.append("NET DEBUG   F3 hide   F4 delay=%.1fs   solo=%s" % [ready_delay, str(allow_solo_start)])
+	lines.append("fps %d   frame %.2f ms   draw calls %d   items %d   nodes %d" % [
+		Engine.get_frames_per_second(),
+		Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+		Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
+		Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),
+		Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
+	])
+	lines.append("video mem %.1f MB" % (Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0))
 	if not is_online:
 		lines.append("mode: offline")
 	else:

@@ -2,21 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bfdgnpr2icbgo"
-path.s3tc="res://.godot/imported/example.jpg-8801d5c0826dad7498e53d3dd6ba4d97.s3tc.ctex"
+uid="uid://dfofwl2nu65dc"
+path="res://.godot/imported/residential_area_new.png-06b234bf177fc6c894a8cf969d48b137.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
-source_file="res://resources/example.jpg"
-dest_files=["res://.godot/imported/example.jpg-8801d5c0826dad7498e53d3dd6ba4d97.s3tc.ctex"]
+source_file="res://resources/ui/arena_previews/residential_area_new.png"
+dest_files=["res://.godot/imported/residential_area_new.png-06b234bf177fc6c894a8cf969d48b137.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -24,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

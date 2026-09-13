@@ -23,6 +23,10 @@ const BOLT := preload("res://scenes/lightning_bolt.tscn")
 var _anchors: PackedVector2Array = PackedVector2Array()
 var _timer: Timer
 
+# Bolts are spawned ~20 times a second for the whole match. Recycling them avoids
+# that many instantiate/queue_free cycles (and the node churn behind them).
+var _pool: Array[LightningBolt] = []
+
 
 func _ready() -> void:
 	add_to_group("lightning_emitters")
@@ -72,15 +76,34 @@ func strike_global(from_global: Vector2, to_global: Vector2) -> void:
 
 
 func _spawn(from: Vector2, to: Vector2) -> void:
-	var bolt := BOLT.instantiate() as LightningBolt
+	var bolt: LightningBolt = _acquire()
 	var from_to: Vector2 = to - from
 	if rail_mode:
 		var seg: float = from_to.length()
 		bolt.divider = maxf(seg / 8.0, 4.0)
 		bolt.sway_divider = maxf(seg / 12.0, 2.0)
-	add_child(bolt)
 	bolt.set_start(from)
 	bolt.set_end(to)
 	bolt.segmentize(from_to, from)
 	bolt.sway(Vector2(from_to.y, -from_to.x).normalized())
+	bolt.visible = true
 	bolt.play_fade()
+
+
+func _acquire() -> LightningBolt:
+	while not _pool.is_empty():
+		var reused: LightningBolt = _pool.pop_back()
+		if is_instance_valid(reused):
+			reused.reset()
+			return reused
+	var bolt := BOLT.instantiate() as LightningBolt
+	add_child(bolt)
+	bolt.fade_finished.connect(_on_bolt_finished)
+	bolt.reset()
+	return bolt
+
+
+func _on_bolt_finished(bolt: LightningBolt) -> void:
+	bolt.visible = false
+	bolt.reset()
+	_pool.append(bolt)
