@@ -51,9 +51,16 @@ extends CharacterBody2D
 @export var keyboard_jump: Key = KEY_SPACE  
 @export var keyboard_dash: Key = KEY_SHIFT  
 
-@export var invulnerability_flash_speed: float = 0.1  
+@export var invulnerability_flash_speed: float = 0.1
 @export var player_light_energy: float = 1.0
 @export var player_light_scale: float = 2.2
+
+@export_group("Long Fall")
+@export var fall_fx_distance: float = 300.0
+@export var fall_streak_color: Color = Color(0.7804, 0.8706, 1, 0.55)
+@export var fall_ghost_color: Color = Color(0.549, 0.6784, 0.9490, 0.55)
+@export var fall_whoosh_sound: AudioStream
+@export var fall_whoosh_volume_db: float = -8.0
 var dash_start_time_ms: int = 0  
 var is_invulnerable: bool = false 
 var _invuln_time_left: float = 0.0 
@@ -61,6 +68,8 @@ var _invuln_flash_timer: float = 0.0
 var _death_animation_id: int = 0  
 
 const STICK_DEADZONE: float = 0.2
+const TELEPORT_DISTANCE: float = 600.0
+const FALL_MIN_SPEED: float = 250.0
 
 var _prev_jump_held: bool = false  
 var _prev_dash_held: bool = false  
@@ -111,6 +120,12 @@ var _fall_speed: float = 0.0
 var _land_dust: CPUParticles2D
 var _jump_dust: CPUParticles2D
 var _run_dust: CPUParticles2D
+var _fall_streaks: CPUParticles2D
+var _fall_whoosh: AudioStreamPlayer2D
+var _fall_fx_active: bool = false
+var _fall_fx_last_y: float = 0.0
+var _fall_distance: float = 0.0
+var _dash_ghost_color: Color = Color.WHITE
 var _player_light: PointLight2D
 
 
@@ -125,6 +140,7 @@ func _ready() -> void:
 	_setup_life_hearts()
 	_sprite_base_scale = animated_sprite.scale
 	_setup_dust()
+	_setup_fall_fx()
 	if _is_networked() and is_multiplayer_authority() and device_id == -2:
 		device_id = -1
 		if bomb_controller:
@@ -203,8 +219,9 @@ func _apply_stun_physics(delta: float) -> void:
 	animated_sprite.rotation = lerp_angle(animated_sprite.rotation, target_tilt, stun_tilt_speed * delta)  
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_update_identity()
+	_update_fall_fx(delta)
 	if is_dead:
 		return
 	if animated_sprite.animation != animation_name:
@@ -243,7 +260,7 @@ func _squash(x_mult: float, y_mult: float, duration: float) -> void:
 
 
 func _dust_texture() -> Texture2D:
-	var img := Image.create(3, 3, false, Image.FORMAT_RGBA8)
+	var img := Image.create(1, 1, false, Image.FORMAT_RGBA8)
 	img.fill(Color.WHITE)
 	return ImageTexture.create_from_image(img)
 
@@ -261,15 +278,90 @@ func _make_dust(amount: int, lifetime: float, spread: float, vmin: float, vmax: 
 	dust.initial_velocity_min = vmin
 	dust.initial_velocity_max = vmax
 	dust.gravity = Vector2(0.0, 320.0)
-	dust.scale_amount_min = 1.0
-	dust.scale_amount_max = 2.5
+	dust.scale_amount_min = 3.0
+	dust.scale_amount_max = 7.0
 	dust.damping_min = 40.0
 	dust.damping_max = 90.0
 	dust.color = dust_color
 	dust.position = Vector2(0.0, dust_offset_y)
-	dust.z_index = -1
+	dust.z_index = 1
 	add_child(dust)
 	return dust
+
+
+func _streak_texture() -> Texture2D:
+	var img := Image.create(1, 6, false, Image.FORMAT_RGBA8)
+	img.fill(Color.WHITE)
+	return ImageTexture.create_from_image(img)
+
+
+func _setup_fall_fx() -> void:
+	_fall_whoosh = get_node_or_null("FallWhoosh")
+	if dash_afterimage:
+		_dash_ghost_color = dash_afterimage.ghost_color
+	_fall_fx_last_y = global_position.y
+
+	var streaks := CPUParticles2D.new()
+	streaks.name = "FallStreaks"
+	streaks.texture = _streak_texture()
+	streaks.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	streaks.emitting = false
+	streaks.amount = 22
+	streaks.lifetime = 0.35
+	streaks.local_coords = false
+	streaks.direction = Vector2(0.0, -1.0)
+	streaks.spread = 6.0
+	streaks.initial_velocity_min = 120.0
+	streaks.initial_velocity_max = 320.0
+	streaks.gravity = Vector2.ZERO
+	streaks.scale_amount_min = 1.0
+	streaks.scale_amount_max = 3.0
+	streaks.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	streaks.emission_rect_extents = Vector2(14.0, 12.0)
+	streaks.color = fall_streak_color
+	streaks.z_index = 1
+	add_child(streaks)
+	_fall_streaks = streaks
+
+
+func _update_fall_fx(delta: float) -> void:
+	if delta <= 0.0:
+		return
+	var y: float = global_position.y
+	var moved: float = y - _fall_fx_last_y
+	_fall_fx_last_y = y
+	if absf(moved) > TELEPORT_DISTANCE:
+		_fall_distance = 0.0
+		return
+	if is_dead or moved / delta < FALL_MIN_SPEED:
+		_fall_distance = 0.0
+	else:
+		_fall_distance += moved
+	var falling: bool = _fall_distance >= fall_fx_distance
+	if falling != _fall_fx_active:
+		_set_fall_fx(falling)
+
+
+func _set_fall_fx(on: bool) -> void:
+	_fall_fx_active = on
+	if _fall_streaks:
+		_fall_streaks.emitting = on
+	if dash_afterimage:
+		if on:
+			dash_afterimage.ghost_color = fall_ghost_color
+			dash_afterimage.start()
+		elif not is_dashing:
+			dash_afterimage.stop()
+			dash_afterimage.ghost_color = _dash_ghost_color
+	if _fall_whoosh == null:
+		return
+	if on and fall_whoosh_sound:
+		if not _fall_whoosh.playing:
+			_fall_whoosh.stream = fall_whoosh_sound
+			_fall_whoosh.volume_db = fall_whoosh_volume_db
+			_fall_whoosh.play()
+	elif not on:
+		_fall_whoosh.stop()
 
 
 func _setup_dust() -> void:
@@ -481,7 +573,6 @@ func _handle_input(delta: float) -> void:
 		cut_jump = true
 
 
-
 func _apply_movement(delta: float) -> void:
 	if dash_cooldown_left > 0.0:
 		dash_cooldown_left -= delta
@@ -645,6 +736,9 @@ func _check_landing() -> void:
 func respawn(invuln_duration: float) -> void:
 	_death_animation_id += 1
 	is_dead = false
+	_set_fall_fx(false)
+	_fall_fx_last_y = global_position.y
+	_fall_distance = 0.0
 	velocity = Vector2.ZERO
 	is_stunned = false
 	is_frozen = false

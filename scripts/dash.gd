@@ -33,7 +33,7 @@ func _spawn_ghost() -> void:
 	ghost.flip_h = _sprite.flip_h
 	ghost.scale = _sprite.scale
 	ghost.modulate = ghost_color
-	ghost.z_index = -1 
+	ghost.z_index = 1
 	get_tree().current_scene.add_child(ghost)
 	var tween := ghost.create_tween()
 	tween.tween_property(ghost, "modulate:a", 0.0, fade_time)

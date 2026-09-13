@@ -448,3 +448,8 @@ replication_config = SubResource("SceneReplicationConfig_bomb")
 script = ExtResource("16_a8ls1")
 fade_time = 0.2
 interval = 0.04
+
+[node name="FallWhoosh" type="AudioStreamPlayer2D" parent="."]
+bus = &"SFX"
+max_distance = 1400.0
+attenuation = 1.5
