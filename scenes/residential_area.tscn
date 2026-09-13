@@ -6,20 +6,20 @@
 [ext_resource type="PackedScene" uid="uid://deiu510u7y2u3" path="res://scenes/match_hud.tscn" id="6_hud"]
 [ext_resource type="Script" uid="uid://yjxuo048bmay" path="res://scripts/tracking_camera.gd" id="7_camera"]
 [ext_resource type="Script" uid="uid://yv5cfb7voxbn" path="res://scripts/parallax_layer.gd" id="8_parallax"]
-[ext_resource type="Texture2D" uid="uid://djhwwiej24xbw" path="res://resources/residential-area-tileset-pixel-art/1 Tiles/tileset_atlas.png" id="14_7lb0h"]
-[ext_resource type="Texture2D" uid="uid://de1nbw23kfys6" path="res://resources/residential-area-tileset-pixel-art/3 Objects/Boxes/1.png" id="15_2rhev"]
-[ext_resource type="Texture2D" uid="uid://dy0l3yokby3hm" path="res://resources/residential-area-tileset-pixel-art/3 Objects/Boxes/2.png" id="16_1o0l6"]
-[ext_resource type="Texture2D" uid="uid://31siy5o0no42" path="res://resources/residential-area-tileset-pixel-art/3 Objects/Boxes/4.png" id="17_ncaus"]
-[ext_resource type="Texture2D" uid="uid://bsd4lghpw7ucq" path="res://resources/residential-area-tileset-pixel-art/3 Objects/Boxes/3.png" id="18_gucx2"]
-[ext_resource type="Texture2D" uid="uid://dsd3q3od5ymn" path="res://resources/residential-area-tileset-pixel-art/3 Objects/Boxes/5.png" id="19_dxfuc"]
-[ext_resource type="Texture2D" uid="uid://btk80dtgo1mh2" path="res://resources/residential-area-tileset-pixel-art/3 Objects/Pointers/4.png" id="20_1o0l6"]
-[ext_resource type="Texture2D" uid="uid://p4wsv7328chx" path="res://resources/residential-area-tileset-pixel-art/2 Background/Day/Background.png" id="50_day_bg"]
-[ext_resource type="Texture2D" uid="uid://vd4pxpb2m02u" path="res://resources/residential-area-tileset-pixel-art/2 Background/Night/1.png" id="51_day1"]
-[ext_resource type="Texture2D" uid="uid://bn0x47er2cp41" path="res://resources/residential-area-tileset-pixel-art/2 Background/Night/2.png" id="52_day2"]
-[ext_resource type="Texture2D" uid="uid://dceccedo745qy" path="res://resources/residential-area-tileset-pixel-art/2 Background/Night/3.png" id="53_day3"]
-[ext_resource type="Texture2D" uid="uid://b8poqysedhsqf" path="res://resources/residential-area-tileset-pixel-art/2 Background/Night/4.png" id="54_day4"]
-[ext_resource type="Texture2D" uid="uid://bouajr4rm3qlc" path="res://resources/residential-area-tileset-pixel-art/2 Background/Night/5.png" id="55_day5"]
-[ext_resource type="Texture2D" uid="uid://os00k3x6qgpb" path="res://resources/residential-area-tileset-pixel-art/2 Background/Overlay_illumination.png" id="56_day_overlay"]
+[ext_resource type="Texture2D" uid="uid://dypnxv6tst0vq" path="res://resources/residential-area-tileset-pixel-art/1 Tiles/tileset_atlas.png" id="14_7lb0h"]
+[ext_resource type="Texture2D" uid="uid://dj216hxl2aoy8" path="res://resources/residential-area-tileset-pixel-art/3 Objects/Boxes/1.png" id="15_2rhev"]
+[ext_resource type="Texture2D" uid="uid://c6awnwuccfv0d" path="res://resources/residential-area-tileset-pixel-art/3 Objects/Boxes/2.png" id="16_1o0l6"]
+[ext_resource type="Texture2D" uid="uid://oiees30jqpnu" path="res://resources/residential-area-tileset-pixel-art/3 Objects/Boxes/4.png" id="17_ncaus"]
+[ext_resource type="Texture2D" uid="uid://vhdoqwi35aku" path="res://resources/residential-area-tileset-pixel-art/3 Objects/Boxes/3.png" id="18_gucx2"]
+[ext_resource type="Texture2D" uid="uid://buka657gpsq0v" path="res://resources/residential-area-tileset-pixel-art/3 Objects/Boxes/5.png" id="19_dxfuc"]
+[ext_resource type="Texture2D" uid="uid://56h3bjwgta8m" path="res://resources/residential-area-tileset-pixel-art/3 Objects/Pointers/4.png" id="20_1o0l6"]
+[ext_resource type="Texture2D" uid="uid://bkh0l3i5pcrxl" path="res://resources/residential-area-tileset-pixel-art/2 Background/Day/Background.png" id="50_day_bg"]
+[ext_resource type="Texture2D" uid="uid://dkb7mdi684vhw" path="res://resources/residential-area-tileset-pixel-art/2 Background/Night/1.png" id="51_day1"]
+[ext_resource type="Texture2D" uid="uid://0ysxl5mw0qfh" path="res://resources/residential-area-tileset-pixel-art/2 Background/Night/2.png" id="52_day2"]
+[ext_resource type="Texture2D" uid="uid://dguim5vmblrh3" path="res://resources/residential-area-tileset-pixel-art/2 Background/Night/3.png" id="53_day3"]
+[ext_resource type="Texture2D" uid="uid://qaak70yme805" path="res://resources/residential-area-tileset-pixel-art/2 Background/Night/4.png" id="54_day4"]
+[ext_resource type="Texture2D" uid="uid://cbonnku2j22mb" path="res://resources/residential-area-tileset-pixel-art/2 Background/Night/5.png" id="55_day5"]
+[ext_resource type="Texture2D" uid="uid://bnqunqqo18vxu" path="res://resources/residential-area-tileset-pixel-art/2 Background/Overlay_illumination.png" id="56_day_overlay"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_7ptiw"]
 particle_flag_disable_z = true
@@ -466,11 +466,12 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_slot3")
 position = Vector2(736, 459)
 script = ExtResource("7_camera")
 margin = 120.0
-min_zoom = 0.4
+min_zoom = 0.8
 max_zoom = 0.9
 position_lerp_speed = 6.0
 zoom_lerp_speed = 5.0
 world_bounds = Rect2(40, 310, 1520, 580)
+center_point = Vector2(600, 600)
 
 [node name="tiles" type="Node2D" parent="." unique_id=1759449181]
 position = Vector2(68, 0)
