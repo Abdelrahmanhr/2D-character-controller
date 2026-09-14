@@ -142,6 +142,27 @@ var _fall_distance: float = 0.0
 var _dash_ghost_color: Color = Color.WHITE
 var _player_light: PointLight2D
 
+# Remote players are position-driven only: the synchronizer hands us discrete
+# snapshots, so we glide between the last two instead of snapping to each one.
+const NET_SNAP_DISTANCE: float = 200.0  # respawns and teleports must not slide across the arena
+const NET_INTERP_MIN: float = 0.02
+const NET_INTERP_MAX: float = 0.25
+
+var _net_position: Vector2 = Vector2.ZERO
+var net_position: Vector2:
+	get:
+		return _net_position
+	set(value):
+		_net_position = value
+		_receive_net_position(value)
+
+var _net_prev_pos: Vector2 = Vector2.ZERO
+var _net_target_pos: Vector2 = Vector2.ZERO
+var _net_lerp_t: float = 0.0
+var _net_interp_span: float = 0.033
+var _net_last_recv_ms: int = 0
+var _net_primed: bool = false
+
 
 func _ready() -> void:
 	dash_hitbox.body_entered.connect(_on_dash_hitbox_body_entered)
@@ -155,6 +176,7 @@ func _ready() -> void:
 	_sprite_base_scale = animated_sprite.scale
 	_setup_dust()
 	_setup_fall_fx()
+	_net_position = global_position  # so the first sync carries the spawn point, not (0, 0)
 	if _is_networked() and is_multiplayer_authority() and device_id == -2:
 		device_id = -1
 		if bomb_controller:
@@ -166,6 +188,42 @@ func _enter_tree() -> void:
 func _is_networked() -> bool:
 	return multiplayer.multiplayer_peer != null and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer)
 
+
+func _publish_net_position() -> void:
+	_net_position = global_position
+
+
+func _receive_net_position(value: Vector2) -> void:
+	if not _is_networked() or is_multiplayer_authority():
+		return
+	# Snapshots arrive on the sender's cadence, which drifts. Time the gap so the
+	# glide always lands on the new target just as the next one shows up.
+	var now := Time.get_ticks_msec()
+	if _net_primed:
+		_net_interp_span = clampf(float(now - _net_last_recv_ms) / 1000.0, NET_INTERP_MIN, NET_INTERP_MAX)
+	_net_last_recv_ms = now
+	if not _net_primed or _net_target_pos.distance_to(value) > NET_SNAP_DISTANCE:
+		_net_prev_pos = value
+		_net_target_pos = value
+		_net_lerp_t = 1.0
+		_net_primed = true
+		global_position = value
+		return
+	_net_prev_pos = _net_target_pos
+	_net_target_pos = value
+	_net_lerp_t = 0.0
+
+
+func _advance_net_interpolation(delta: float) -> void:
+	if not _net_primed:
+		return
+	if _net_lerp_t >= 1.0:
+		global_position = _net_target_pos
+		return
+	_net_lerp_t = minf(_net_lerp_t + delta / _net_interp_span, 1.0)
+	global_position = _net_prev_pos.lerp(_net_target_pos, _net_lerp_t)
+
+
 func _recalculate_jump_physics() -> void:
 	rise_gravity = (2.0 * jump_height) / (time_to_peak * time_to_peak)
 	fall_gravity = (2.0 * jump_height) / (time_to_descent * time_to_descent)
@@ -174,9 +232,13 @@ func _recalculate_jump_physics() -> void:
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
+		if _is_networked() and not is_multiplayer_authority():
+			_advance_net_interpolation(delta)
+			return
 		var gravity: float = rise_gravity if velocity.y < 0.0 else fall_gravity
 		velocity.y += gravity * delta
 		move_and_slide()
+		_publish_net_position()
 		return
 	
 	if is_invulnerable:
@@ -201,6 +263,7 @@ func _physics_process(delta: float) -> void:
 			animated_sprite.speed_scale = 1.0
 	
 	if _is_networked() and not is_multiplayer_authority():
+		_advance_net_interpolation(delta)
 		return
 	
 	if is_frozen:  
@@ -212,6 +275,7 @@ func _physics_process(delta: float) -> void:
 			_end_dash_immediately()
 		_apply_stun_physics(delta)
 		move_and_slide()
+		_publish_net_position()
 		_update_animation()
 		return
 	
@@ -219,6 +283,7 @@ func _physics_process(delta: float) -> void:
 	_apply_movement(delta)
 	_fall_speed = velocity.y
 	move_and_slide()
+	_publish_net_position()
 	_check_landing()
 	_update_animation()
 

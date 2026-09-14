@@ -7,6 +7,6 @@ colors = PackedColorArray(0, 0, 0, 0, 0, 0, 0, 0.35, 0, 0, 0, 1, 0, 0, 0, 1)
 [resource]
 gradient = SubResource("Gradient_pit")
 width = 8
-height = 48
+height = 66
 fill_from = Vector2(0.5, 0)
 fill_to = Vector2(0.5, 1)

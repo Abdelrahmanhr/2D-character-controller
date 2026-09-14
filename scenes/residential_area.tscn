@@ -234,7 +234,6 @@ sources/0 = SubResource("TileSetAtlasSource_b0xx7")
 glow_enabled = true
 glow_intensity = 2.2
 glow_bloom = 0.1
-glow_hdr_threshold = 1.0
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_dust"]
 particle_flag_disable_z = true
@@ -508,8 +507,8 @@ randomness = 0.6
 process_material = SubResource("ParticleProcessMaterial_dust")
 
 [node name="ForegroundHaze" type="CanvasLayer" parent="." unique_id=1225690202]
-visible = false
 layer = 0
+visible = false
 
 [node name="Haze" type="TextureRect" parent="ForegroundHaze" unique_id=398154638]
 modulate = Color(1, 0.87, 0.72, 0.05)
@@ -881,6 +880,6 @@ flicker_chance = 0.01
 [node name="PitFade" type="Sprite2D" parent="." unique_id=2011185119]
 z_index = 2
 texture_filter = 1
-position = Vector2(1132.0001, 1508)
-scale = Vector2(300, 29.583332)
+position = Vector2(1098, 1784.0001)
+scale = Vector2(334.92, 33.006)
 texture = ExtResource("59_pit")

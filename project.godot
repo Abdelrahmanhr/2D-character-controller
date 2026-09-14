@@ -39,7 +39,6 @@ MusicManager="*uid://d1np3sr422x7"
 window/size/mode=2
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-window/vsync/vsync_mode=1
 
 [gui]
 
@@ -95,7 +94,6 @@ dash={
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
-textures/vram_compression/import_etc2_astc=false
 textures/vram_compression/import_s3tc_bptc=true
 
 [steam]
