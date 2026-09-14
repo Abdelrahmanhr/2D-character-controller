@@ -67,6 +67,8 @@ extends CharacterBody2D
 @export var zone_jump_multiplier: float = 0.9  # NEW: jumps feel softer/shorter, like jumping in water
 @export var zone_move_speed_multiplier: float = 0.6  # NEW: walking/air control feels sluggish
 
+var _danger_ring: DangerRing  
+
 var _zone_outside_timer: float = 0.0  
 var dash_start_time_ms: int = 0  
 var is_invulnerable: bool = false 
@@ -152,6 +154,7 @@ func _ready() -> void:
 	_setup_glow_texture()
 	_update_identity()
 	_setup_life_hearts()
+	_setup_danger_ring()  # NEW
 	_sprite_base_scale = animated_sprite.scale
 	_setup_dust()
 	_setup_fall_fx()
@@ -159,6 +162,12 @@ func _ready() -> void:
 		device_id = -1
 		if bomb_controller:
 			bomb_controller.device_id = device_id
+
+func _setup_danger_ring() -> void:
+	_danger_ring = DangerRing.new()
+	_danger_ring.name = "DangerRing"
+	_danger_ring.position = Vector2(-42.0, -10.0)  
+	add_child(_danger_ring)
 
 func _enter_tree() -> void:
 	set_multiplayer_authority(name.to_int())
@@ -811,21 +820,27 @@ func _do_flash_dash_loss() -> void:
 	tween.tween_property(animated_sprite, "modulate", dash_conflict_flash_color, dash_conflict_flash_duration * 0.3)
 	tween.tween_property(animated_sprite, "modulate", Color.WHITE.lerp(_current_identity_color(), 0.28), dash_conflict_flash_duration * 0.7)
 	
-func _current_identity_color() -> Color:  # NEW
+func _current_identity_color() -> Color:  
 	if bomb_controller:
 		return bomb_controller.get_player_color()
 	return Color.WHITE
 
-func _get_safe_zone() -> Node:  # NEW
+func _get_safe_zone() -> Node:  
 	return get_tree().get_first_node_in_group("safe_zones")
 
-func _update_zone_timer(delta: float, outside: bool, zone: Node) -> void:  # NEW
+func _update_zone_timer(delta: float, outside: bool, zone: Node) -> void:
 	if zone == null:
 		_zone_outside_timer = 0.0
+		if _danger_ring:
+			_danger_ring.set_progress(0.0)  
 		return
 	if outside:
 		_zone_outside_timer += delta
+		if _danger_ring:  
+			_danger_ring.set_progress(_zone_outside_timer / zone.outside_death_time)  # NEW
 		if _zone_outside_timer >= zone.outside_death_time and not is_dead:
 			bomb_controller.player_died("explode")
 	else:
 		_zone_outside_timer = 0.0
+		if _danger_ring:  
+			_danger_ring.set_progress(0.0) 
