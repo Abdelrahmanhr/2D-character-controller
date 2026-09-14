@@ -61,6 +61,13 @@ extends CharacterBody2D
 @export var fall_ghost_color: Color = Color(0.549, 0.6784, 0.9490, 0.55)
 @export var fall_whoosh_sound: AudioStream
 @export var fall_whoosh_volume_db: float = -8.0
+
+@export var zone_drag: float = 1.5  # NEW: higher = more resistance, feels thicker
+@export var zone_gravity_multiplier: float = 0.4  # NEW: still want reduced fall speed, just not the whole effect
+@export var zone_jump_multiplier: float = 0.9  # NEW: jumps feel softer/shorter, like jumping in water
+@export var zone_move_speed_multiplier: float = 0.6  # NEW: walking/air control feels sluggish
+
+var _zone_outside_timer: float = 0.0  
 var dash_start_time_ms: int = 0  
 var is_invulnerable: bool = false 
 var _invuln_time_left: float = 0.0 
@@ -217,13 +224,20 @@ func _physics_process(delta: float) -> void:
 
 func _apply_stun_physics(delta: float) -> void:
 	var gravity: float = rise_gravity if velocity.y < 0.0 else fall_gravity
+	var zone := _get_safe_zone()
+	var outside_zone: bool = zone != null and zone.is_outside(global_position)
+	if outside_zone:
+		gravity *= zone_gravity_multiplier  
 	velocity.y += gravity * delta
 	velocity.x = move_toward(velocity.x, 0.0, knockback_friction * delta)
+	if outside_zone:  # NEW
+		velocity = velocity.move_toward(Vector2.ZERO, zone_drag * delta * velocity.length())
+	_update_zone_timer(delta, outside_zone, zone)
 	
-	var target_tilt: float = 0.0  
-	if is_stunned and abs(velocity.x) > 10.0:  
-		target_tilt = deg_to_rad(stun_tilt_angle_degrees) * sign(velocity.x)  
-	animated_sprite.rotation = lerp_angle(animated_sprite.rotation, target_tilt, stun_tilt_speed * delta)  
+	var target_tilt: float = 0.0
+	if is_stunned and abs(velocity.x) > 10.0:
+		target_tilt = deg_to_rad(stun_tilt_angle_degrees) * sign(velocity.x)
+	animated_sprite.rotation = lerp_angle(animated_sprite.rotation, target_tilt, stun_tilt_speed * delta)
 
 
 func _process(delta: float) -> void:
@@ -481,6 +495,8 @@ func play_death_animation(cause: String = "fall") -> void:
 
 
 func _update_animation() -> void:
+	if is_dead:  
+		return  
 	if direction != 0.0:
 		facing_right = direction > 0.0
 
@@ -596,8 +612,12 @@ func _apply_movement(delta: float) -> void:
 			dash_afterimage.stop()
 		return
 	
+	var zone := _get_safe_zone()
+	var outside_zone: bool = zone != null and zone.is_outside(global_position)
+	
 	var grounded: bool = is_on_floor()
-	var target_x: float = direction * speed
+	var speed_mult: float = zone_move_speed_multiplier if outside_zone else 1.0  # NEW
+	var target_x: float = direction * speed * speed_mult  # CHANGED: was "direction * speed"
 	var rate: float
 	if is_zero_approx(direction):
 		rate = friction if grounded else air_friction
@@ -611,7 +631,7 @@ func _apply_movement(delta: float) -> void:
 		velocity.y = 0.0
 	
 	if jump_pressed:
-		velocity.y = jump_velocity
+		velocity.y = jump_velocity * (zone_jump_multiplier if outside_zone else 1.0)  # CHANGED: softened jump in the zone
 		jump_pressed = false
 		SfxManager.play(jump_sound,-10.0,0.1) 
 		_fx_jump_net()
@@ -626,9 +646,18 @@ func _apply_movement(delta: float) -> void:
 		gravity *= fast_fall_gravity_mult
 	elif not grounded and absf(velocity.y) < apex_threshold:
 		gravity *= apex_gravity_mult
+	
+	if outside_zone:
+		gravity *= zone_gravity_multiplier  # CHANGED: was "zone.outer_gravity_multiplier", now a dedicated export instead of pulling from the zone resource
+	
 	velocity.y += gravity * delta
 	if fast_falling:
 		velocity.y = minf(velocity.y, fast_fall_max_speed)
+	
+	if outside_zone:  # NEW: the actual "thick resistance" feel
+		velocity = velocity.move_toward(Vector2.ZERO, zone_drag * delta * velocity.length())
+	
+	_update_zone_timer(delta, outside_zone, zone)
 
 func _get_dash_direction() -> Vector2:
 	var raw := _last_move_input
@@ -786,3 +815,17 @@ func _current_identity_color() -> Color:  # NEW
 	if bomb_controller:
 		return bomb_controller.get_player_color()
 	return Color.WHITE
+
+func _get_safe_zone() -> Node:  # NEW
+	return get_tree().get_first_node_in_group("safe_zones")
+
+func _update_zone_timer(delta: float, outside: bool, zone: Node) -> void:  # NEW
+	if zone == null:
+		_zone_outside_timer = 0.0
+		return
+	if outside:
+		_zone_outside_timer += delta
+		if _zone_outside_timer >= zone.outside_death_time and not is_dead:
+			bomb_controller.player_died("explode")
+	else:
+		_zone_outside_timer = 0.0

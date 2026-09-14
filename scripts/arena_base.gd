@@ -10,6 +10,19 @@ var players: Array[CharacterBody2D]
 var _spectate_overlay: CanvasLayer
 var _end_menu: CanvasLayer
 
+@export var safe_zone_event_interval_min: float = 5.0  # NEW
+@export var safe_zone_event_interval_max: float = 10.0  # NEW
+@export var safe_zone_active_duration: float = 20.0  # NEW
+@export var safe_zone_start_radius: float = 1200.0  # NEW
+@export var safe_zone_end_radius: float = 220.0  # NEW
+@export var safe_zone_gravity_multiplier: float = 0.6  # NEW
+@export var safe_zone_outside_death_time: float = 3.0  # NEW
+@export var safe_zone_hold_duration: float = 10.0  # NEW
+
+var _active_zone: SafeZone = null  # NEW
+var _active_zone_spawn_index: int = -1  # NEW
+var _next_zone_event_ms: int = -1  # NEW
+
 @onready var multiplayer_spawner: MultiplayerSpawner = $MultiplayerSpawner
 @onready var match_result: Label = $MatchResult
 @onready var spawn_points: Array[Node2D] = [$SpawnPoint1, $SpawnPoint2, $SpawnPoint3, $SpawnPoint4]
@@ -23,6 +36,7 @@ func _ready() -> void:
 	_layout_viewport_content()
 	MinigameDirector.reset_match()
 	MinigameDirector.match_finished.connect(_on_match_finished)
+	MinigameDirector.match_started.connect(_on_match_started_for_zone)  # NEW
 	_setup_minigame_screens()
 	multiplayer_spawner.spawn_function = _spawn_player
 	$DeathBox.body_entered.connect(_on_death_zone_body_entered)
@@ -39,6 +53,71 @@ func _ready() -> void:
 	if multiplayer.is_server():
 		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	Networking.notify_arena_ready()
+
+
+func _process(delta: float) -> void:  # NEW
+	_update_safe_zone_schedule()
+
+
+func _is_zone_authority() -> bool:  # NEW
+	return not _is_networked() or multiplayer.is_server()
+
+
+func _get_timestamp() -> int:  # NEW
+	if _is_networked():
+		return Networking.get_sync_time()
+	return Time.get_ticks_msec()
+
+
+func _on_match_started_for_zone() -> void:  # NEW
+	if _is_zone_authority():
+		_schedule_next_zone_event()
+
+
+func _schedule_next_zone_event() -> void:  # NEW
+	var wait: float = randf_range(safe_zone_event_interval_min, safe_zone_event_interval_max)
+	_next_zone_event_ms = _get_timestamp() + int(wait * 1000.0)
+
+
+func _update_safe_zone_schedule() -> void:  # NEW
+	if not _is_zone_authority():
+		return
+	if _active_zone != null or _next_zone_event_ms < 0:
+		return
+	if _get_timestamp() >= _next_zone_event_ms:
+		var index: int = randi() % spawn_points.size()
+		if _is_networked():
+			_start_safe_zone_event.rpc(index)
+		else:
+			_start_safe_zone_event(index)
+
+
+@rpc("authority", "call_local", "reliable")
+func _start_safe_zone_event(spawn_index: int) -> void:
+	if spawn_index < 0 or spawn_index >= spawn_points.size():
+		return
+	var zone := SafeZone.new()
+	zone.name = "SafeZoneEvent"
+	zone.z_index = 10
+	zone.global_position = spawn_points[spawn_index].global_position
+	zone.start_radius = safe_zone_start_radius
+	zone.end_radius = safe_zone_end_radius
+	zone.shrink_duration = safe_zone_active_duration
+	zone.hold_duration = safe_zone_hold_duration  
+	zone.outer_gravity_multiplier = safe_zone_gravity_multiplier
+	zone.outside_death_time = safe_zone_outside_death_time
+	add_child(zone)
+	zone.expired.connect(_on_safe_zone_expired)
+	zone.activate()
+	_active_zone = zone
+	_active_zone_spawn_index = spawn_index
+
+
+func _on_safe_zone_expired() -> void:  # NEW
+	_active_zone = null
+	_active_zone_spawn_index = -1
+	if _is_zone_authority():
+		_schedule_next_zone_event()
 
 
 func _exit_tree() -> void:
@@ -202,6 +281,10 @@ func _spawn_local_players() -> void:
 		players.append(player)
 
 
-func respawn_player(player: CharacterBody2D) -> void:  
-	var slot_index: int = player.get_node("BombController").get_slot_index()
-	player.global_position = spawn_points[slot_index % spawn_points.size()].global_position
+func respawn_player(player: CharacterBody2D) -> void:
+	var target_index: int  # NEW
+	if _active_zone != null and _active_zone_spawn_index >= 0:  # NEW: respawn at the event's location while it's active
+		target_index = _active_zone_spawn_index  # NEW
+	else:  # NEW
+		target_index = player.get_node("BombController").get_slot_index()  # CHANGED: was inlined directly below
+	player.global_position = spawn_points[target_index % spawn_points.size()].global_position
