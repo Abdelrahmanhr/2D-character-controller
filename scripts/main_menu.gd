@@ -62,11 +62,26 @@ func _setup_options() -> void:
 func _open_options() -> void:
 	$Menu.hide()
 	_options.show()
+	_cascade(_options.get_node("OptionsLayout"))
 
 
 func _close_options() -> void:
 	_options.hide()
 	$Menu.show()
+	_cascade($Menu)
+
+
+## OptionsPanel is reparented out of a throwaway pause_menu instance above, so
+## pause_menu.gd never runs for it - the cascade has to be driven from here.
+func _cascade(page: Control) -> void:
+	var elements: Array[Control] = []
+	for child in page.get_children():
+		if child is Control and child.visible:
+			elements.append(child)
+	UICascade.reset(elements)
+	await get_tree().process_frame
+	if is_inside_tree():
+		UICascade.play(elements, 0.0, 0.055)
 
 
 func _set_volume(value: float) -> void:

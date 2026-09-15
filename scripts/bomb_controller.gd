@@ -38,6 +38,9 @@ var _start_time_ms: int = 0
 var _adjust_total: float = 0.0
 var _running: bool = false
 var _frozen_value: float = 0.0
+## Soft pause. Offline _running is never true (start_at is only wired when
+## networked), so it cannot serve as the freeze flag - this one can.
+var _timer_frozen: bool = false
 
 const STICK_THRESHOLD: float = 0.5  
 
@@ -70,6 +73,7 @@ func start_at(start_time_ms: int) -> void:
 	_adjust_total = 0.0
 	_expired = false
 	_running = true
+	_timer_frozen = false
 	_frozen_value = bomb_time
 	set_process(true)
 
@@ -112,17 +116,18 @@ func _process(delta: float) -> void:
 			_running = false
 			_frozen_value = 0.0
 			_explode.rpc()
-	elif not _expired:
+	elif not _expired and not _timer_frozen:
 		_time_left -= delta
 		if _time_left <= 0.0:
 			player_died("explode")  
 	if _minigame_layer:
 		_minigame_layer.global_position = _player.global_position + Vector2(-100, -150)
-	_update_tick(delta)
+	if not _timer_frozen:
+		_update_tick(delta)
 	_poll_right_stick()
 
 func _update_tick(delta: float) -> void:
-	if _expired:
+	if _expired or _timer_frozen:
 		return
 	if _is_networked() and not _running:
 		return
@@ -151,6 +156,8 @@ func _update_tick(delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if _active_minigame == null or not _has_authority() or _player.is_stunned:
 		return
+	if MinigameDirector.is_input_locked():
+		return
 	if event is InputEventJoypadButton and (_is_networked() or event.device == device_id):
 		var handled: bool = _active_minigame._handle_input(event)
 		if handled:
@@ -169,6 +176,8 @@ func _input(event: InputEvent) -> void:
 
 func _poll_right_stick() -> void:
 	if _active_minigame == null or not _has_authority() or _player.is_stunned:
+		return
+	if MinigameDirector.is_input_locked():
 		return
 	
 	var poll_device: int = device_id
@@ -244,6 +253,7 @@ func detach_from_match() -> void:
 func reset_for_respawn() -> void:
 	_expired = false
 	_running = false
+	_timer_frozen = false
 	_adjust_total = 0.0
 	_time_left = bomb_time
 	_frozen_value = bomb_time
@@ -252,7 +262,15 @@ func reset_for_respawn() -> void:
 func stop_timer() -> void:
 	_frozen_value = _compute_time_left()
 	_running = false
-	set_process(false)
+	# Deliberately keeps _process alive: the world is no longer paused around us,
+	# so the minigame layer still has to follow the player.
+	_timer_frozen = true
+
+
+func resume_timer() -> void:
+	if _expired:
+		return
+	_timer_frozen = false
 
 
 

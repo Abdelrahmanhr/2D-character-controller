@@ -1,108 +1,6 @@
 [gd_scene format=3 uid="uid://exgjdsdt0vkd"]
-
 [ext_resource type="Script" uid="uid://ctnopn2ygflhd" path="res://scripts/arena_select.gd" id="1_arena_select"]
-[ext_resource type="Theme" uid="uid://doxgt2jeresa3" path="res://resources/themes/gravity.tres" id="2_theme"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
-bg_color = Color(0.02, 0.06, 0.08, 0.3)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.2, 0.95, 1, 0.45)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_pressed"]
-bg_color = Color(0.2, 0.95, 1, 0.25)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.75, 1, 1, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
-bg_color = Color(0.04, 0.13, 0.16, 0.55)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.2, 0.95, 1, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-shadow_color = Color(0.2, 0.95, 1, 0.4)
-shadow_size = 10
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_disabled"]
-bg_color = Color(0.03, 0.05, 0.06, 0.2)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.3, 0.4, 0.42, 0.35)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back_normal"]
-bg_color = Color(0.02, 0.06, 0.08, 0.3)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.2, 0.95, 1, 0.45)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back_pressed"]
-bg_color = Color(0.2, 0.95, 1, 0.25)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.75, 1, 1, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back_hover"]
-bg_color = Color(0.04, 0.13, 0.16, 0.55)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.2, 0.95, 1, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-shadow_color = Color(0.2, 0.95, 1, 0.4)
-shadow_size = 10
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back_disabled"]
-bg_color = Color(0.03, 0.05, 0.06, 0.2)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.3, 0.4, 0.42, 0.35)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
+[ext_resource type="Theme" path="res://resources/themes/cyberpunk.tres" id="cyber_theme"]
 [node name="ArenaSelect" type="Control" unique_id=1459563425]
 layout_mode = 3
 anchors_preset = 15
@@ -110,9 +8,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = ExtResource("2_theme")
+theme = ExtResource("cyber_theme")
 script = ExtResource("1_arena_select")
-
 [node name="Title" type="Label" parent="." unique_id=353937082]
 layout_mode = 1
 anchors_preset = 10
@@ -120,16 +17,14 @@ anchor_right = 1.0
 offset_top = 128.0
 offset_bottom = 188.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(1, 1, 1, 0.97)
-theme_override_colors/font_shadow_color = Color(0.2, 0.95, 1, 0.45)
-theme_override_colors/font_outline_color = Color(0.2, 0.95, 1, 0.9)
+theme_override_colors/font_color = Color(0.8, 0.886275, 0.882353, 1)
+theme_override_colors/font_outline_color = Color(0.133333, 0.164706, 0.360784, 1)
 theme_override_constants/shadow_offset_x = 0
 theme_override_constants/shadow_offset_y = 0
 theme_override_constants/outline_size = 6
 theme_override_font_sizes/font_size = 40
 text = "CHOOSE ARENA"
 horizontal_alignment = 1
-
 [node name="Panel" type="VBoxContainer" parent="." unique_id=2081739657]
 layout_mode = 1
 anchors_preset = 8
@@ -144,46 +39,28 @@ offset_bottom = 94.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 16
-
 [node name="ArenaList" type="VBoxContainer" parent="Panel" unique_id=734765031]
 layout_mode = 2
 theme_override_constants/separation = 12
-
 [node name="ContinueButton" type="Button" parent="Panel" unique_id=838335041]
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 0.96)
-theme_override_colors/font_hover_color = Color(0.2, 0.95, 1, 1)
-theme_override_colors/font_outline_color = Color(0.2, 0.95, 1, 0.7)
-theme_override_constants/outline_size = 3
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-theme_override_styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
-theme_override_styles/focus = SubResource("StyleBoxFlat_btn_hover")
 text = "CONTINUE"
-
+size_flags_horizontal = 4
+texture_filter = 1
 [node name="BackButton" type="Button" parent="." unique_id=1212611704]
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -140.0
+offset_left = 0.0
 offset_top = -158.0
-offset_right = 140.0
-offset_bottom = -114.0
+offset_right = 0.0
+offset_bottom = -118.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_colors/font_color = Color(1, 1, 1, 0.96)
-theme_override_colors/font_hover_color = Color(0.2, 0.95, 1, 1)
-theme_override_colors/font_outline_color = Color(0.2, 0.95, 1, 0.7)
-theme_override_constants/outline_size = 3
-theme_override_styles/normal = SubResource("StyleBoxFlat_back_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_back_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_back_hover")
-theme_override_styles/disabled = SubResource("StyleBoxFlat_back_disabled")
-theme_override_styles/focus = SubResource("StyleBoxFlat_back_hover")
 text = "BACK TO MAIN MENU"
+texture_filter = 1

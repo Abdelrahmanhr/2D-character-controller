@@ -4,6 +4,12 @@ const PREVIEW_DIR := "res://resources/ui/arena_previews/"
 const PREVIEW_EXTENSIONS: Array[String] = [".png", ".jpg", ".jpeg", ".webp"]
 const ROW_HEIGHT := 96
 
+# Cyberpunk GUI pack palette (resources/themes/cyberpunk.tres)
+const MENU_TEXT := Color(0.545098, 0.670588, 0.74902, 1)
+const MENU_TEXT_ACTIVE := Color(1, 0.964706, 0.682353, 1)
+const MENU_BORDER := Color(0.337255, 0.415686, 0.537255, 1)
+const MENU_BORDER_ACTIVE := Color(0.823529, 0.184314, 0.117647, 1)
+
 const ARENAS := [
 	{"id": "power_station", "name": "Power Station", "scene_path": "res://scenes/power_station2.tscn", "preview": "power_station"},
 	{"id": "residential_area", "name": "Residential Area", "scene_path": "res://scenes/residential_area.tscn", "preview": "residential_area"},
@@ -64,41 +70,36 @@ func _load_preview(base_name: String) -> Texture2D:
 	return null
 
 func _style_menu_button(button: Button, over_art: bool = false) -> void:
-	button.add_theme_color_override("font_color", Color(1, 1, 1, 0.96))
-	button.add_theme_color_override("font_hover_color", Color(0.1529, 0.8275, 0.7961, 1))
-	button.add_theme_color_override("font_pressed_color", Color(1, 1, 1, 1))
-	button.add_theme_color_override("font_hover_pressed_color", Color(1, 1, 1, 1))
-	button.add_theme_color_override("font_focus_color", Color(1, 1, 1, 1))
-	button.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9) if over_art else Color(0.1529, 0.8275, 0.7961, 0.7))
+	# Arena rows are selection cards sitting on top of preview art, so they keep a flat
+	# stylebox rather than the opaque 9-patch the menu buttons use -- just in pack colours.
+	button.add_theme_color_override("font_color", MENU_TEXT)
+	button.add_theme_color_override("font_hover_color", MENU_TEXT_ACTIVE)
+	button.add_theme_color_override("font_pressed_color", MENU_TEXT_ACTIVE)
+	button.add_theme_color_override("font_hover_pressed_color", MENU_TEXT_ACTIVE)
+	button.add_theme_color_override("font_focus_color", MENU_TEXT_ACTIVE)
+	button.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	button.add_theme_constant_override("outline_size", 6 if over_art else 3)
-	var idle_bg := Color(0, 0, 0, 0.45) if over_art else Color(0, 0, 0, 0.3)
-	var press_bg := Color(0.1529, 0.8275, 0.7961, 0.3) if over_art else Color(0.1529, 0.8275, 0.7961, 0.25)
-	button.add_theme_stylebox_override("normal", _make_stylebox(idle_bg, Color(0.1529, 0.8275, 0.7961, 0.45)))
-	button.add_theme_stylebox_override("pressed", _make_stylebox(press_bg, Color(0.7569, 0.851, 0.949, 1)))
+	var idle_bg := Color(0.133, 0.165, 0.361, 0.55) if over_art else Color(0.133, 0.165, 0.361, 0.85)
+	var press_bg := Color(0.824, 0.184, 0.118, 0.2) if over_art else Color(0.824, 0.184, 0.118, 0.3)
+	button.add_theme_stylebox_override("normal", _make_stylebox(idle_bg, MENU_BORDER))
+	button.add_theme_stylebox_override("pressed", _make_stylebox(press_bg, MENU_BORDER_ACTIVE))
 	button.add_theme_stylebox_override("hover", _make_hover_stylebox(over_art))
-	button.add_theme_stylebox_override("disabled", _make_stylebox(Color(0, 0, 0, 0.2), Color(0.2314, 0.4627, 0.5608, 0.35)))
+	button.add_theme_stylebox_override("disabled", _make_stylebox(Color(0, 0, 0, 0.2), Color(0.337, 0.416, 0.537, 0.35)))
 	button.add_theme_stylebox_override("focus", _make_hover_stylebox(over_art))
 
 func _make_stylebox(bg_color: Color, border_color: Color) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
 	box.bg_color = bg_color
-	box.border_width_left = 1
-	box.border_width_top = 1
-	box.border_width_right = 1
-	box.border_width_bottom = 1
+	box.border_width_left = 2
+	box.border_width_top = 2
+	box.border_width_right = 2
+	box.border_width_bottom = 2
 	box.border_color = border_color
-	box.corner_radius_top_left = 4
-	box.corner_radius_top_right = 4
-	box.corner_radius_bottom_right = 4
-	box.corner_radius_bottom_left = 4
 	return box
 
 func _make_hover_stylebox(over_art: bool = false) -> StyleBoxFlat:
-	var bg := Color(0, 0, 0, 0.25) if over_art else Color(0.0392, 0.1647, 0.2, 0.55)
-	var box := _make_stylebox(bg, Color(0.1529, 0.8275, 0.7961, 1))
-	box.shadow_color = Color(0.1529, 0.8275, 0.7961, 0.4)
-	box.shadow_size = 10
-	return box
+	var bg := Color(0.824, 0.184, 0.118, 0.3) if over_art else Color(0.22, 0.05, 0.17, 0.9)
+	return _make_stylebox(bg, MENU_BORDER_ACTIVE)
 
 func _on_arena_pressed(index: int) -> void:
 	selected_index = index

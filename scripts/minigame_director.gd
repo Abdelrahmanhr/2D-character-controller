@@ -4,6 +4,14 @@ signal countdown_tick(seconds_left: int)
 signal match_started
 signal match_finished(winner_peer_id: int)
 signal alive_count_changed(alive: int, total: int)
+signal input_locked_changed(locked: bool)
+
+## Soft pause. A bitmask rather than a bool so that closing the pause menu can
+## never unlock the input that the end of the match locked.
+## Purely local presentation state - never RPC lock_input/unlock_input. The match
+## end stays in sync for free because _finish_match is already "call_local".
+const LOCK_MATCH_OVER := 1
+const LOCK_MENU := 2
 
 @export var expected_player_count: int = 1
 @export var countdown_duration: float = 3.0
@@ -21,6 +29,7 @@ var _alive_peer_ids: Dictionary = {}
 var _total_players: int = 0
 var _match_finished := false
 var _pending_start_ms: int = 0
+var _lock_mask: int = 0
 
 
 func _ready() -> void:
@@ -81,6 +90,7 @@ func reset_match() -> void:
 	_counting_down = false
 	_match_finished = false
 	_pending_start_ms = 0
+	_lock_mask = 0
 
 func register_player(bomb_controller: BombController) -> void:
 	if _bomb_controllers.has(bomb_controller):
@@ -184,7 +194,40 @@ func _finish_match(winner_peer_id: int) -> void:
 		if is_instance_valid(bomb_controller):
 			bomb_controller.stop_minigame()
 			bomb_controller.stop_timer()
+	lock_input(LOCK_MATCH_OVER)
 	match_finished.emit(winner_peer_id)
+
+
+func is_input_locked() -> bool:
+	return _lock_mask != 0
+
+
+## Used by the pause menu for the offline soft pause. Never resumes a bomb once
+## the match is over - those are frozen for good.
+func set_timers_frozen(frozen: bool) -> void:
+	if not frozen and _match_finished:
+		return
+	for bomb_controller in _bomb_controllers:
+		if not is_instance_valid(bomb_controller):
+			continue
+		if frozen:
+			bomb_controller.stop_timer()
+		else:
+			bomb_controller.resume_timer()
+
+
+func lock_input(reason: int) -> void:
+	var was_locked := _lock_mask != 0
+	_lock_mask |= reason
+	if not was_locked:
+		input_locked_changed.emit(true)
+
+
+func unlock_input(reason: int) -> void:
+	var was_locked := _lock_mask != 0
+	_lock_mask &= ~reason
+	if was_locked and _lock_mask == 0:
+		input_locked_changed.emit(false)
 
 func _process(delta: float) -> void:
 	if _match_finished:

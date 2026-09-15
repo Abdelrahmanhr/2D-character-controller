@@ -19,6 +19,13 @@ var _end_menu: CanvasLayer
 @export var safe_zone_outside_death_time: float = 3.0  # NEW
 @export var safe_zone_hold_duration: float = 10.0  # NEW
 
+enum Outcome { WIN, LOSE, DRAW }
+
+@export_group("Match outro")
+@export var celebration_delay: float = 0.30
+@export var outro_delay: float = 0.60
+@export var corpse_fade_duration: float = 0.9
+
 var _active_zone: SafeZone = null  # NEW
 var _active_zone_spawn_index: int = -1  # NEW
 var _next_zone_event_ms: int = -1  # NEW
@@ -80,6 +87,8 @@ func _schedule_next_zone_event() -> void:  # NEW
 
 
 func _update_safe_zone_schedule() -> void:  # NEW
+	if MinigameDirector.is_match_finished() or MinigameDirector.is_input_locked():
+		return
 	if not _is_zone_authority():
 		return
 	if _active_zone != null or _next_zone_event_ms < 0:
@@ -96,6 +105,8 @@ func _update_safe_zone_schedule() -> void:  # NEW
 func _start_safe_zone_event(spawn_index: int) -> void:
 	if spawn_index < 0 or spawn_index >= spawn_points.size():
 		return
+	if MinigameDirector.is_match_finished():
+		return
 	var zone := SafeZone.new()
 	zone.name = "SafeZoneEvent"
 	zone.z_index = 10
@@ -111,6 +122,42 @@ func _start_safe_zone_event(spawn_index: int) -> void:
 	zone.activate()
 	_active_zone = zone
 	_active_zone_spawn_index = spawn_index
+
+
+## Retires the live zone without touching SafeZone.gd. Leaving the group is what
+## actually stops the kill - Player._get_safe_zone() resolves through it, so every
+## outside-timer resets on the next tick.
+func _dismiss_safe_zone() -> void:
+	_next_zone_event_ms = -1
+	var zone := _active_zone
+	_active_zone = null
+	_active_zone_spawn_index = -1
+	if zone == null or not is_instance_valid(zone):
+		return
+	if zone.expired.is_connected(_on_safe_zone_expired):
+		zone.expired.disconnect(_on_safe_zone_expired)
+	zone.remove_from_group("safe_zones")
+	zone.set_process(false)
+	# SafeZone parents its overlay to the current scene rather than to itself, so
+	# freeing the zone alone would strand it. It is named, so we can find it.
+	var overlay := get_tree().current_scene.get_node_or_null("SafeZoneOverlayLayer") as CanvasLayer
+	if overlay:
+		_fade_out_overlay(overlay)
+	zone.queue_free()
+
+
+func _fade_out_overlay(layer: CanvasLayer) -> void:
+	var target: CanvasItem = null
+	for child in layer.get_children():
+		if child is CanvasItem:
+			target = child
+			break
+	if target == null:
+		layer.queue_free()
+		return
+	var tw := create_tween()
+	tw.tween_property(target, "modulate:a", 0.0, 0.35)
+	tw.tween_callback(layer.queue_free)
 
 
 func _on_safe_zone_expired() -> void:  # NEW
@@ -170,6 +217,9 @@ func _is_networked() -> bool:
 
 
 func _on_death_zone_body_entered(body: Node) -> void:
+	# The match is over; nobody dies during the victory lap.
+	if MinigameDirector.is_match_finished():
+		return
 	if body is CharacterBody2D and not body.is_dead:
 		_play_death_zone_zap(body.global_position)
 	if body is CharacterBody2D and (not _is_networked() or body.is_multiplayer_authority()) and not body.is_dead:
@@ -202,29 +252,72 @@ func _on_match_finished(winner_peer_id: int) -> void:
 	if _spectate_overlay:
 		_spectate_overlay.queue_free()
 		_spectate_overlay = null
+	_dismiss_safe_zone()
+
 	var title: String
 	var color: Color
+	var outcome: Outcome
 
 	if winner_peer_id == 0:
 		title = "DRAW"
 		color = Color(1, 0.8784, 0.5686, 1)
+		outcome = Outcome.DRAW
 	elif not _is_networked():
 		var winner_slot: int = winner_peer_id - 1
 		var winner_color: Color = BombController.PLAYER_COLORS[clampi(winner_slot, 0, 3)]
 		title = "PLAYER %d WINS!" % winner_peer_id
 		color = winner_color
+		# One shared screen, so there is no per-viewer loser to show ash to.
+		outcome = Outcome.WIN
 	else:
 		if winner_peer_id == multiplayer.get_unique_id():
 			title = "YOU WIN"
 			color = Color(0.549, 1, 0.6078, 1)
+			outcome = Outcome.WIN
 		else:
 			title = "YOU LOSE"
 			color = Color(1, 0.4118, 0.3529, 1)
+			outcome = Outcome.LOSE
 
-	get_tree().paused = true
+	# Deliberately no get_tree().paused: MinigameDirector has already frozen every
+	# bomb and locked input, so the arena can keep breathing behind the results.
+	_begin_outro(winner_peer_id, title, color, outcome)
+
+
+func _begin_outro(winner_peer_id: int, title: String, color: Color, outcome: Outcome) -> void:
+	_send_off_the_fallen()
+	await get_tree().create_timer(celebration_delay).timeout
+	if not is_inside_tree():
+		return
+	_celebrate_winner(winner_peer_id)
+	await get_tree().create_timer(maxf(outro_delay - celebration_delay, 0.0)).timeout
+	if not is_inside_tree() or _end_menu != null:
+		return
 	_end_menu = END_MENU.instantiate()
 	add_child(_end_menu)
-	_end_menu.set_result(title, color)
+	_end_menu.set_result(title, color, int(outcome))
+
+
+func _celebrate_winner(winner_peer_id: int) -> void:
+	if winner_peer_id == 0:
+		return
+	var winner := get_node_or_null(str(winner_peer_id)) as CharacterBody2D
+	if winner == null or winner.is_dead:
+		return
+	if _is_networked() and not winner.is_multiplayer_authority():
+		return
+	if winner.has_method("play_celebration"):
+		winner.play_celebration()
+
+
+func _send_off_the_fallen() -> void:
+	for player in players:
+		if not is_instance_valid(player) or not player.is_dead:
+			continue
+		UIParticles.wisp(self, player.global_position)
+		var tw := create_tween()
+		tw.tween_interval(0.05)
+		tw.tween_property(player, "modulate:a", 0.0, corpse_fade_duration)
 
 
 func _spawn_local_player() -> void:

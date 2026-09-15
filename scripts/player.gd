@@ -122,6 +122,12 @@ const ANIM_JUMP: Array[StringName] = [&"jump_left", &"jump_right"]
 const ANIM_DIE: Array[StringName] = [&"die_left", &"die_right"]
 
 var is_dead := false
+var is_celebrating := false
+
+@export_group("Celebration")
+@export var celebrate_hop_velocity_scale: float = 0.62
+@export var celebrate_hop_interval: float = 0.46
+@export var celebrate_hops: int = 5
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var player_tag: Label = $PlayerTag
@@ -568,6 +574,41 @@ func play_death_animation(cause: String = "fall") -> void:
 		elapsed += get_physics_process_delta_time()
 
 
+## Victory hop. There is no celebrate animation in the SpriteFrames, so the
+## read comes from cadence + squash + dust + an alternating facing flip, driving
+## the existing jump/idle frames. Authority-only: peers see it through the
+## replicated animation_name, net position and the call_local jump dust.
+func play_celebration() -> void:
+	if is_dead or is_celebrating:
+		return
+	is_celebrating = true
+	_death_animation_id += 1
+	var my_id: int = _death_animation_id
+	for index in celebrate_hops:
+		while is_inside_tree() and not is_on_floor():
+			await get_tree().physics_frame
+			if not is_inside_tree() or is_dead or my_id != _death_animation_id:
+				is_celebrating = false
+				return
+		if not is_inside_tree() or is_dead or my_id != _death_animation_id:
+			is_celebrating = false
+			return
+		_celebrate_hop(index)
+		await get_tree().create_timer(celebrate_hop_interval).timeout
+	is_celebrating = false
+
+
+func _celebrate_hop(index: int) -> void:
+	velocity.y = jump_velocity * celebrate_hop_velocity_scale
+	velocity.x = 0.0
+	facing_right = index % 2 == 0
+	animation_name = ANIM_JUMP[1 if facing_right else 0]
+	animated_sprite.play(animation_name)
+	_squash(0.72, 1.34, 0.20)
+	SfxManager.play(jump_sound, -12.0, 0.18)
+	_fx_jump_net()
+
+
 func _update_animation() -> void:
 	if is_dead:  
 		return  
@@ -650,6 +691,13 @@ func _handle_input(delta: float) -> void:
 	var dash_just_pressed: bool = dash_held and not _prev_dash_held
 	_prev_jump_held = jump_held
 	_prev_dash_held = dash_held
+	
+	if MinigameDirector.is_input_locked():
+		direction = 0.0
+		_last_move_input = Vector2.ZERO
+		jump_buffer_counter = 0.0
+		coyote_time_counter = 0.0
+		return
 	
 	if dash_just_pressed and not is_dashing and dash_cooldown_left <= 0.0:
 		_start_dash()
@@ -903,7 +951,7 @@ func _update_zone_timer(delta: float, outside: bool, zone: Node) -> void:
 		_zone_outside_timer += delta
 		if _danger_ring:  
 			_danger_ring.set_progress(_zone_outside_timer / zone.outside_death_time)  # NEW
-		if _zone_outside_timer >= zone.outside_death_time and not is_dead:
+		if _zone_outside_timer >= zone.outside_death_time and not is_dead 				and not MinigameDirector.is_input_locked():
 			bomb_controller.player_died("explode")
 	else:
 		_zone_outside_timer = 0.0

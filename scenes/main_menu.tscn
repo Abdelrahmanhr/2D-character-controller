@@ -2,68 +2,13 @@
 
 [ext_resource type="Script" uid="uid://dqfpv8fwmyv8d" path="res://scripts/main_menu.gd" id="1"]
 [ext_resource type="Theme" uid="uid://doxgt2jeresa3" path="res://resources/themes/gravity.tres" id="2"]
-[ext_resource type="Script" uid="uid://cbsjdhl8vx0rl" path="res://scripts/title_glow.gd" id="3_glow"]
-[ext_resource type="AudioStream" uid="uid://cihodc8aynwdg" path="res://resources/audio/Light Flicker.mp3" id="5_8ln24"]
-[ext_resource type="FontFile" uid="uid://dgkg43ipmagnn" path="res://resources/fonts/Neonsign-Regular.otf" id="neon_light_font"]
+[ext_resource type="Theme" uid="uid://dgqitluxdgnbd" path="res://resources/themes/cyberpunk.tres" id="6_cyber"]
+[ext_resource type="Script" uid="uid://dhhvk4en5plpd" path="res://scripts/title_logo_frames.gd" id="7_title"]
 
 [sub_resource type="Environment" id="Environment_wu84c"]
 glow_enabled = true
 glow_intensity = 2.7
 glow_bloom = 0.26
-
-[sub_resource type="FontVariation" id="FontVariation_title"]
-base_font = ExtResource("neon_light_font")
-spacing_glyph = 5
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
-bg_color = Color(0.02, 0.06, 0.08, 0.3)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.2, 0.95, 1, 0.45)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_pressed"]
-bg_color = Color(0.2, 0.95, 1, 0.25)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.75, 1, 1, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
-bg_color = Color(0.04, 0.13, 0.16, 0.55)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.2, 0.95, 1, 1)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
-shadow_color = Color(0.2, 0.95, 1, 0.4)
-shadow_size = 10
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_disabled"]
-bg_color = Color(0.03, 0.05, 0.06, 0.2)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.3, 0.4, 0.42, 0.35)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
 
 [node name="MainMenu" type="Control" unique_id=692184613]
 layout_mode = 3
@@ -78,102 +23,55 @@ script = ExtResource("1")
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=955711601]
 environment = SubResource("Environment_wu84c")
 
-[node name="Title" type="Label" parent="." unique_id=662121332]
+[node name="Title" type="Control" parent="." unique_id=662121332]
+texture_filter = 1
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_top = 128.0
-offset_bottom = 192.0
+offset_top = 84.0
+offset_bottom = 284.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(0.5, 2.4, 3, 1)
-theme_override_colors/font_shadow_color = Color(0.2, 0.95, 1, 0.85)
-theme_override_colors/font_outline_color = Color(0.2, 0.95, 1, 1)
-theme_override_constants/shadow_offset_x = 0
-theme_override_constants/shadow_offset_y = 0
-theme_override_constants/outline_size = 10
-theme_override_constants/shadow_outline_size = 24
-theme_override_fonts/font = SubResource("FontVariation_title")
-theme_override_font_sizes/font_size = 115
-text = "Bomb Voyage"
-horizontal_alignment = 1
-vertical_alignment = 1
-script = ExtResource("3_glow")
-base_alpha = 0.815
-min_flicker_chance = 0.09
-flicker_max_duration = 0.15
-double_flicker_chance = 0.12
-flicker_sound = ExtResource("5_8ln24")
-flicker_sound_volume = -14.715
-flicker_sound_pitch_variance = 0.095
+mouse_filter = 2
+script = ExtResource("7_title")
 
 [node name="Menu" type="VBoxContainer" parent="." unique_id=652719526]
+texture_filter = 1
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -140.0
+offset_left = -180.0
 offset_top = -21.0
-offset_right = 140.0
+offset_right = 180.0
 offset_bottom = 255.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("6_cyber")
 theme_override_constants/separation = 14
 
 [node name="LocalMultiplayerButton" type="Button" parent="Menu" unique_id=1861124297]
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 0.96)
-theme_override_colors/font_hover_color = Color(0.2, 0.95, 1, 1)
-theme_override_colors/font_outline_color = Color(0.2, 0.95, 1, 0.7)
-theme_override_constants/outline_size = 3
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-theme_override_styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
-theme_override_styles/focus = SubResource("StyleBoxFlat_btn_hover")
+size_flags_horizontal = 4
 text = "COUCH PLAY"
 
 [node name="MultiplayerButton" type="Button" parent="Menu" unique_id=680130786]
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 0.96)
-theme_override_colors/font_hover_color = Color(0.2, 0.95, 1, 1)
-theme_override_colors/font_outline_color = Color(0.2, 0.95, 1, 0.7)
-theme_override_constants/outline_size = 3
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-theme_override_styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
-theme_override_styles/focus = SubResource("StyleBoxFlat_btn_hover")
+size_flags_horizontal = 4
 text = "ONLINE MULTIPLAYER"
 
 [node name="CreditsButton" type="Button" parent="Menu" unique_id=968154274]
 visible = false
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 0.96)
-theme_override_colors/font_hover_color = Color(0.2, 0.95, 1, 1)
-theme_override_colors/font_outline_color = Color(0.2, 0.95, 1, 0.7)
-theme_override_constants/outline_size = 3
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-theme_override_styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
-theme_override_styles/focus = SubResource("StyleBoxFlat_btn_hover")
+size_flags_horizontal = 4
 text = "CREDITS"
 
 [node name="ExitButton" type="Button" parent="Menu" unique_id=298939229]
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 0.96)
-theme_override_colors/font_hover_color = Color(0.2, 0.95, 1, 1)
-theme_override_colors/font_outline_color = Color(0.2, 0.95, 1, 0.7)
-theme_override_constants/outline_size = 3
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_btn_pressed")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-theme_override_styles/disabled = SubResource("StyleBoxFlat_btn_disabled")
-theme_override_styles/focus = SubResource("StyleBoxFlat_btn_hover")
+size_flags_horizontal = 4
 text = "EXIT"
