@@ -2,6 +2,7 @@ extends Node
 class_name BombController
 
 signal player_finished_round
+signal minigame_spawned(instance: Control, slot_index: int)
 
 @export var bomb_time: float = 40.0
 @export var device_id: int = 0  
@@ -16,6 +17,9 @@ var _lives_remaining: int = 5
 @export var minigame_complete_sound: AudioStream
 
 @export var max_bomb_time: float = 60.0
+
+@export var lethal: bool = true
+const NONLETHAL_FLOOR: float = 0.4
 
 @export_group("Tick")
 @export var tick_sound: AudioStream
@@ -119,7 +123,10 @@ func _process(delta: float) -> void:
 	elif not _expired and not _timer_frozen:
 		_time_left -= delta
 		if _time_left <= 0.0:
-			player_died("explode")  
+			if lethal:
+				player_died("explode")
+			else:
+				_time_left = NONLETHAL_FLOOR
 	if _minigame_layer:
 		_minigame_layer.global_position = _player.global_position + Vector2(-100, -150)
 	if not _timer_frozen:
@@ -151,6 +158,26 @@ func _update_tick(delta: float) -> void:
 		0.0,
 		lerpf(tick_pitch_calm, tick_pitch_panic, ramp),
 	)
+
+
+func bot_submit() -> void:
+	if _active_minigame == null or not _has_authority() or _player.is_stunned:
+		return
+	if MinigameDirector.is_input_locked() or MinigameDirector.is_match_finished():
+		return
+	if not _active_minigame.has_method("bot_action"):
+		return
+	var action: StringName = _active_minigame.bot_action()
+	if action == &"":
+		return
+	var key: Key = Settings.get_key(action)
+	if key == KEY_NONE:
+		return
+	var event := InputEventKey.new()
+	event.pressed = true
+	event.physical_keycode = key
+	if _active_minigame._handle_input(event):
+		_play_input_sound_net()
 
 
 func _input(event: InputEvent) -> void:
@@ -282,6 +309,10 @@ func reset_for_respawn() -> void:
 	_frozen_value = bomb_time
 	set_process(true)
 
+func set_lives(count: int) -> void:
+	_lives_remaining = maxi(count, 0)
+
+
 func stop_timer() -> void:
 	_frozen_value = _compute_time_left()
 	_running = false
@@ -349,6 +380,10 @@ func play_minigame(scene: PackedScene, slot_index: int) -> void:
 	else:
 		_show_minigame.rpc(slot_index, scene_index, rng_seed)
 
+func has_active_minigame() -> bool:
+	return _active_minigame != null
+
+
 func stop_minigame() -> void:
 	if _has_authority() and _is_networked():
 		_clear_minigame.rpc()
@@ -372,6 +407,7 @@ func _show_minigame(slot_index: int, scene_index: int, rng_seed: int = 0) -> voi
 		return
 	var scene: PackedScene = MinigameDirector.minigame_order[scene_index]
 	_active_minigame = scene.instantiate()
+	minigame_spawned.emit(_active_minigame, slot_index)
 	_active_minigame_slot = slot
 	_active_slot_index = slot_index
 	slot.add_child(_active_minigame)
@@ -539,7 +575,7 @@ func eliminate_player(cause: String = "fall") -> void:  # CHANGED: added cause p
 	stop_minigame()
 	await _player.play_death_animation(cause)  # CHANGED: pass cause through
 	MinigameDirector.player_eliminated(_player.name.to_int())
-	if _has_authority():
+	if _has_authority() and _player.bot == null:
 		var scene := get_tree().current_scene
 		if scene.has_method("show_lose_popup"):
 			scene.show_lose_popup()

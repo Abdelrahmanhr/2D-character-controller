@@ -42,6 +42,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_pause()
 		get_viewport().set_input_as_handled()
 
+func toggle() -> void:
+	_toggle_pause()
+
+
 func _toggle_pause() -> void:
 	if panel.visible:
 		_resume()

@@ -67,6 +67,19 @@ func _next_round() -> void:
 	_target_color_name = COLOR_NAMES[_rng.randi() % COLOR_NAMES.size()]
 	center_square.color = COLOR_VALUES[_target_color_name]
 
+## What a bot should press right now, as a Settings action name, or &"" if there
+## is nothing to answer. BombController.bot_submit turns it into a real key event,
+## so a bot travels exactly the same path a human does.
+func bot_action() -> StringName:
+	if _round_finished:
+		return &""
+	for position in POSITIONS:
+		# The label TEXT names the colour; its ink colour is the Stroop distractor.
+		if _position_color_name.get(position, "") == _target_color_name:
+			return StringName("mg_" + position)
+	return &""
+
+
 func _handle_input(event: InputEvent) -> bool: 
 	if _round_finished:
 		return false  

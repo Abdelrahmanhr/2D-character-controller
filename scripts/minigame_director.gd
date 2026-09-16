@@ -12,6 +12,7 @@ signal input_locked_changed(locked: bool)
 ## end stays in sync for free because _finish_match is already "call_local".
 const LOCK_MATCH_OVER := 1
 const LOCK_MENU := 2
+const LOCK_TUTORIAL := 4
 
 @export var expected_player_count: int = 1
 @export var countdown_duration: float = 3.0
@@ -21,6 +22,8 @@ var _counting_down: bool = false
 
 @export var minigame_order: Array[PackedScene] = []
 @export var spawn_cooldown: float = 5.0
+
+var auto_serve: bool = true
 
 var _bomb_controllers: Array[BombController] = []
 var _round_indices: Dictionary = {}
@@ -95,6 +98,7 @@ func reset_match() -> void:
 	_lock_mask = 0
 	_lock_started_ms = -1
 	_paused_accum_ms = 0
+	auto_serve = true
 
 func register_player(bomb_controller: BombController) -> void:
 	if _bomb_controllers.has(bomb_controller):
@@ -134,6 +138,8 @@ func unregister_player(bomb_controller: BombController) -> void:
 		_countdown_left = 0.0
 
 func _start_rounds() -> void:
+	if not auto_serve:
+		return
 	for bomb_controller in _bomb_controllers.duplicate():
 		_start_next_round_for_player(bomb_controller)
 
@@ -285,6 +291,9 @@ func _process(delta: float) -> void:
 				_start_rounds()
 			else:
 				Networking.broadcast_bomb_start()
+		return
+
+	if not auto_serve:
 		return
 
 	for bomb_controller in _cooldowns.keys():

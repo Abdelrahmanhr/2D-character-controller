@@ -5,6 +5,12 @@ var entering_arena_select_for_local: bool = false
 const MAX_PLAYERS: int = 4
 const KEYBOARD_DEVICE_ID: int = -1
 
+const BOT_DEVICE_BASE: int = -100
+
+var singleplayer: bool = false
+
+var tutorial_practice: bool = false
+
 signal player_joined(device_id: int)
 signal player_left(device_id: int)
 signal device_remapped(old_device_id: int, new_device_id: int)
@@ -39,6 +45,22 @@ func leave(device_id: int) -> void:
 	device_guids.erase(device_id)
 	player_left.emit(device_id)
 
+func is_bot(device_id: int) -> bool:
+	return device_id <= BOT_DEVICE_BASE
+
+
+func add_bots(count: int) -> void:
+	for i in count:
+		if joined_devices.size() >= MAX_PLAYERS:
+			return
+		var device_id: int = BOT_DEVICE_BASE - i
+		if is_joined(device_id):
+			continue
+		joined_devices.append(device_id)
+		player_names[device_id] = "BOT %d" % (i + 1)
+		player_joined.emit(device_id)
+
+
 func reset() -> void:
 	joined_devices.clear()
 	device_guids.clear()
@@ -72,7 +94,7 @@ func get_display_name(device_id: int, fallback_slot: int) -> String:
 
 func resolve_device_drift() -> void:
 	for old_device in joined_devices.duplicate():
-		if old_device == KEYBOARD_DEVICE_ID:
+		if old_device == KEYBOARD_DEVICE_ID or is_bot(old_device):
 			continue
 		var guid: String = str(device_guids.get(old_device, ""))
 		if guid.is_empty():

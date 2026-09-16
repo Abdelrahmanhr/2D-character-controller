@@ -19,6 +19,20 @@ var _end_menu: CanvasLayer
 @export var safe_zone_outside_death_time: float = 3.0  # NEW
 @export var safe_zone_hold_duration: float = 10.0  # NEW
 
+## Singleplayer turns the pressure up: alone against bots, the stock intervals
+## leave long dead stretches. Applied in _ready so multiplayer keeps the values
+## that were actually playtested. Arenas with their own hazards extend this (see
+## power_station.gd).
+const SINGLEPLAYER_SAFE_ZONE_INTERVAL := Vector2(3.0, 6.0)
+const SINGLEPLAYER_SAFE_ZONE_HOLD := 7.0
+
+## One per bot slot, so the three of them do not solve in lockstep and expire
+## together - the player needs a weakest one to outlast. Indexed by spawn order.
+const BOT_REACTION_TIMES: Array[float] = [0.32, 0.45, 0.62]
+
+## How far inside the outermost spawn points bots keep themselves.
+const BOT_BOUNDS_MARGIN := 90.0
+
 enum Outcome { WIN, LOSE, DRAW }
 
 @export_group("Match outro")
@@ -41,6 +55,7 @@ var _weather_event_active: bool = false
 
 
 func _ready() -> void:
+	_apply_singleplayer_tuning()
 	_set_global_parallax_active(false)
 	MusicManager.play_id(_music_id())
 	$PauseMenu.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -65,6 +80,39 @@ func _ready() -> void:
 	if multiplayer.is_server():
 		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	Networking.notify_arena_ready()
+
+
+## Overridden by arenas with extra hazards of their own; call super() first.
+func _apply_singleplayer_tuning() -> void:
+	if not LocalPlayers.singleplayer:
+		return
+	safe_zone_event_interval_min = SINGLEPLAYER_SAFE_ZONE_INTERVAL.x
+	safe_zone_event_interval_max = SINGLEPLAYER_SAFE_ZONE_INTERVAL.y
+	safe_zone_hold_duration = SINGLEPLAYER_SAFE_ZONE_HOLD
+
+
+## Spots the arena has telegraphed as about to become dangerous, for bots to step
+## away from. Empty here; arenas with a strike warning override it, which is why
+## BotController never has to know what lightning is.
+func get_danger_positions() -> PackedVector2Array:
+	return PackedVector2Array()
+
+
+## The x band bots should stay inside, as (min, max). Derived from the spawn
+## points because they are the one thing every arena has that is guaranteed to
+## be standable and inside the map - wandering past the outermost one is how
+## bots found the DeathBox.
+func get_play_bounds_x() -> Vector2:
+	if spawn_points.is_empty():
+		return Vector2(-INF, INF)
+	var low: float = spawn_points[0].global_position.x
+	var high: float = low
+	for point in spawn_points:
+		low = minf(low, point.global_position.x)
+		high = maxf(high, point.global_position.x)
+	# Inset, because the outermost spawn points sit close enough to the drop that
+	# a bot wandering to exactly that x still walks off the lip.
+	return Vector2(low + BOT_BOUNDS_MARGIN, high - BOT_BOUNDS_MARGIN)
 
 
 ## Which MusicManager track this arena plays. Overridden per arena; the default
@@ -381,6 +429,10 @@ func _on_peer_disconnected(peer_id: int) -> void:
 
 func _spawn_local_players() -> void:
 	var devices := LocalPlayers.joined_devices
+	# Defaults to 1, which would start the countdown on the first registration
+	# rather than once the whole roster is in. Harmless while everyone spawns in
+	# one frame, but singleplayer depends on all four being counted.
+	MinigameDirector.set_expected_player_count(devices.size())
 	for i in devices.size():
 		var device_id: int = devices[i]
 		var player := PLAYER.instantiate() as CharacterBody2D
@@ -398,6 +450,12 @@ func _spawn_local_players() -> void:
 		add_child(player)
 		var bomb_controller: Node = player.get_node("BombController")
 		bomb_controller.device_id = device_id
+		if LocalPlayers.is_bot(device_id):
+			var brain := BotController.new()
+			brain.name = "BotController"
+			brain.reaction_time = BOT_REACTION_TIMES[i % BOT_REACTION_TIMES.size()]
+			player.add_child(brain)
+			player.bot = brain
 		players.append(player)
 
 

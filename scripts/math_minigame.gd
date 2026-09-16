@@ -84,6 +84,15 @@ func _load_new_equation() -> void:
 	
 	time_bar.value = (float(_correct_count) / float(target_correct)) * 100.0
 
+## What a bot should press right now, as a Settings action name, or &"" if there
+## is nothing to answer. BombController.bot_submit turns it into a real key event,
+## so a bot travels exactly the same path a human does.
+func bot_action() -> StringName:
+	if _round_finished or _answered:
+		return &""
+	return &"mg_left" if _current_answer == 0 else &"mg_right"
+
+
 func _handle_input(event: InputEvent) -> bool: 
 	if _answered:
 		return false  

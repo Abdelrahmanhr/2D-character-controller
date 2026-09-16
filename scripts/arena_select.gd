@@ -15,6 +15,10 @@ const ARENAS := [
 	{"id": "residential_area", "name": "Residential Area", "scene_path": "res://scenes/residential_area.tscn", "preview": "residential_area"},
 ]
 
+## A full 4-player arena: you plus three bots. There are exactly four spawn
+## points, so this cannot usefully go higher.
+const BOT_COUNT := 3
+
 var selected_index := 0
 var _for_local_play := false  # NEW
 
@@ -109,6 +113,15 @@ func _on_arena_pressed(index: int) -> void:
 
 func _on_continue_pressed() -> void:
 	var arena: Dictionary = ARENAS[selected_index]
+	if LocalPlayers.singleplayer:
+		# No lobby to walk through - there is only one device, and the roster is
+		# decided here rather than by anyone pressing a button to join.
+		LocalPlayers.reset()
+		LocalPlayers.try_join(LocalPlayers.KEYBOARD_DEVICE_ID)
+		LocalPlayers.add_bots(BOT_COUNT)
+		LocalPlayers.selected_arena_path = arena["scene_path"]
+		SceneTransition.circle_to(arena["scene_path"])
+		return
 	if _for_local_play:  
 		LocalPlayers.selected_arena_path = arena["scene_path"]  
 		get_tree().change_scene_to_file("res://scenes/local_lobby.tscn")  

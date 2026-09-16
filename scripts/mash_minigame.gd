@@ -26,6 +26,13 @@ func setup(player: Node, _rng_seed: int = 0) -> void:
 	time_bar.value = 0.0
 	_update_label()
 
+## What a bot should press right now, as a Settings action name, or &"" if there
+## is nothing to answer. BombController.bot_submit turns it into a real key event,
+## so a bot travels exactly the same path a human does.
+func bot_action() -> StringName:
+	return &"" if _round_finished else &"mash"
+
+
 func _handle_input(event: InputEvent) -> bool:  
 	if _round_finished:
 		return false  

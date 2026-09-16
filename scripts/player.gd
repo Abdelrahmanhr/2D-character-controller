@@ -46,6 +46,10 @@ extends CharacterBody2D
 @export var stun_tilt_speed: float = 10.0  
 
 @export var device_id: int = -2
+## Set by ArenaBase._spawn_local_players for bot players. Non-null means input
+## comes from there instead of from a device; every other system (dash, jump cut,
+## fast fall, safe zone slowdown, stun, death) is unaware and unchanged.
+var bot: BotController = null
 
 ## CHANGED: was seven @export Key fields. Bindings now live in Settings so the
 ## options page can edit them; these are a cache, because _handle_input runs
@@ -738,7 +742,12 @@ func _handle_input(delta: float) -> void:
 	var jump_held: bool
 	var dash_held: bool
 	
-	if _is_networked():  # NEW: online players merge keyboard + first controller
+	if bot != null:
+		move_x = bot.move_x
+		move_y = bot.move_y
+		jump_held = bot.jump_held
+		dash_held = bot.dash_held
+	elif _is_networked():  # NEW: online players merge keyboard + first controller
 		var kb_move_x: float = float(Input.is_physical_key_pressed(keyboard_right)) - float(Input.is_physical_key_pressed(keyboard_left))
 		var kb_move_y: float = float(Input.is_physical_key_pressed(keyboard_down)) - float(Input.is_physical_key_pressed(keyboard_up))
 		var kb_jump_held: bool = Input.is_physical_key_pressed(keyboard_jump)

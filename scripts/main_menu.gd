@@ -4,6 +4,7 @@ const LOBBY_SCENE := "res://scenes/lobby.tscn"
 const ARENA_SELECT_SCENE := "res://scenes/arena_select.tscn"
 const LOCAL_LOBBY_SCENE := "res://scenes/local_lobby.tscn"
 const CREDITS_SCENE := "res://scenes/credits.tscn"
+const TUTORIAL_ARENA_SCENE := "res://scenes/tutorial_arena.tscn"
 const OPTIONS_MENU := preload("res://scenes/options_menu.tscn")
 
 var _joining := false
@@ -21,9 +22,46 @@ func _ready() -> void:
 	Networking.client_joined.connect(_on_client_joined)
 	Networking.join_pending.connect(_on_join_pending)
 	Networking.lobby_failed.connect(_on_lobby_failed)
+	_setup_singleplayer_button()
+	_setup_tutorial_button()
 	_setup_options()
 	if Networking.has_pending_join():
 		_on_join_pending()
+
+
+func _setup_singleplayer_button() -> void:
+	var button: Button = $Menu/CreditsButton.duplicate(Node.DUPLICATE_GROUPS | Node.DUPLICATE_SCRIPTS)
+	button.name = "SingleplayerButton"
+	button.text = "SINGLEPLAYER"
+	button.visible = true
+	$Menu.add_child(button)
+	$Menu.move_child(button, $Menu/MultiplayerButton.get_index() + 1)
+	button.pressed.connect(_on_singleplayer_pressed)
+
+
+func _on_singleplayer_pressed() -> void:
+	LocalPlayers.singleplayer = true
+	LocalPlayers.entering_arena_select_for_local = true
+	get_tree().change_scene_to_file(ARENA_SELECT_SCENE)
+
+
+func _setup_tutorial_button() -> void:
+	var button: Button = $Menu/CreditsButton.duplicate(Node.DUPLICATE_GROUPS | Node.DUPLICATE_SCRIPTS)
+	button.name = "TutorialButton"
+	button.text = "TUTORIAL"
+	button.visible = true
+	$Menu.add_child(button)
+	$Menu.move_child(button, $Menu/SingleplayerButton.get_index() + 1)
+	button.pressed.connect(_on_tutorial_pressed)
+
+
+func _on_tutorial_pressed() -> void:
+	LocalPlayers.reset()
+	LocalPlayers.singleplayer = true
+	LocalPlayers.tutorial_practice = false
+	LocalPlayers.try_join(LocalPlayers.KEYBOARD_DEVICE_ID)
+	LocalPlayers.add_bots(2)
+	SceneTransition.circle_to(TUTORIAL_ARENA_SCENE)
 
 
 func _setup_options() -> void:
@@ -108,11 +146,13 @@ func _on_exit_pressed() -> void:
 	get_tree().quit()
 
 func _on_local_multiplayer_pressed() -> void:
+	LocalPlayers.singleplayer = false
 	LocalPlayers.entering_arena_select_for_local = true  # NEW
 	get_tree().change_scene_to_file(ARENA_SELECT_SCENE)
 
 func _on_multiplayer_pressed() -> void:
 	if _joining:
 		return
+	LocalPlayers.singleplayer = false
 	LocalPlayers.entering_arena_select_for_local = false  # NEW
 	get_tree().change_scene_to_file(ARENA_SELECT_SCENE)

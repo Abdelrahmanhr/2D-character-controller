@@ -101,6 +101,19 @@ func _consume_active_arrow() -> void:
 	_reposition_queue(true)
 	time_bar.value = (float(_correct_count) / float(target_correct)) * 100.0
 
+## What a bot should press right now, as a Settings action name, or &"" if there
+## is nothing to answer. BombController.bot_submit turns it into a real key event,
+## so a bot travels exactly the same path a human does.
+func bot_action() -> StringName:
+	if _round_finished or _arrow_queue.is_empty():
+		return &""
+	# The queue's back is the active arrow - the same one _submit_direction checks.
+	var active: Label = _arrow_queue[_arrow_queue.size() - 1]
+	if not is_instance_valid(active):
+		return &""
+	return StringName("mg_" + str(active.get_meta("direction")))
+
+
 func _handle_input(event: InputEvent) -> bool:  
 	if _round_finished:
 		return false  

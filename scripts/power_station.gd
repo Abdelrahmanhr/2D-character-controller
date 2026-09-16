@@ -74,6 +74,30 @@ var _lightning_platform_widths: Array[float] = []
 var _active_electrifications: Array[Dictionary] = []
 
 
+const SINGLEPLAYER_LIGHTNING_INTERVAL := Vector2(2.0, 3.5)
+
+
+func _apply_singleplayer_tuning() -> void:
+	super()
+	if not LocalPlayers.singleplayer:
+		return
+	lightning_event_interval_min = SINGLEPLAYER_LIGHTNING_INTERVAL.x
+	lightning_event_interval_max = SINGLEPLAYER_LIGHTNING_INTERVAL.y
+
+
+## The "!" warnings currently on screen, in world space. _pending_strike_indices
+## is filled by _trigger_lightning_strike and cleared by _update_pending_strike,
+## so this is live for exactly the warning lead time.
+func get_danger_positions() -> PackedVector2Array:
+	var spots := PackedVector2Array()
+	for idx in _pending_strike_indices:
+		var i: int = int(idx)
+		if i < 0 or i >= _lightning_platforms.size():
+			continue
+		spots.append(_lightning_platforms[i].global_position)
+	return spots
+
+
 func _music_id() -> StringName:
 	return &"arena_power_station"
 
