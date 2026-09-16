@@ -35,8 +35,10 @@ extends CharacterBody2D
 @export var footstep_pitch_variance: float = 0.15
 @export var footstep_debounce: float = 0.1
 @export var dash_conflict_knockback_multiplier: float = 2.0
-@export var dash_conflict_flash_color: Color = Color(0.8667, 0.2157, 0.2706, 1.0) 
-@export var dash_conflict_flash_duration: float = 0.25 
+@export var dash_conflict_flash_color: Color = Color(0.8667, 0.2157, 0.2706, 1.0)
+@export var dash_conflict_flash_duration: float = 0.25
+@export var shield_duration: float = 10.0
+@export var shield_flash_color: Color = Color(0.3216, 0.6392, 1.0, 1.0)
 @export var explode_sound: AudioStream  
 @export var explode_pitch_variance: float = 0.1  
 
@@ -101,6 +103,12 @@ var freeze_time_left: float = 0.0
 
 var is_stunned: bool = false
 var stun_time_left: float = 0.0
+
+## Independent of is_invulnerable: blocks stun/knockback (see _do_apply_stun) rather
+## than damage/death, and has its own blue tint instead of the white respawn flash.
+var is_shielded: bool = false
+var shield_time_left: float = 0.0
+var _shield_particles: CPUParticles2D
 
 var is_dashing: bool = false
 var dash_time_left: float = 0.0
@@ -195,6 +203,7 @@ func _ready() -> void:
 	_sprite_base_scale = animated_sprite.scale
 	_setup_dust()
 	_setup_fall_fx()
+	_setup_shield_particles()
 	_net_position = global_position  # so the first sync carries the spawn point, not (0, 0)
 	if _is_networked() and is_multiplayer_authority() and device_id == -2:
 		device_id = -1
@@ -280,8 +289,14 @@ func _physics_process(delta: float) -> void:
 		stun_time_left -= delta
 		if stun_time_left <= 0.0:
 			is_stunned = false
-	
-	if is_frozen: 
+
+	if is_shielded:
+		shield_time_left -= delta
+		if shield_time_left <= 0.0:
+			is_shielded = false
+			_set_shield_particles_active(false)
+
+	if is_frozen:
 		freeze_time_left -= delta
 		if freeze_time_left <= 0.0:
 			is_frozen = false
@@ -834,7 +849,16 @@ func _on_dash_hitbox_body_entered(body: Node) -> void:
 	if body.has_method("is_invulnerable") or "is_invulnerable" in body:
 		if body.is_invulnerable:
 			return
-	
+
+	if body.get("is_shielded") == true:
+		# The shield blocks all stun/knockback on the defender (see _do_apply_stun),
+		# so there's nothing to apply to body -- instead the attacker bounces off as if
+		# they'd hit something solid. No flash_dash_loss here: that cue is specifically
+		# for losing your own dash to a conflict, which isn't what happened.
+		apply_stun(-dash_direction, dash_conflict_knockback_multiplier)
+		apply_hitstop(hitstop_duration)
+		return
+
 	if body.get("is_dashing") == true:
 		if dash_start_time_ms <= body.dash_start_time_ms:
 			return
@@ -863,6 +887,8 @@ func apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0, dura
 
 @rpc("any_peer", "call_local", "reliable")
 func _do_apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0, duration_override: float = -1.0) -> void:
+	if is_shielded:
+		return
 	var duration: float = stun_duration if duration_override < 0.0 else duration_override
 	is_dashing = false
 	dash_hitbox.monitoring = false
@@ -925,10 +951,13 @@ func respawn(invuln_duration: float) -> void:
 	velocity = Vector2.ZERO
 	is_stunned = false
 	is_frozen = false
-	is_dashing = false  
-	dash_time_left = 0.0  
-	dash_hitbox.monitoring = false  
-	dash_afterimage.stop()  
+	is_shielded = false
+	shield_time_left = 0.0
+	_set_shield_particles_active(false)
+	is_dashing = false
+	dash_time_left = 0.0
+	dash_hitbox.monitoring = false
+	dash_afterimage.stop()
 	animated_sprite.speed_scale = 1.0
 	animated_sprite.modulate.a = 1.0
 	animated_sprite.scale = _sprite_base_scale
@@ -955,10 +984,99 @@ func _do_flash_dash_loss() -> void:
 	tween.tween_property(animated_sprite, "modulate", dash_conflict_flash_color, dash_conflict_flash_duration * 0.3)
 	tween.tween_property(animated_sprite, "modulate", Color.WHITE.lerp(_current_identity_color(), 0.28), dash_conflict_flash_duration * 0.7)
 	
-func _current_identity_color() -> Color:  
+func _current_identity_color() -> Color:
 	if bomb_controller:
 		return bomb_controller.get_player_color()
 	return Color.WHITE
+
+## Refreshes/extends shield_time_left rather than stacking if already shielded. See
+## _do_apply_stun for where the shield actually blocks stun/knockback.
+func apply_shield(duration: float) -> void:
+	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		_do_apply_shield(duration)
+	else:
+		_do_apply_shield.rpc(duration)
+
+@rpc("any_peer", "call_local", "reliable")
+func _do_apply_shield(duration: float) -> void:
+	var is_new_activation: bool = not is_shielded
+	is_shielded = true
+	shield_time_left = duration
+	if is_new_activation:
+		_set_shield_particles_active(true)
+
+## Built once in _ready (see _setup_shield_particles) and just toggled here -- never
+## recreated per activation. Replaces the old modulate-tint tween entirely: no more
+## flashing the sprite blue then back, is_invulnerable's white respawn flash is the
+## only sprite-modulate effect left.
+func _set_shield_particles_active(active: bool) -> void:
+	if _shield_particles:
+		_shield_particles.emitting = active
+
+## Continuous (not one-shot) aura orbiting the player, following the same
+## CPUParticles2D + cached 1x1-pixel-texture approach _make_dust/UIParticles already
+## use elsewhere in this project rather than GPUParticles2D (unused anywhere else here,
+## and this project explicitly targets the GL Compatibility renderer, which doesn't
+## support the Glow WorldEnvironment effect at all -- only Forward+/Mobile do). The
+## "glow" here is the same trick _setup_glow_texture already uses for the player's own
+## ambient light: a soft radial-gradient texture plus BLEND_MODE_ADD, so overlapping
+## particles brighten instead of just overdrawing flat pixels. preprocess seeds the
+## ring so it's already fully populated the instant emitting flips true, instead of
+## sparsely filling in over its first lifetime.
+##
+## Performance: the gradient texture and its material are built ONCE (static, shared
+## across every Player instance, same caching idiom as UIParticles.pixel_texture())
+## rather than per-player. amount is kept modest (12) since additive blending is what
+## sells "glow" here, not particle count -- bumping amount would cost more per frame
+## for a look that a slightly larger per-particle scale already achieves cheaper.
+static var _shield_glow_texture: Texture2D
+static var _shield_glow_material: CanvasItemMaterial
+
+
+static func _shared_shield_glow_texture() -> Texture2D:
+	if _shield_glow_texture == null:
+		var gradient := Gradient.new()
+		gradient.offsets = PackedFloat32Array([0.0, 1.0])
+		gradient.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
+		var texture := GradientTexture2D.new()
+		texture.gradient = gradient
+		texture.width = 8
+		texture.height = 8
+		texture.fill = GradientTexture2D.FILL_RADIAL
+		texture.fill_from = Vector2(0.5, 0.5)
+		texture.fill_to = Vector2(0.5, 0.0)
+		_shield_glow_texture = texture
+	return _shield_glow_texture
+
+
+static func _shared_shield_glow_material() -> CanvasItemMaterial:
+	if _shield_glow_material == null:
+		_shield_glow_material = CanvasItemMaterial.new()
+		_shield_glow_material.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		_shield_glow_material.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	return _shield_glow_material
+
+
+func _setup_shield_particles() -> void:
+	_shield_particles = CPUParticles2D.new()
+	_shield_particles.texture = _shared_shield_glow_texture()
+	_shield_particles.material = _shared_shield_glow_material()
+	_shield_particles.emitting = false
+	_shield_particles.amount = 12
+	_shield_particles.lifetime = 0.9
+	_shield_particles.preprocess = 0.9
+	_shield_particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE_SURFACE
+	_shield_particles.emission_sphere_radius = 26.0
+	_shield_particles.direction = Vector2(0.0, -1.0)
+	_shield_particles.spread = 180.0
+	_shield_particles.initial_velocity_min = 4.0
+	_shield_particles.initial_velocity_max = 14.0
+	_shield_particles.gravity = Vector2.ZERO
+	_shield_particles.scale_amount_min = 1.5
+	_shield_particles.scale_amount_max = 3.0
+	_shield_particles.color = shield_flash_color
+	_shield_particles.z_index = 1
+	add_child(_shield_particles)
 
 func _get_safe_zone() -> Node:  
 	return get_tree().get_first_node_in_group("safe_zones")

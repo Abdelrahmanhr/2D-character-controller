@@ -38,7 +38,18 @@ extends ArenaBase
 @export var lightning_electrify_interval_max: float = 0.22
 const ELECTRIFY_SOUND := preload("res://resources/audio/Light Flicker.mp3")
 
+@export_group("Shield Pickup")
+@export var shield_pickup_interval_min: float = 4.0  ## PLAYTEST TUNING: real value is 15.0, lowered so pickups spawn often while testing
+@export var shield_pickup_interval_max: float = 7.0  ## PLAYTEST TUNING: real value is 25.0, see shield_pickup_interval_min
+@export var shield_pickup_duration: float = 10.0  ## passed to the pickup, which passes it to Player.apply_shield
+@export var shield_pickup_edge_margin: float = 16.0  ## keeps the spawn point off a platform's very edge
+@export var shield_pickup_hover_height: float = 20.0  ## lifts the pickup to visually rest on the platform surface, not sit centered inside it
+const SHIELD_PICKUP_SCENE := preload("res://scenes/shield_pickup.tscn")
+
 var _next_lightning_event_ms: int = -1
+
+var _next_shield_pickup_ms: int = -1
+var _active_shield_pickup: ShieldPickup = null
 
 ## Populated in _ready from LightningPlatforms' Marker2D children (see scene: each
 ## marks a real platform center on the TileMapLayer4 collision layer, tagged with
@@ -66,6 +77,7 @@ func _ready() -> void:
 	_light_glow_layer()
 	_collect_lightning_platforms()
 	MinigameDirector.match_started.connect(_on_match_started_for_lightning)
+	MinigameDirector.match_started.connect(_on_match_started_for_shield_pickup)
 
 
 func _collect_lightning_platforms() -> void:
@@ -87,6 +99,7 @@ func _process(delta: float) -> void:
 	super._process(delta)
 	_update_lightning_schedule()
 	_update_electrified_hazards()
+	_update_shield_pickup_schedule()
 
 
 func _on_match_started_for_lightning() -> void:
@@ -333,6 +346,75 @@ func _spawn_electrify_effect(idx: int) -> void:
 	var expire_timer := get_tree().create_timer(lightning_electrify_duration)
 	expire_timer.timeout.connect(emitter.queue_free)
 	expire_timer.timeout.connect(func() -> void: entry["expire_ms"] = 0)
+
+
+func _on_match_started_for_shield_pickup() -> void:
+	if _is_zone_authority():
+		_schedule_next_shield_pickup()
+
+
+func _schedule_next_shield_pickup() -> void:
+	var wait: float = randf_range(shield_pickup_interval_min, shield_pickup_interval_max)
+	_next_shield_pickup_ms = _get_timestamp() + int(wait * 1000.0)
+
+
+## Authority-gated, randomized interval, RPC'd spawn -- same shape as the lightning
+## event's own scheduler. Only one pickup may be active/uncollected at a time: the
+## next spawn is withheld until _active_shield_pickup is freed, whether that happens
+## by a player collecting it (ShieldPickup._do_despawn) or by its own lifetime timeout
+## expiring uncollected (the same "don't wait forever" convention SafeZone follows).
+func _update_shield_pickup_schedule() -> void:
+	if MinigameDirector.is_match_finished() or MinigameDirector.is_input_locked():
+		return
+	if not _is_zone_authority():
+		return
+	if _next_shield_pickup_ms < 0:
+		return
+	if is_instance_valid(_active_shield_pickup):
+		return
+	if _get_timestamp() < _next_shield_pickup_ms:
+		return
+	if _lightning_platforms.is_empty():
+		return
+	var spawn_pos: Vector2 = _random_shield_pickup_position()
+	if _is_networked():
+		_spawn_shield_pickup.rpc(spawn_pos)
+	else:
+		_spawn_shield_pickup(spawn_pos)
+
+
+## Reuses the same platform anchors the lightning event already collected (real
+## platform centers + real widths on the TileMapLayer4 collision layer) rather than a
+## fresh raycast/shapecast system -- picks a random platform, then a random point
+## along its actual footprint (not just its center), landing on its surface with a
+## small hover so the pickup visually rests on top of it.
+func _random_shield_pickup_position() -> Vector2:
+	var idx: int = randi() % _lightning_platforms.size()
+	var anchor: Marker2D = _lightning_platforms[idx]
+	var half_width: float = maxf(_lightning_platform_widths[idx] * 0.5 - shield_pickup_edge_margin, 0.0)
+	var offset_x: float = randf_range(-half_width, half_width)
+	return anchor.global_position + Vector2(offset_x, -shield_pickup_hover_height)
+
+
+@rpc("authority", "call_local", "reliable")
+func _spawn_shield_pickup(spawn_pos: Vector2) -> void:
+	if MinigameDirector.is_match_finished():
+		return
+	if is_instance_valid(_active_shield_pickup):
+		return
+	var pickup: ShieldPickup = SHIELD_PICKUP_SCENE.instantiate()
+	pickup.name = "ShieldPickup"
+	pickup.shield_duration = shield_pickup_duration
+	add_child(pickup)
+	pickup.global_position = spawn_pos
+	pickup.tree_exited.connect(_on_shield_pickup_gone)
+	_active_shield_pickup = pickup
+
+
+func _on_shield_pickup_gone() -> void:
+	_active_shield_pickup = null
+	if _is_zone_authority():
+		_schedule_next_shield_pickup()
 
 
 func _light_glow_layer() -> void:
