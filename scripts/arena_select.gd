@@ -25,6 +25,7 @@ var _arena_buttons: Array[Button] = []
 @onready var back_button: Button = $BackButton
 
 func _ready() -> void:
+	MusicManager.play_id(&"menu")
 	_for_local_play = LocalPlayers.entering_arena_select_for_local  
 	_populate_arena_list()
 	continue_button.pressed.connect(_on_continue_pressed)

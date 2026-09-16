@@ -13,7 +13,7 @@ var _options: Control
 func _ready() -> void:
 	get_tree().paused = false
 	SceneTransition.boot_reveal()
-	MusicManager.play(preload("res://resources/audio/MAINMENUSOUNDTRACK.ogg"), false, false)
+	MusicManager.play_id(&"menu")
 	$Menu/MultiplayerButton.pressed.connect(_on_multiplayer_pressed)
 	$Menu/LocalMultiplayerButton.pressed.connect(_on_local_multiplayer_pressed)
 	$Menu/CreditsButton.pressed.connect(_on_credits_pressed)

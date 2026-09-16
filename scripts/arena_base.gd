@@ -42,7 +42,7 @@ var _weather_event_active: bool = false
 
 func _ready() -> void:
 	_set_global_parallax_active(false)
-	MusicManager.play(preload("res://resources/audio/ARENA SOUNDTRACK.ogg"), false, true, -25.0)
+	MusicManager.play_id(_music_id())
 	$PauseMenu.process_mode = Node.PROCESS_MODE_ALWAYS
 	get_viewport().size_changed.connect(_layout_viewport_content)
 	_layout_viewport_content()
@@ -65,6 +65,12 @@ func _ready() -> void:
 	if multiplayer.is_server():
 		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	Networking.notify_arena_ready()
+
+
+## Which MusicManager track this arena plays. Overridden per arena; the default
+## keeps a new arena scene from being silent before anyone scores one.
+func _music_id() -> StringName:
+	return &"arena_default"
 
 
 func _process(delta: float) -> void:  # NEW

@@ -74,6 +74,10 @@ var _lightning_platform_widths: Array[float] = []
 var _active_electrifications: Array[Dictionary] = []
 
 
+func _music_id() -> StringName:
+	return &"arena_power_station"
+
+
 func _ready() -> void:
 	super()
 	var dim := CanvasModulate.new()

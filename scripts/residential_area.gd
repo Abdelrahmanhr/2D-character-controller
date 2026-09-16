@@ -41,6 +41,10 @@ var _dust_shape: ParticleProcessMaterial
 var _dust_extents: Vector2 = Vector2.ZERO
 
 
+func _music_id() -> StringName:
+	return &"arena_residential"
+
+
 func _ready() -> void:
 	super()
 	var dim := CanvasModulate.new()

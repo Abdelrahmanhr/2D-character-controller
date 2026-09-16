@@ -75,30 +75,11 @@ border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.337255, 0.415686, 0.537255, 1)
 
-[sub_resource type="StyleBoxTexture" id="SBT_panel"]
-texture = ExtResource("1_window")
-texture_margin_left = 32.0
-texture_margin_top = 32.0
-texture_margin_right = 32.0
-texture_margin_bottom = 30.0
-
-[sub_resource type="StyleBoxFlat" id="SBF_line_edit_normal"]
-bg_color = Color(0.133333, 0.164706, 0.360784, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.337255, 0.415686, 0.537255, 1)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
+[sub_resource type="StyleBoxFlat" id="SBF_line_edit_focus"]
 content_margin_left = 8.0
 content_margin_top = 4.0
 content_margin_right = 8.0
 content_margin_bottom = 4.0
-
-[sub_resource type="StyleBoxFlat" id="SBF_line_edit_focus"]
 bg_color = Color(0.133333, 0.164706, 0.360784, 1)
 border_width_left = 2
 border_width_top = 2
@@ -109,10 +90,29 @@ corner_radius_top_left = 2
 corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="SBF_line_edit_normal"]
 content_margin_left = 8.0
 content_margin_top = 4.0
 content_margin_right = 8.0
 content_margin_bottom = 4.0
+bg_color = Color(0.133333, 0.164706, 0.360784, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.337255, 0.415686, 0.537255, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxTexture" id="SBT_panel"]
+texture = ExtResource("1_window")
+texture_margin_left = 32.0
+texture_margin_top = 32.0
+texture_margin_right = 32.0
+texture_margin_bottom = 30.0
 
 [resource]
 Button/colors/font_color = Color(0.545098, 0.670588, 0.74902, 1)
@@ -129,13 +129,13 @@ Button/styles/pressed = SubResource("SBT_btn_pressed")
 HSlider/styles/grabber_area = SubResource("SBF_grabber")
 HSlider/styles/grabber_area_highlight = SubResource("SBF_grabber_hl")
 HSlider/styles/slider = SubResource("SBF_slider")
-Panel/styles/panel = SubResource("SBT_panel")
+LineEdit/colors/caret_color = Color(1, 0.854902, 0.270588, 1)
 LineEdit/colors/font_color = Color(0.545098, 0.670588, 0.74902, 1)
 LineEdit/colors/font_placeholder_color = Color(0.337255, 0.415686, 0.537255, 1)
 LineEdit/colors/font_selected_color = Color(1, 0.964706, 0.682353, 1)
-LineEdit/colors/caret_color = Color(1, 0.854902, 0.270588, 1)
 LineEdit/colors/selection_color = Color(0.337255, 0.415686, 0.537255, 0.6)
 LineEdit/font_sizes/font_size = 16
-LineEdit/styles/normal = SubResource("SBF_line_edit_normal")
 LineEdit/styles/focus = SubResource("SBF_line_edit_focus")
+LineEdit/styles/normal = SubResource("SBF_line_edit_normal")
 LineEdit/styles/read_only = SubResource("SBF_line_edit_normal")
+Panel/styles/panel = SubResource("SBT_panel")

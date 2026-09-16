@@ -9,6 +9,7 @@ var _players_label: Label
 
 
 func _ready() -> void:
+	MusicManager.play_id(&"menu")
 	host_button.pressed.connect(_on_host_pressed)
 	start_button.pressed.connect(_on_start_pressed)
 	back_button.pressed.connect(_exit_game)

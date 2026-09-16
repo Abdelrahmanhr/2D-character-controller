@@ -21,6 +21,7 @@ func _confirm_keys() -> Array[Key]:
 
 
 func _ready() -> void:
+	MusicManager.play_id(&"menu")
 	LocalPlayers.reset()
 	LocalPlayers.player_joined.connect(_on_player_joined)
 	LocalPlayers.player_left.connect(_on_player_left)

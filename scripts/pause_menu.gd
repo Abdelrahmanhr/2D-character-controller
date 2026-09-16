@@ -48,6 +48,7 @@ func _toggle_pause() -> void:
 	else:
 		dim.show()
 		panel.show()
+		MusicManager.duck(true)
 		if not Networking.is_connected_online():
 			# Soft pause: bomb timers freeze and input is ignored, but the arena,
 			# music and particles keep running. Online we deliberately do neither -
@@ -97,6 +98,7 @@ func _exit_game() -> void:
 	SceneTransition.circle_to("res://scenes/main_menu.tscn")
 
 func _release_soft_pause() -> void:
+	MusicManager.duck(false)
 	MinigameDirector.unlock_input(MinigameDirector.LOCK_MENU)
 	MinigameDirector.set_timers_frozen(false)
 	get_tree().paused = false
