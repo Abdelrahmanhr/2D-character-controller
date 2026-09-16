@@ -246,11 +246,14 @@ func _update_overlay() -> void:
 	_overlay_material.set_shader_parameter("time_offset", t)
 	_overlay_material.set_shader_parameter("fade_alpha", _get_fade_alpha())
 	
+	# get_nodes_in_group allocates a fresh Array each call -- scan the group once per
+	# frame instead of twice (the count below used to re-scan it a second time).
+	var players := get_tree().get_nodes_in_group("players")
 	var player_positions: Array[Vector2] = []
-	for p in get_tree().get_nodes_in_group("players"):
+	for p in players:
 		if is_instance_valid(p) and not p.is_dead and player_positions.size() < MAX_PLAYERS:
 			player_positions.append(p.global_position)
 	while player_positions.size() < MAX_PLAYERS:
 		player_positions.append(Vector2(-999999.0, -999999.0))
 	_overlay_material.set_shader_parameter("player_pos", PackedVector2Array(player_positions))
-	_overlay_material.set_shader_parameter("player_count", mini(get_tree().get_nodes_in_group("players").size(), MAX_PLAYERS))
+	_overlay_material.set_shader_parameter("player_count", mini(players.size(), MAX_PLAYERS))

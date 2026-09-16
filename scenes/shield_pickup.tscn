@@ -1,7 +1,8 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scripts/shield_pickup.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://resources/residential-area-tileset-pixel-art/4 Animated objects/Card.png" id="2_card"]
+[ext_resource type="Texture2D" uid="uid://bl6w4l4qvlnm" path="res://resources/light_glow.tres" id="3_glow"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_card0"]
 atlas = ExtResource("2_card")
@@ -73,6 +74,11 @@ radius = 22.0
 [node name="ShieldPickup" type="Area2D"]
 script = ExtResource("1_script")
 
+[node name="Glow" type="Sprite2D" parent="."]
+modulate = Color(0.3216, 0.6392, 1, 0.5)
+scale = Vector2(0.35, 0.35)
+texture = ExtResource("3_glow")
+
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_shield")
@@ -81,3 +87,13 @@ autoplay = "default"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_shield")
+
+[node name="SpawnSound" type="AudioStreamPlayer2D" parent="."]
+bus = &"SFX"
+max_distance = 1400.0
+attenuation = 1.5
+
+[node name="CollectSound" type="AudioStreamPlayer2D" parent="."]
+bus = &"SFX"
+max_distance = 1400.0
+attenuation = 1.5

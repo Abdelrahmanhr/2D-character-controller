@@ -187,15 +187,28 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
-func _process(_delta: float) -> void:
+const REFRESH_INTERVAL := 0.1  ## a text readout doesn't need rebuilding at 60fps
+
+var _refresh_left: float = 0.0
+
+func _process(delta: float) -> void:
 	if _pad_overlay:
-		_pad_label.text = _compose_pad_text()
 		_panel.position = Vector2(12, 12 + _pad_panel.size.y + 8)
 	else:
 		_panel.position = Vector2(12, 12)
-	if not _visible_overlay:
+	if not _pad_overlay and not _visible_overlay:
 		return
-	_label.text = _compose_text()
+	# Both readouts rebuild their whole text (group scans, sorts, string formatting)
+	# from scratch every call, which only matters while a dev actually has one of
+	# these panels open -- throttled instead of doing that work every single frame.
+	_refresh_left -= delta
+	if _refresh_left > 0.0:
+		return
+	_refresh_left = REFRESH_INTERVAL
+	if _pad_overlay:
+		_pad_label.text = _compose_pad_text()
+	if _visible_overlay:
+		_label.text = _compose_text()
 
 
 func _compose_text() -> String:

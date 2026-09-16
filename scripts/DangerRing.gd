@@ -12,6 +12,7 @@ class_name DangerRing
 
 var progress: float = 0.0
 var _visible_state: bool = false
+var _was_visible: bool = false
 var _pulse_time: float = 0.0
 var _overlay: Control
 var _overlay_layer: CanvasLayer
@@ -38,8 +39,16 @@ func _process(delta: float) -> void:
 		_pulse_time += delta * pulse_speed
 	else:
 		_pulse_time = 0.0
-	if _overlay and is_instance_valid(_follow_target):
+	# Every player carries one of these, each owning a full-screen CanvasLayer, and
+	# _visible_state is false for nearly all of a match (only set once a player is
+	# actually outside the shrinking zone). Redrawing unconditionally meant 4 extra
+	# full-screen canvas-item rebuilds every frame for the entire match just to keep
+	# re-confirming "nothing to draw." Only redraw while something is shown, plus
+	# exactly one more frame on the way to invisible so the last-drawn arc actually
+	# clears instead of staying stuck on screen.
+	if _overlay and is_instance_valid(_follow_target) and (_visible_state or _was_visible):
 		_overlay.queue_redraw()
+	_was_visible = _visible_state
 
 func set_progress(value: float) -> void:
 	var should_show: bool = value > 0.0
