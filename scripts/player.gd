@@ -73,6 +73,7 @@ extends CharacterBody2D
 @export var zone_jump_multiplier: float = 0.9  # NEW: jumps feel softer/shorter, like jumping in water
 @export var zone_move_speed_multiplier: float = 0.6  # NEW: walking/air control feels sluggish
 
+
 var _danger_ring: DangerRing  
 
 var _zone_outside_timer: float = 0.0  
@@ -144,6 +145,7 @@ var is_celebrating := false
 
 var _identity_slot: int = -1
 var _sprite_base_scale: Vector2 = Vector2.ONE
+var _dash_hitbox_base_scale_x: float = 1.0
 var _fall_speed: float = 0.0
 var _land_dust: CPUParticles2D
 var _jump_dust: CPUParticles2D
@@ -182,7 +184,9 @@ func _ready() -> void:
 	dash_hitbox.body_entered.connect(_on_dash_hitbox_body_entered)
 	animated_sprite.frame_changed.connect(_on_animation_frame_changed)
 	dash_hitbox.monitoring = false
+	_dash_hitbox_base_scale_x = absf(dash_hitbox.scale.x) if dash_hitbox.scale.x != 0.0 else 1.0
 	add_to_group("players")
+	_dash_hitbox_base_scale_x = absf(dash_hitbox.scale.x) if dash_hitbox.scale.x != 0.0 else 1.0
 	_recalculate_jump_physics()
 	_setup_glow_texture()
 	_update_identity()
@@ -620,6 +624,7 @@ func _update_animation() -> void:
 		return  
 	if direction != 0.0:
 		facing_right = direction > 0.0
+		dash_hitbox.scale.x = _dash_hitbox_base_scale_x * (1.0 if facing_right else -1.0)
 
 	var facing: int = 1 if facing_right else 0
 	var next_animation: StringName
@@ -805,6 +810,12 @@ func _start_dash() -> void:
 	dash_direction = _get_dash_direction()
 	dash_start_time_ms = _get_timestamp()  
 	velocity = dash_direction * dash_speed
+	# The hitbox itself never flips on its own -- this player uses separate
+	# left/right animations rather than sprite flipping, so nothing else in this
+	# script ever touches dash_hitbox's transform. Without this it stays on
+	# whatever side it was placed on in the editor no matter which way you dash.
+	if dash_direction.x != 0.0:
+		dash_hitbox.scale.x = _dash_hitbox_base_scale_x * signf(dash_direction.x)
 	dash_hitbox.monitoring = true
 	SfxManager.play(dash_sound,-15.0)
 	_squash(1.3, 0.75, 0.2)
@@ -841,28 +852,32 @@ func _on_dash_hitbox_body_entered(body: Node) -> void:
 	if body.has_method("apply_hitstop"):
 		body.apply_hitstop(hitstop_duration)
 		
-func apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0) -> void:
+## duration_override < 0 keeps the default stun_duration export (dash-collision
+## behavior is untouched); callers like the lightning strike event pass an explicit
+## duration instead.
+func apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0, duration_override: float = -1.0) -> void:
 	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
-		_do_apply_stun(from_direction, knockback_multiplier)
+		_do_apply_stun(from_direction, knockback_multiplier, duration_override)
 	else:
-		_do_apply_stun.rpc(from_direction, knockback_multiplier)
+		_do_apply_stun.rpc(from_direction, knockback_multiplier, duration_override)
 
 @rpc("any_peer", "call_local", "reliable")
-func _do_apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0) -> void:
+func _do_apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0, duration_override: float = -1.0) -> void:
+	var duration: float = stun_duration if duration_override < 0.0 else duration_override
 	is_dashing = false
 	dash_hitbox.monitoring = false
 	dash_afterimage.stop()
 	is_stunned = true
-	stun_time_left = stun_duration
+	stun_time_left = duration
 	velocity = from_direction * knockback_speed * knockback_multiplier
 	SfxManager.play(slam_sound, -10.0, 0.1)
-	_tilt_on_stun(from_direction)  
+	_tilt_on_stun(from_direction, duration)
 
-func _tilt_on_stun(from_direction: Vector2) -> void:  
+func _tilt_on_stun(from_direction: Vector2, duration: float) -> void:
 	var tilt_angle: float = deg_to_rad(stun_tilt_angle_degrees) * sign(from_direction.x if from_direction.x != 0.0 else 1.0)
 	var tween := create_tween()
 	tween.tween_property(animated_sprite, "rotation", tilt_angle, 0.08)
-	tween.tween_property(animated_sprite, "rotation", 0.0, stun_duration - 0.08)
+	tween.tween_property(animated_sprite, "rotation", 0.0, duration - 0.08)
 
 func apply_hitstop(duration: float) -> void:
 	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
@@ -963,4 +978,4 @@ func _update_zone_timer(delta: float, outside: bool, zone: Node) -> void:
 	else:
 		_zone_outside_timer = 0.0
 		if _danger_ring:  
-			_danger_ring.set_progress(0.0) 
+			_danger_ring.set_progress(0.0)

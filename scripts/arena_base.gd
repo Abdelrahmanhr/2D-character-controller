@@ -30,6 +30,11 @@ var _active_zone: SafeZone = null  # NEW
 var _active_zone_spawn_index: int = -1  # NEW
 var _next_zone_event_ms: int = -1  # NEW
 
+## Shared across every "weather" style event (safe zone, lightning strike, ...) so at
+## most one of them can ever run at a time. Owning code sets this true when its event
+## starts and false when it fully ends; every scheduler checks it before starting.
+var _weather_event_active: bool = false
+
 @onready var multiplayer_spawner: MultiplayerSpawner = $MultiplayerSpawner
 @onready var match_result: Label = $MatchResult
 @onready var spawn_points: Array[Node2D] = [$SpawnPoint1, $SpawnPoint2, $SpawnPoint3, $SpawnPoint4]
@@ -91,7 +96,7 @@ func _update_safe_zone_schedule() -> void:  # NEW
 		return
 	if not _is_zone_authority():
 		return
-	if _active_zone != null or _next_zone_event_ms < 0:
+	if _active_zone != null or _next_zone_event_ms < 0 or _weather_event_active:
 		return
 	if _get_timestamp() >= _next_zone_event_ms:
 		var index: int = randi() % spawn_points.size()
@@ -122,6 +127,7 @@ func _start_safe_zone_event(spawn_index: int) -> void:
 	zone.activate()
 	_active_zone = zone
 	_active_zone_spawn_index = spawn_index
+	_weather_event_active = true
 
 
 ## Retires the live zone without touching SafeZone.gd. Leaving the group is what
@@ -132,6 +138,7 @@ func _dismiss_safe_zone() -> void:
 	var zone := _active_zone
 	_active_zone = null
 	_active_zone_spawn_index = -1
+	_weather_event_active = false
 	if zone == null or not is_instance_valid(zone):
 		return
 	if zone.expired.is_connected(_on_safe_zone_expired):
@@ -163,6 +170,7 @@ func _fade_out_overlay(layer: CanvasLayer) -> void:
 func _on_safe_zone_expired() -> void:  # NEW
 	_active_zone = null
 	_active_zone_spawn_index = -1
+	_weather_event_active = false
 	if _is_zone_authority():
 		_schedule_next_zone_event()
 

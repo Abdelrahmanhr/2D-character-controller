@@ -937,3 +937,50 @@ bolt_sound = ExtResource("41_flick")
 sound_volume_db = -26.0
 sound_chance = 0.15
 rail_mode = true
+
+[node name="LightningPlatforms" type="Node2D" parent="." unique_id=1900300000]
+
+[node name="PlatformCenter" type="Marker2D" parent="LightningPlatforms" unique_id=1900300001]
+position = Vector2(704, 416)
+metadata/platform_width = 128.0
+metadata/high_traffic = true
+
+[node name="PlatformInnerLeftLow" type="Marker2D" parent="LightningPlatforms" unique_id=1900300002]
+position = Vector2(448, 544)
+metadata/platform_width = 128.0
+metadata/high_traffic = true
+
+[node name="PlatformInnerRightLow" type="Marker2D" parent="LightningPlatforms" unique_id=1900300003]
+position = Vector2(1024, 544)
+metadata/platform_width = 128.0
+metadata/high_traffic = true
+
+[node name="PlatformInnerLeftHigh" type="Marker2D" parent="LightningPlatforms" unique_id=1900300004]
+position = Vector2(480, 352)
+metadata/platform_width = 128.0
+metadata/high_traffic = true
+
+[node name="PlatformInnerRightHigh" type="Marker2D" parent="LightningPlatforms" unique_id=1900300005]
+position = Vector2(944, 352)
+metadata/platform_width = 160.0
+metadata/high_traffic = true
+
+[node name="PlatformSpawnLeftTop" type="Marker2D" parent="LightningPlatforms" unique_id=1900300006]
+position = Vector2(240, 288)
+metadata/platform_width = 160.0
+metadata/high_traffic = false
+
+[node name="PlatformSpawnRightTop" type="Marker2D" parent="LightningPlatforms" unique_id=1900300007]
+position = Vector2(1200, 288)
+metadata/platform_width = 160.0
+metadata/high_traffic = false
+
+[node name="PlatformSpawnLeftMid" type="Marker2D" parent="LightningPlatforms" unique_id=1900300008]
+position = Vector2(256, 448)
+metadata/platform_width = 128.0
+metadata/high_traffic = false
+
+[node name="PlatformSpawnRightMid" type="Marker2D" parent="LightningPlatforms" unique_id=1900300009]
+position = Vector2(1168, 448)
+metadata/platform_width = 160.0
+metadata/high_traffic = false
