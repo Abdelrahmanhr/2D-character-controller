@@ -245,7 +245,10 @@ func _build_animation() -> void:
 	add_child(player)
 
 	var animation := Animation.new()
-	animation.length = 1.60
+	# Ends on its own last key. The debris clock is the longest track and the
+	# final shard dies at blast_time 0.62 (~t=0.92), so anything past 0.95 was
+	# the logo sitting dead still waiting for the queued idle loop to start.
+	animation.length = 0.95
 	animation.loop_mode = Animation.LOOP_NONE
 
 	# Crouch, snap to the hit, then rattle out in shrinking whole-pixel steps.
@@ -255,10 +258,12 @@ func _build_animation() -> void:
 		Vector2(8.0, -5.0), Vector2(-7.0, 4.0), Vector2(5.0, -3.0), Vector2(-4.0, 2.0),
 		Vector2(2.0, -1.0), Vector2(-1.0, 1.0), Vector2.ZERO])
 
-	# No grow-in: the badge is simply absent, then oversized, then settled.
+	# No grow-in: the badge is simply absent, then oversized, then settled - and
+	# from 0.58 it picks up the idle breath early, so the logo is never holding
+	# still while the debris is still in the air.
 	_add_step_track(animation, ".:burst_scale",
-		[0.00, 0.28, 0.30, 0.36, 0.42],
-		[0.0, 0.0, 1.28, 1.05, 1.0])
+		[0.00, 0.28, 0.30, 0.36, 0.42, 0.58, 0.74, 0.90],
+		[0.0, 0.0, 1.28, 1.05, 1.0, 1.03, 1.05, 1.03])
 
 	# A real blow-out: one opaque frame, one dirty frame, gone.
 	_add_step_track(animation, ".:flash_alpha",
@@ -269,14 +274,16 @@ func _build_animation() -> void:
 
 	# Squash wide on contact, overshoot tall, then two corrective steps.
 	_add_step_track(animation, "BombWord:scale",
-		[0.00, 0.29, 0.30, 0.35, 0.40, 0.45, 0.50],
+		[0.00, 0.29, 0.30, 0.35, 0.40, 0.45, 0.50, 0.58, 0.74, 0.90],
 		[Vector2.ZERO, Vector2.ZERO, Vector2(1.45, 0.55), Vector2(0.84, 1.24),
-		Vector2(1.10, 0.92), Vector2(0.97, 1.04), Vector2.ONE])
+		Vector2(1.10, 0.92), Vector2(0.97, 1.04), Vector2.ONE,
+		Vector2(1.02, 0.98), Vector2(1.03, 1.02), Vector2(1.01, 1.01)])
 
 	_add_step_track(animation, "VoyageWord:scale",
-		[0.00, 0.29, 0.30, 0.36, 0.42, 0.48],
+		[0.00, 0.29, 0.30, 0.36, 0.42, 0.48, 0.56, 0.72, 0.88],
 		[Vector2.ONE, Vector2.ONE, Vector2(1.12, 0.86), Vector2(0.94, 1.07),
-		Vector2(1.03, 0.98), Vector2.ONE])
+		Vector2(1.03, 0.98), Vector2.ONE,
+		Vector2(0.98, 1.01), Vector2.ONE, Vector2(1.02, 0.98)])
 
 	_add_step_track(animation, "FireBlast:modulate:a",
 		[0.30, 0.46, 0.52, 0.58, 0.64],
@@ -296,8 +303,44 @@ func _build_animation() -> void:
 
 	var library := AnimationLibrary.new()
 	library.add_animation("explosion", animation)
+	library.add_animation("idle", _build_idle_animation())
 	player.add_animation_library("", library)
 	player.play("explosion")
+	# The sting used to settle on a frozen badge; this picks up where it lands.
+	player.queue("idle")
+
+
+## Keeps the burst breathing once the sting is over, on the same "on twos" clock
+## as everything else here. Stepped between a handful of held values rather than
+## eased on purpose: _burst_runs rasterises and caches per quantised scale, so a
+## smooth sine would build a fresh rasterisation almost every frame, while these
+## four distinct values cost four cache entries for the life of the scene.
+func _build_idle_animation() -> Animation:
+	var animation := Animation.new()
+	animation.length = 1.20
+	animation.loop_mode = Animation.LOOP_LINEAR
+	_add_step_track(animation, ".:burst_scale",
+		[0.00, 0.20, 0.40, 0.60, 0.80, 1.00, 1.20],
+		[1.0, 1.03, 1.05, 1.03, 1.0, 0.98, 1.0])
+
+	# The words breathe with the burst, squashing wide as it expands. Kept to
+	# ~3% so the lettering stays readable - this is idle life, not a sting.
+	_add_step_track(animation, "BombWord:scale",
+		[0.00, 0.20, 0.40, 0.60, 0.80, 1.00, 1.20],
+		[Vector2.ONE, Vector2(1.02, 0.98), Vector2(1.03, 1.02), Vector2(1.01, 1.01),
+		Vector2.ONE, Vector2(0.98, 1.01), Vector2.ONE])
+
+	# VOYAGE runs the same cycle one step behind BOMB. Overlapping action: the
+	# two words moving in lockstep would read as one rigid block sliding.
+	_add_step_track(animation, "VoyageWord:scale",
+		[0.00, 0.20, 0.40, 0.60, 0.80, 1.00, 1.20],
+		[Vector2(0.98, 1.01), Vector2.ONE, Vector2(1.02, 0.98), Vector2(1.03, 1.02),
+		Vector2(1.01, 1.01), Vector2.ONE, Vector2(0.98, 1.01)])
+
+	# Only scale is animated. Position belongs to _apply_shake, and an overbright
+	# modulate would do nothing here - this project is GL Compatibility with no
+	# HDR 2D, so anything above 1.0 just clamps.
+	return animation
 
 ## Inserts each pose twice - once holding the previous value right up to the
 ## change - so values snap between keys instead of easing through them.
