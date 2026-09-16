@@ -95,12 +95,16 @@ func _handle_input(event: InputEvent) -> bool:
 			_submit_answer(1)
 			return true  
 	elif event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_LEFT:
-			_submit_answer(0)
-			return true  
-		elif event.keycode == KEY_RIGHT:
-			_submit_answer(1)
-			return true  
+		# CHANGED: this branch only ever read event.keycode, so a synthesized or
+		# layout-shifted event with just a physical code fell straight through.
+		var key: int = event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode
+		match Settings.action_for_key(key):
+			&"mg_left":
+				_submit_answer(0)
+				return true  
+			&"mg_right":
+				_submit_answer(1)
+				return true  
 	return false  
 
 func _submit_answer(side: int) -> void:

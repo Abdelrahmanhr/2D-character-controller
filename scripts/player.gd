@@ -46,13 +46,17 @@ extends CharacterBody2D
 @export var stun_tilt_speed: float = 10.0  
 
 @export var device_id: int = -2
-@export var keyboard_left: Key = KEY_A  
-@export var keyboard_right: Key = KEY_D  
-@export var keyboard_up: Key = KEY_W  
-@export var keyboard_down: Key = KEY_S 
-@export var keyboard_jump: Key = KEY_SPACE  
-@export var keyboard_dash: Key = KEY_SHIFT  
-@export var keyboard_dash_alt: Key = KEY_F  # NEW: the itch page advertised F but nothing read it
+
+## CHANGED: was seven @export Key fields. Bindings now live in Settings so the
+## options page can edit them; these are a cache, because _handle_input runs
+## every physics frame for every player and this used to be a plain field read.
+var keyboard_left: Key = KEY_A
+var keyboard_right: Key = KEY_D
+var keyboard_up: Key = KEY_W
+var keyboard_down: Key = KEY_S
+var keyboard_jump: Key = KEY_SPACE
+var keyboard_dash: Key = KEY_SHIFT
+var keyboard_dash_alt: Key = KEY_F
 
 ## Layered under Jump.wav rather than replacing it - effort beneath the jump,
 ## not a second event. Only on the real jump; _celebrate_hop stays ungrunted.
@@ -206,10 +210,24 @@ func _ready() -> void:
 	_setup_fall_fx()
 	_setup_shield_particles()
 	_net_position = global_position  # so the first sync carries the spawn point, not (0, 0)
+	_refresh_keys()
+	Settings.keys_changed.connect(_refresh_keys)
 	if _is_networked() and is_multiplayer_authority() and device_id == -2:
 		device_id = -1
 		if bomb_controller:
 			bomb_controller.device_id = device_id
+
+## Pulled once on spawn and again whenever the options page rebinds something,
+## rather than asking Settings inside the input loop.
+func _refresh_keys() -> void:
+	keyboard_left = Settings.get_key(&"move_left")
+	keyboard_right = Settings.get_key(&"move_right")
+	keyboard_up = Settings.get_key(&"move_up")
+	keyboard_down = Settings.get_key(&"move_down")
+	keyboard_jump = Settings.get_key(&"jump")
+	keyboard_dash = Settings.get_key(&"dash")
+	keyboard_dash_alt = Settings.get_key(&"dash_alt")
+
 
 func _setup_danger_ring() -> void:
 	_danger_ring = DangerRing.new()

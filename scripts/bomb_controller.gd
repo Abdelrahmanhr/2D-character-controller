@@ -170,7 +170,11 @@ func _input(event: InputEvent) -> void:
 			if handled:
 				get_viewport().set_input_as_handled()
 				_play_input_sound_net()
-			var key: int = event.keycode if event.keycode != KEY_NONE else event.physical_keycode
+			# Peers do not share bindings, so send the key this action *ships*
+			# with and let the far side translate it back into its own.
+			var raw_key: int = event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode
+			var action := Settings.action_for_key(raw_key)
+			var key: int = Settings.default_key(action) if action != &"" else raw_key
 			_try_replicate_input(true, key)
 
 
@@ -397,7 +401,10 @@ func _replicate_minigame_input(is_key: bool, code: int) -> void:
 	if is_key:
 		var key_event := InputEventKey.new()
 		key_event.pressed = true
-		key_event.keycode = code as Key
+		# The sender normalized to the canonical key; map it onto ours. Set the
+		# physical code, which is what the minigames and player.gd look at.
+		var action := Settings.action_for_default_key(code)
+		key_event.physical_keycode = Settings.get_key(action) if action != &"" else code as Key
 		_active_minigame._handle_input(key_event)
 	else:
 		var pad_event := InputEventJoypadButton.new()

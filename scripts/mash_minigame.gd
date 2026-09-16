@@ -33,7 +33,8 @@ func _handle_input(event: InputEvent) -> bool:
 		_register_press()
 		return true 
 	elif event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_Y or event.physical_keycode == KEY_Y:
+		var key: int = event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode
+		if Settings.action_for_key(key) == &"mash":
 			_register_press()
 			return true  
 	return false 

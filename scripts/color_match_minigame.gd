@@ -79,12 +79,12 @@ func _handle_input(event: InputEvent) -> bool:
 			JOY_BUTTON_DPAD_DOWN: pressed_position = "down"
 			_: return false  
 	elif event is InputEventKey and event.pressed and not event.echo:
-		var key: int = event.keycode if event.keycode != KEY_NONE else event.physical_keycode
-		match key:
-			KEY_LEFT: pressed_position = "left"
-			KEY_UP: pressed_position = "up"
-			KEY_RIGHT: pressed_position = "right"
-			KEY_DOWN: pressed_position = "down"
+		var key: int = event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode
+		match Settings.action_for_key(key):  # CHANGED: was a match on KEY_LEFT etc.
+			&"mg_left": pressed_position = "left"
+			&"mg_up": pressed_position = "up"
+			&"mg_right": pressed_position = "right"
+			&"mg_down": pressed_position = "down"
 			_: return false  
 	else:
 		return false  

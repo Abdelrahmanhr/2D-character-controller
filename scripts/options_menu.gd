@@ -26,24 +26,32 @@ const DEVICES: Array[String] = ["KEYBOARD", "XBOX", "PLAYSTATION"]
 ## passes framed = false and sizes its own Panel around us instead.
 const PAGE_SIZES := {
 	"OPTIONS": Vector2(380.0, 360.0),
-	"CONTROLS": Vector2(480.0, 440.0),
+	# CHANGED: was 480x440. The KEYBOARD tab is both taller (MOVE split into
+	# per-direction rows) and wider (four editable caps on the MINIGAME row).
+	"CONTROLS": Vector2(560.0, 520.0),
 }
 
 ## Verified against player.gd, bomb_controller.gd, local_lobby.gd and the
 ## minigame _handle_input methods - NOT against the itch description, which is
 ## wrong about the dash key and silent about aiming, fast fall and the mash
-## minigame. Rows are parallel across devices so tabbing does not reshuffle.
+## minigame. The pad tables stay row-parallel with each other; KEYBOARD no
+## longer matches them, because a rebindable MOVE has to split into one row per
+## direction and START MATCH has no keyboard binding to edit.
 const CONTROLS := {
+	# CHANGED: these are Settings action names, not key text - the KEYBOARD tab
+	# renders them as editable caps. AIM DASH and FAST FALL reuse the movement
+	# actions rather than owning bindings of their own, which is why they are
+	# the same rows repeated; player.gd reads one set of direction keys.
 	"KEYBOARD": [
-		["MOVE", ["A", "D"]],
-		["JUMP", ["SPACE"]],
-		["DASH / SLAM", ["SHIFT", "F"]],
-		["AIM DASH", ["W", "A", "S", "D"]],
-		["FAST FALL", ["S"]],
-		["MINIGAME", ["^", "v", "<", ">"]],
-		["BUTTON MASH", ["Y"]],
-		["CONFIRM", ["SPACE", "ENTER"]],
-		["START MATCH", ["ENTER"]],
+		["MOVE LEFT", [&"move_left"]],
+		["MOVE RIGHT", [&"move_right"]],
+		["AIM UP", [&"move_up"]],
+		["AIM / FAST FALL", [&"move_down"]],
+		["JUMP", [&"jump"]],
+		["DASH / SLAM", [&"dash", &"dash_alt"]],
+		["MINIGAME", [&"mg_up", &"mg_down", &"mg_left", &"mg_right"]],
+		["BUTTON MASH", [&"mash"]],
+		["CONFIRM", [&"confirm", &"confirm_alt"]],
 	],
 	"XBOX": [
 		["MOVE", ["L-STICK"]],
@@ -88,6 +96,17 @@ var _device: String = "KEYBOARD"
 var _tabs: Dictionary = {}
 var _framed := false
 var _page: String = "OPTIONS"
+## The cap currently waiting for a key, and the action it will bind. Armed a
+## frame late so the SPACE/ENTER that activated the button is not the key we
+## capture.
+var _listening_button: Button = null
+var _listening_action: StringName = &""
+var _listening_armed := false
+## Every editable cap on screen, as [Button, action]. Rebinding refreshes these
+## in place instead of rebuilding the rows, so focus survives the edit - and a
+## swap repaints both caps for free.
+var _key_caps: Array = []
+var _reset_button: Button
 
 
 func _ready() -> void:
@@ -95,6 +114,7 @@ func _ready() -> void:
 	_build_controls_page()
 	controls_page.hide()
 	audio_page.show()
+	Settings.keys_changed.connect(_refresh_key_caps)
 
 
 # --- public API -------------------------------------------------------------
@@ -239,9 +259,23 @@ func _build_controls_page() -> void:
 	_row_list.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	controls_page.add_child(_row_list)
 
+	var buttons := HBoxContainer.new()
+	buttons.add_theme_constant_override("separation", 8)
+	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
+
+	_reset_button = _make_button("RESET KEYS")
+	_tighten(_reset_button)
+	_reset_button.add_theme_font_size_override("font_size", 14)
+	_reset_button.pressed.connect(func() -> void:
+		_cancel_listening()
+		Settings.reset_keys())
+	buttons.add_child(_reset_button)
+
 	var back := _make_button("BACK")
+	_tighten(back)
+	buttons.add_child(back)
 	back.pressed.connect(_show_audio)
-	controls_page.add_child(back)
+	controls_page.add_child(buttons)
 
 	_build_rows()
 
@@ -278,6 +312,11 @@ func _build_rows() -> void:
 	for child in _row_list.get_children():
 		_row_list.remove_child(child)
 		child.queue_free()
+	_cancel_listening()
+	_key_caps.clear()
+	# Nothing on the pad tabs is editable, so there is nothing there to reset.
+	if _reset_button != null:
+		_reset_button.visible = _device == "KEYBOARD"
 	for entry in CONTROLS[_device]:
 		_row_list.add_child(_make_control_row(entry[0], entry[1]))
 
@@ -297,7 +336,11 @@ func _make_control_row(action: String, keys: Array) -> HBoxContainer:
 	keys_box.add_theme_constant_override("separation", 5)
 	keys_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for key in keys:
-		keys_box.add_child(_make_key(str(key)))
+		# Only the KEYBOARD table carries action names; the pad tables are text.
+		if _device == "KEYBOARD":
+			keys_box.add_child(_make_rebind_key(key))
+		else:
+			keys_box.add_child(_make_key(str(key)))
 	row.add_child(keys_box)
 	return row
 
@@ -307,16 +350,7 @@ func _make_control_row(action: String, keys: Array) -> HBoxContainer:
 func _make_key(text: String) -> PanelContainer:
 	var box := PanelContainer.new()
 	box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-
-	var style := StyleBoxFlat.new()
-	style.bg_color = KEY_BG
-	style.border_color = KEY_BORDER
-	style.set_border_width_all(2)
-	style.content_margin_left = 8.0
-	style.content_margin_right = 8.0
-	style.content_margin_top = 3.0
-	style.content_margin_bottom = 3.0
-	box.add_theme_stylebox_override("panel", style)
+	box.add_theme_stylebox_override("panel", _keycap_style(false))
 
 	var label := Label.new()
 	label.text = text
@@ -325,9 +359,102 @@ func _make_key(text: String) -> PanelContainer:
 	return box
 
 
+## One cap look, shared by the static pad caps and the editable keyboard ones.
+## highlighted lifts the border so a focused cap is findable with a pad.
+func _keycap_style(highlighted: bool) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = KEY_BG
+	style.border_color = KEY_TEXT if highlighted else KEY_BORDER
+	style.set_border_width_all(2)
+	style.content_margin_left = 8.0
+	style.content_margin_right = 8.0
+	style.content_margin_top = 3.0
+	style.content_margin_bottom = 3.0
+	return style
+
+
+## An editable keycap. Styled to match _make_key exactly - it has to read as the
+## same object as the pad tables' caps, just one you can click.
+func _make_rebind_key(action: StringName) -> Button:
+	var button := Button.new()
+	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# A Button fills its cell by default, which stretched the four caps on the
+	# MINIGAME row to uneven widths. Shrink so every cap is the same size.
+	button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	# Wide enough for the "PRESS..." prompt, so the row does not jump on click.
+	button.custom_minimum_size = Vector2(76.0, 0.0)
+	button.clip_text = true
+	for state in ["normal", "hover", "pressed", "focus", "disabled"]:
+		button.add_theme_stylebox_override(state, _keycap_style(state == "hover" or state == "focus"))
+	button.add_theme_color_override("font_color", KEY_TEXT)
+	button.add_theme_color_override("font_hover_color", KEY_TEXT)
+	button.add_theme_color_override("font_pressed_color", KEY_TEXT)
+	button.add_theme_color_override("font_focus_color", KEY_TEXT)
+	button.add_theme_font_size_override("font_size", 13)
+	button.text = _key_label(action)
+	button.pressed.connect(_begin_listening.bind(button, action))
+	_key_caps.append([button, action])
+	return button
+
+
+func _key_label(action: StringName) -> String:
+	var key: Key = Settings.get_key(action)
+	return "-" if key == KEY_NONE else OS.get_keycode_string(key)
+
+
+func _refresh_key_caps() -> void:
+	for cap in _key_caps:
+		var button: Button = cap[0]
+		# _build_rows queue_frees the old caps; a pending free must not be painted.
+		if is_instance_valid(button) and button != _listening_button:
+			button.text = _key_label(cap[1])
+
+
+## SPACE and ENTER activate the focused Button, so the press that opened this
+## prompt would otherwise be the press we captured. Arm a frame late instead.
+func _begin_listening(button: Button, action: StringName) -> void:
+	_cancel_listening()
+	_listening_button = button
+	_listening_action = action
+	_listening_armed = false
+	button.text = "PRESS..."
+	await get_tree().process_frame
+	if _listening_button == button:
+		_listening_armed = true
+
+
+func _cancel_listening() -> void:
+	if is_instance_valid(_listening_button):
+		_listening_button.text = _key_label(_listening_action)
+	_listening_button = null
+	_listening_action = &""
+	_listening_armed = false
+
+
+func _input(event: InputEvent) -> void:
+	if not _listening_armed or not is_instance_valid(_listening_button):
+		return
+	if not (event is InputEventKey) or not event.pressed or event.echo:
+		return
+	# Swallow it either way - ESC here means "never mind", not "close the menu".
+	get_viewport().set_input_as_handled()
+	var action := _listening_action
+	var button := _listening_button
+	_cancel_listening()
+	# Physical, to match player.gd polling is_physical_key_pressed - bindings
+	# should follow the key you pressed, not what the layout prints on it.
+	var key: int = event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode
+	if key != KEY_ESCAPE and key != KEY_NONE:
+		Settings.set_key(action, key as Key)
+	_refresh_key_caps()
+	if is_instance_valid(button):
+		button.grab_focus()
+
+
 # --- page switching ---------------------------------------------------------
 
 func _show_audio() -> void:
+	_cancel_listening()
 	controls_page.hide()
 	audio_page.show()
 	_page = "OPTIONS"

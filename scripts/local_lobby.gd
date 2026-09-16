@@ -2,8 +2,6 @@ extends Control
 class_name LocalLobby
 
 const CONFIRM_JOYPAD_BUTTONS: Array[JoyButton] = [JOY_BUTTON_A, JOY_BUTTON_B, JOY_BUTTON_X, JOY_BUTTON_Y]
-const CONFIRM_KEYS: Array[Key] = [KEY_SPACE, KEY_ENTER]
-
 @export var min_players_to_start: int = 2
 @export var slot_scene: PackedScene  # a small UI scene showing "P1 - Ready", empty slot, etc.
 
@@ -13,10 +11,14 @@ const CONFIRM_KEYS: Array[Key] = [KEY_SPACE, KEY_ENTER]
 @onready var back_button: Button = $BackButton
 
 const START_JOYPAD_BUTTON: JoyButton = JOY_BUTTON_START  # NEW
-const START_KEY: Key = KEY_ENTER
-
 
 var _slot_nodes: Dictionary = {}  # device_id -> slot UI instance
+
+## CHANGED: was const CONFIRM_KEYS = [KEY_SPACE, KEY_ENTER]; read live so a
+## rebind on the options page takes effect here too.
+func _confirm_keys() -> Array[Key]:
+	return [Settings.get_key(&"confirm"), Settings.get_key(&"confirm_alt")]
+
 
 func _ready() -> void:
 	LocalPlayers.reset()
@@ -39,8 +41,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		# able to join a new player while someone else is mid-edit on a name.
 		if get_viewport().gui_get_focus_owner() is LineEdit:
 			return
-		var key: int = event.keycode if event.keycode != KEY_NONE else event.physical_keycode
-		if key in CONFIRM_KEYS:  # CHANGED: removed the START_KEY special-case above this
+		var key: int = event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode
+		if key in _confirm_keys():  # CHANGED: removed the START_KEY special-case above this
 			LocalPlayers.try_join(LocalPlayers.KEYBOARD_DEVICE_ID)
 	elif event is InputEventJoypadMotion:
 		return
