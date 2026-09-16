@@ -38,7 +38,7 @@ func setup(player: Node, rng_seed: int = 0) -> void:
 	MinigameUI.style_time_bar(time_bar, accent)
 	time_bar.value = 0.0
 	for label in [label_left, label_up, label_right, label_down]:
-		MinigameUI.style_label(label, accent, 14)
+		MinigameUI.style_label(label, accent, 18)
 		label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.6))  
 	_next_round()
 

@@ -8,6 +8,8 @@ shader = ExtResource("2")
 shader_parameter/radius = 1.6
 shader_parameter/center = Vector2(0.5, 0.5)
 shader_parameter/aspect = 1.0
+shader_parameter/viewport_size = Vector2(1152, 648)
+shader_parameter/pixel_scale = 6.0
 
 [node name="SceneTransition" type="CanvasLayer"]
 layer = 100

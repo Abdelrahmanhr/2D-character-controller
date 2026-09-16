@@ -8,10 +8,10 @@ signal round_finished
 @export var penalty_per_wrong: float = 1.0
 @export var target_correct: int = 30
 @export var visible_arrow_count: int = 4
-@export var arrow_spacing: float = 22.0
+@export var arrow_spacing: float = 26.0
 @export var slide_duration: float = 0.15
 
-const ARROW_SIZE := Vector2(48.0, 22.0)
+const ARROW_SIZE := Vector2(54.0, 26.0)
 const INACTIVE_COLOR := Color(1.0, 1.0, 1.0, 0.55)
 
 
@@ -89,7 +89,7 @@ func _refresh_active_style() -> void:
 		var arrow := _arrow_queue[i]
 		var is_active := i == last_index
 		arrow.add_theme_color_override("font_color", Color(1, 1, 1, 0.98) if is_active else Color(1, 1, 1, 0.45))
-		arrow.add_theme_font_size_override("font_size", 28 if is_active else 18)
+		arrow.add_theme_font_size_override("font_size", 32 if is_active else 20)
 		arrow.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9 if is_active else 0.6))
 		arrow.add_theme_constant_override("outline_size", 5 if is_active else 3)
 
@@ -150,7 +150,7 @@ func _spawn_sequence_popup(arrow: Label, amount: float) -> void:
 	var popup := Label.new()
 	popup.text = "%+.1f" % amount
 	popup.add_theme_font_override("font", MinigameUI.game_font())
-	popup.add_theme_font_size_override("font_size", 18)
+	popup.add_theme_font_size_override("font_size", 20)
 	popup.add_theme_color_override("font_color", Color(0.549, 1, 0.6078) if amount > 0.0 else Color(1, 0.4118, 0.3529))
 	popup.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
 	popup.add_theme_constant_override("outline_size", 3)

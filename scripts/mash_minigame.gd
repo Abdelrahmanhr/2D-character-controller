@@ -21,8 +21,8 @@ func setup(player: Node, _rng_seed: int = 0) -> void:
 	_player = player
 	var color := MinigameUI.player_color_for(player)
 	MinigameUI.style_time_bar(time_bar, color)
-	MinigameUI.style_label($MashLabel, color, 28)
-	MinigameUI.style_label(press_count_label, color, 20)
+	MinigameUI.style_label($MashLabel, color, 34)
+	MinigameUI.style_label(press_count_label, color, 24)
 	time_bar.value = 0.0
 	_update_label()
 

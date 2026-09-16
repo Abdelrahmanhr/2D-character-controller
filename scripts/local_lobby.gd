@@ -79,4 +79,6 @@ func _on_back_pressed() -> void:
 func _try_start_match() -> void:
 	if LocalPlayers.joined_devices.size() < min_players_to_start:
 		return
-	get_tree().change_scene_to_file(LocalPlayers.selected_arena_path) 
+	# Matches the online path: networking.gd's _load_arena RPC hands its arena_path
+	# to SceneTransition.circle_to instead of calling change_scene_to_file directly.
+	SceneTransition.circle_to(LocalPlayers.selected_arena_path)

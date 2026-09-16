@@ -17,6 +17,7 @@ func _ready() -> void:
 func _update_aspect() -> void:
 	var s := get_viewport().get_visible_rect().size
 	_mat.set_shader_parameter("aspect", s.x / s.y)
+	_mat.set_shader_parameter("viewport_size", s)
 
 func boot_reveal(duration: float = 0.7) -> void:
 	if _boot_done:

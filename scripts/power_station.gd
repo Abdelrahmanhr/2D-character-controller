@@ -48,6 +48,13 @@ const SHIELD_PICKUP_SCENE := preload("res://scenes/shield_pickup.tscn")
 
 var _next_lightning_event_ms: int = -1
 
+## Set by _trigger_lightning_strike and resolved by _update_pending_strike, polled
+## every frame off the pause-aware clock instead of an `await create_timer(...)`, so
+## a strike already in flight when the couch pause menu opens waits out the pause
+## instead of landing on real-time while the menu is up.
+var _pending_strike_indices: Array = []
+var _pending_strike_time_ms: int = -1
+
 var _next_shield_pickup_ms: int = -1
 var _active_shield_pickup: ShieldPickup = null
 
@@ -98,6 +105,7 @@ func _collect_lightning_platforms() -> void:
 func _process(delta: float) -> void:
 	super._process(delta)
 	_update_lightning_schedule()
+	_update_pending_strike()
 	_update_electrified_hazards()
 	_update_shield_pickup_schedule()
 
@@ -183,13 +191,29 @@ func _trigger_lightning_strike(platform_indices: Array, strike_time_ms: int) -> 
 		var warn_pos: Vector2 = anchor.global_position + Vector2(0.0, -lightning_warning_height_offset)
 		LightningWarning.spawn(self, warn_pos, lightning_warning_lead_time)
 
-	var remaining_sec: float = maxf(float(strike_time_ms - _get_timestamp()) / 1000.0, 0.0)
-	await get_tree().create_timer(remaining_sec).timeout
-	if not is_inside_tree() or MinigameDirector.is_match_finished():
+	_pending_strike_indices = platform_indices
+	_pending_strike_time_ms = strike_time_ms
+
+
+## Polled from _process instead of the `await create_timer(remaining_sec).timeout`
+## this used to be: strike_time_ms is an absolute stamp on the same pause-aware
+## clock _get_timestamp() reads, so this comparison -- unlike a real timer -- simply
+## stops advancing for as long as input stays locked.
+func _update_pending_strike() -> void:
+	if _pending_strike_time_ms < 0:
+		return
+	if MinigameDirector.is_match_finished():
+		_pending_strike_indices = []
+		_pending_strike_time_ms = -1
 		_weather_event_active = false
 		return
+	if _get_timestamp() < _pending_strike_time_ms:
+		return
+	var indices: Array = _pending_strike_indices
+	_pending_strike_indices = []
+	_pending_strike_time_ms = -1
 
-	for idx in platform_indices:
+	for idx in indices:
 		if idx < 0 or idx >= _lightning_platforms.size():
 			continue
 		var anchor: Marker2D = _lightning_platforms[idx]
@@ -275,6 +299,9 @@ func _update_electrified_hazards() -> void:
 	for i in range(_active_electrifications.size() - 1, -1, -1):
 		var entry: Dictionary = _active_electrifications[i]
 		if now >= int(entry["expire_ms"]):
+			var emitter: Node = entry.get("emitter")
+			if is_instance_valid(emitter):
+				emitter.queue_free()
 			_active_electrifications.remove_at(i)
 			continue
 		var idx: int = int(entry["idx"])
@@ -328,24 +355,22 @@ func _spawn_electrify_effect(idx: int) -> void:
 	emitter.global_position = anchor.global_position
 	emitter.remove_from_group("lightning_emitters")
 
+	# Both the visual and the hazard's collision window used to be timed
+	# independently -- the emitter freed itself off get_tree().create_timer (real
+	# engine time, oblivious to a couch pause), while the hazard's expire_ms was
+	# computed off _get_timestamp() (the pause-aware match clock). Those two clocks
+	# could drift -- and the real-time timer would keep running behind a paused
+	# menu -- so _update_electrified_hazards now frees the emitter itself once
+	# expire_ms (the single, pause-aware source of truth) is reached, instead of a
+	# second independently-ticking timer.
 	var entry: Dictionary = {
 		"idx": idx,
 		"expire_ms": _get_timestamp() + int(lightning_electrify_duration * 1000.0),
 		"path_expire_ms": _get_timestamp() + int(lightning_strike_path_duration * 1000.0),
 		"zapped": {},
+		"emitter": emitter,
 	}
 	_active_electrifications.append(entry)
-
-	# Both the visual and the hazard's collision window used to be timed
-	# independently -- the emitter freed itself off get_tree().create_timer (local
-	# engine time), while the hazard's expire_ms was computed off _get_timestamp()
-	# (the synced match clock). Those two clocks can drift, which is why the
-	# collision was outliving the visual. Now a single timer drives both: when it
-	# fires, the emitter frees itself AND the hazard entry is force-expired in the
-	# same frame, so they can never fall out of sync.
-	var expire_timer := get_tree().create_timer(lightning_electrify_duration)
-	expire_timer.timeout.connect(emitter.queue_free)
-	expire_timer.timeout.connect(func() -> void: entry["expire_ms"] = 0)
 
 
 func _on_match_started_for_shield_pickup() -> void:

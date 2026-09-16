@@ -29,7 +29,7 @@ static func spawn_floating_bonus(label: Label, amount: float, forced_side: float
 	var popup := Label.new()
 	popup.text = "%+.1f" % amount
 	popup.add_theme_font_override("font", game_font())
-	popup.add_theme_font_size_override("font_size", 18)
+	popup.add_theme_font_size_override("font_size", 20)
 	popup.add_theme_color_override("font_color", CORRECT_COLOR if amount > 0.0 else WRONG_COLOR)
 	popup.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
 	popup.add_theme_constant_override("outline_size", 3)

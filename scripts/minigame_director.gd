@@ -30,6 +30,8 @@ var _total_players: int = 0
 var _match_finished := false
 var _pending_start_ms: int = 0
 var _lock_mask: int = 0
+var _lock_started_ms: int = -1
+var _paused_accum_ms: int = 0
 
 
 func _ready() -> void:
@@ -91,6 +93,8 @@ func reset_match() -> void:
 	_match_finished = false
 	_pending_start_ms = 0
 	_lock_mask = 0
+	_lock_started_ms = -1
+	_paused_accum_ms = 0
 
 func register_player(bomb_controller: BombController) -> void:
 	if _bomb_controllers.has(bomb_controller):
@@ -220,6 +224,7 @@ func lock_input(reason: int) -> void:
 	var was_locked := _lock_mask != 0
 	_lock_mask |= reason
 	if not was_locked:
+		_lock_started_ms = _raw_time_ms()
 		input_locked_changed.emit(true)
 
 
@@ -227,7 +232,34 @@ func unlock_input(reason: int) -> void:
 	var was_locked := _lock_mask != 0
 	_lock_mask &= ~reason
 	if was_locked and _lock_mask == 0:
+		if _lock_started_ms >= 0:
+			_paused_accum_ms += _raw_time_ms() - _lock_started_ms
+			_lock_started_ms = -1
 		input_locked_changed.emit(false)
+
+
+func _raw_time_ms() -> int:
+	# Called every frame from several arena systems now (see get_hazard_time_ms),
+	# including during app-quit teardown when this autoload's own get_multiplayer()
+	# can transiently go null -- guard the same way arena_base.gd's _is_networked
+	# does rather than crashing mid-shutdown.
+	if is_inside_tree() and multiplayer.multiplayer_peer != null and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer):
+		return Networking.get_sync_time()
+	return Time.get_ticks_msec()
+
+
+## Wall-clock timestamp that freezes for the duration of any active input lock
+## (couch pause, match over) instead of counting through it. Arena hazards that
+## key their scheduling/movement off this (safe zone shrink, lightning strike
+## timing, electrify hazard windows, pickup lifetime) stop advancing while
+## input is locked rather than silently resolving behind a paused menu, and
+## pick up exactly where they left off once unlocked. LOCK_MENU is only ever
+## set for the offline soft pause (see pause_menu.gd), so online play never
+## triggers this freeze.
+func get_hazard_time_ms() -> int:
+	if _lock_mask != 0 and _lock_started_ms >= 0:
+		return _lock_started_ms - _paused_accum_ms
+	return _raw_time_ms() - _paused_accum_ms
 
 func _process(delta: float) -> void:
 	if _match_finished:

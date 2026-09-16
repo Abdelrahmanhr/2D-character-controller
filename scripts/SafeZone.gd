@@ -23,7 +23,7 @@ signal expired
 @export var zigzag_speed: float = 5.0
 @export var ripple_radius: float = 220.0
 @export var ripple_strength: float = 55.0
-@export var pixel_size: float = 3.0
+@export var pixel_size: float = 6.0
 @export var fade_duration: float = 2.0
 @export var outline_core_width: float = 4.0
 @export var outline_glow_range: float = 55.0  
@@ -180,20 +180,22 @@ func _setup_overlay() -> void:
 	_overlay.material = _overlay_material
 	_overlay_layer = CanvasLayer.new()
 	_overlay_layer.name = "SafeZoneOverlayLayer"
-	_overlay_layer.layer = 5
+	# Below MinigameLayout (layer 5, the CRT screen bezels + minigame content)
+	# and DangerRing (layer 6) so the zone reads as part of the arena behind
+	# them, not painted over the top of the screens players are looking at.
+	_overlay_layer.layer = 4
 	_overlay_layer.add_child(_overlay)
 	get_tree().current_scene.add_child.call_deferred(_overlay_layer)
 
 func activate() -> void:
 	_activate_time_ms = _get_timestamp()
 
-func _is_networked() -> bool:
-	return multiplayer.multiplayer_peer != null and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer)
-
+## Routes through MinigameDirector's pause-aware clock rather than reading
+## Networking/Time directly, so an active zone's shrink/fade freezes for the
+## duration of an offline soft pause instead of continuing to close in on
+## players who stepped into the pause menu.
 func _get_timestamp() -> int:
-	if _is_networked():
-		return Networking.get_sync_time()
-	return Time.get_ticks_msec()
+	return MinigameDirector.get_hazard_time_ms()
 
 func get_radius() -> float:
 	if _activate_time_ms < 0:

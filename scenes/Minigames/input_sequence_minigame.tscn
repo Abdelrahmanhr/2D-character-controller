@@ -29,10 +29,10 @@ slide_duration = 0.1
 
 [node name="ArrowContainer" type="Control" parent="." unique_id=1723190828]
 anchors_preset = 0
-offset_left = 40.0
-offset_top = 8.0
-offset_right = 240.0
-offset_bottom = 108.0
+offset_left = 37.0
+offset_top = 4.0
+offset_right = 243.0
+offset_bottom = 110.0
 
 [node name="TimeBar" type="ProgressBar" parent="." unique_id=1750235670]
 layout_mode = 0

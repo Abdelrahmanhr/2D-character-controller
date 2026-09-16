@@ -25,9 +25,9 @@ func setup(player: Node, rng_seed: int = 0) -> void:
 	_rng = MinigameUI.make_rng(rng_seed)
 	var color := MinigameUI.player_color_for(player)
 	MinigameUI.style_time_bar(time_bar, color)
-	MinigameUI.style_label(equation_label, color, 22)
-	MinigameUI.style_label(option_left, color, 20)
-	MinigameUI.style_label(option_right, color, 20)
+	MinigameUI.style_label(equation_label, color, 28)
+	MinigameUI.style_label(option_left, color, 24)
+	MinigameUI.style_label(option_right, color, 24)
 	_load_new_equation()
 
 func _generate_equation() -> Dictionary:

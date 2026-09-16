@@ -68,6 +68,8 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:  # NEW
+	if not is_inside_tree():
+		return
 	_update_safe_zone_schedule()
 
 
@@ -76,9 +78,7 @@ func _is_zone_authority() -> bool:  # NEW
 
 
 func _get_timestamp() -> int:  # NEW
-	if _is_networked():
-		return Networking.get_sync_time()
-	return Time.get_ticks_msec()
+	return MinigameDirector.get_hazard_time_ms()
 
 
 func _on_match_started_for_zone() -> void:  # NEW
@@ -221,6 +221,10 @@ func _layout_viewport_content() -> void:
 
 
 func _is_networked() -> bool:
+	# Guards against _process (still ticking mid-teardown on quit/restart, after this
+	# node has already left the tree) touching get_multiplayer() once it's gone null.
+	if not is_inside_tree():
+		return false
 	return multiplayer.multiplayer_peer != null and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer)
 
 

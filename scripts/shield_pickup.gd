@@ -16,17 +16,42 @@ const COLLECT_FLOURISH_DURATION: float = 0.25
 var _consumed: bool = false
 var _sprite: AnimatedSprite2D
 var _bob_tween: Tween
+var _expire_time_ms: int = -1
 
 
 func _ready() -> void:
 	_sprite = $AnimatedSprite2D
 	body_entered.connect(_on_body_entered)
-	get_tree().create_timer(lifetime).timeout.connect(_despawn)
+	_expire_time_ms = _get_timestamp() + int(lifetime * 1000.0)
 	_start_bob()
+	MinigameDirector.input_locked_changed.connect(_on_input_locked_changed)
+
+
+## Polled instead of a get_tree().create_timer(lifetime) so the pickup's own
+## uncollected-expiry doesn't keep counting down in real time behind a couch
+## pause -- same pause-aware clock SafeZone/PowerStation hazards use.
+func _process(_delta: float) -> void:
+	if _consumed or _expire_time_ms < 0:
+		return
+	if _get_timestamp() >= _expire_time_ms:
+		_despawn()
+
+
+func _on_input_locked_changed(locked: bool) -> void:
+	if not is_instance_valid(_bob_tween) or not _bob_tween.is_valid():
+		return
+	if locked:
+		_bob_tween.pause()
+	else:
+		_bob_tween.play()
 
 
 func _is_networked() -> bool:
 	return multiplayer.multiplayer_peer != null and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer)
+
+
+func _get_timestamp() -> int:
+	return MinigameDirector.get_hazard_time_ms()
 
 
 ## Idle bob, started once and left running for as long as the pickup sits uncollected
@@ -67,6 +92,10 @@ func _on_body_entered(body: Node) -> void:
 func _despawn(animated: bool = false) -> void:
 	if not is_inside_tree():
 		return
+	# Guards the lifetime-expiry poll in _process from re-firing every frame while
+	# the freed node is still finishing its exit (queue_free/RPC round trip isn't
+	# instant), the same way _on_body_entered already guards collection.
+	_consumed = true
 	if not _is_networked():
 		_do_despawn(animated)
 	else:
