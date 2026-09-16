@@ -9,10 +9,27 @@ const SLOT_COLORS: Array[Color] = [
 ]
 
 @onready var color_bar: ColorRect = $ColorBar
-@onready var slot_label: Label = $SlotLabel
+@onready var slot_label: Label = $Layout/SlotLabel
+@onready var name_edit: LineEdit = $Layout/NameEdit
 
-func setup(slot_index: int, label_text: String) -> void:
+var _device_id: int = 0
+
+## label_text is the device descriptor ("Keyboard" / "Controller N"); device_id is
+## what NameEdit's typed-in name gets stored against in LocalPlayers, whose
+## get_display_name is what every in-match name lookup falls back through if the
+## field is left blank.
+func setup(slot_index: int, label_text: String, device_id: int) -> void:
+	_device_id = device_id
 	var color: Color = SLOT_COLORS[clampi(slot_index, 0, SLOT_COLORS.size() - 1)]
 	color_bar.color = color
 	slot_label.text = "P%d - %s" % [slot_index + 1, label_text]
 	slot_label.add_theme_color_override("font_color", color)
+	name_edit.placeholder_text = "P%d" % (slot_index + 1)
+	name_edit.text = LocalPlayers.get_raw_player_name(device_id)
+	name_edit.add_theme_color_override("font_color", color)
+	if not name_edit.text_changed.is_connected(_on_name_changed):
+		name_edit.text_changed.connect(_on_name_changed)
+
+
+func _on_name_changed(new_text: String) -> void:
+	LocalPlayers.set_player_name(_device_id, new_text)

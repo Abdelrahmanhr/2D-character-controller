@@ -11,6 +11,11 @@ signal device_remapped(old_device_id: int, new_device_id: int)
 
 var joined_devices: Array[int] = []
 var device_guids: Dictionary = {}
+## device_id -> typed-in name, entered by whoever is driving the couch lobby (see
+## player_slot.gd's NameEdit). Empty/missing means "use the P<n> default" -- see
+## get_display_name, which is what every couch-facing name lookup should call
+## rather than reading this dictionary directly.
+var player_names: Dictionary = {}
 
 
 func is_joined(device_id: int) -> bool:
@@ -37,9 +42,32 @@ func leave(device_id: int) -> void:
 func reset() -> void:
 	joined_devices.clear()
 	device_guids.clear()
+	player_names.clear()
 
 func get_slot_index(device_id: int) -> int:
 	return joined_devices.find(device_id)
+
+
+func set_player_name(device_id: int, display_name: String) -> void:
+	player_names[device_id] = display_name.strip_edges()
+
+
+## Raw typed-in value, no P<n> fallback applied -- what the lobby's LineEdit
+## itself should show (so an empty field reads as empty/placeholder, not "P1").
+func get_raw_player_name(device_id: int) -> String:
+	return str(player_names.get(device_id, ""))
+
+
+## What every other bit of the game (in-match labels, HUD, results) should call.
+## fallback_slot lets the caller supply its own already-resolved slot index
+## (BombController.get_slot_index()) rather than re-deriving one from device_id,
+## which would be unreliable for the single-offline-player path that never
+## registers through LocalPlayers at all.
+func get_display_name(device_id: int, fallback_slot: int) -> String:
+	var typed: String = get_raw_player_name(device_id)
+	if not typed.is_empty():
+		return typed
+	return "P%d" % (fallback_slot + 1)
 
 
 func resolve_device_drift() -> void:

@@ -319,6 +319,18 @@ func get_slot_index() -> int:
 func get_player_color() -> Color:
 	return PLAYER_COLORS[get_slot_index()]
 
+
+## The color stays keyed to slot no matter what -- this only decides the text.
+## Online: server-synced Steam persona name (Networking.get_player_name), falling
+## back to P<slot> if it hasn't arrived yet. Couch: whatever was typed into that
+## device's lobby slot (LocalPlayers.get_display_name), falling back the same way.
+func get_player_display_name() -> String:
+	var slot := get_slot_index()
+	if _is_networked():
+		return Networking.get_player_name(_player.name.to_int(), slot)
+	return LocalPlayers.get_display_name(device_id, slot)
+
+
 func play_minigame(scene: PackedScene, slot_index: int) -> void:
 	if _expired or not _has_authority():
 		return

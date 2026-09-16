@@ -32,6 +32,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.button_index in CONFIRM_JOYPAD_BUTTONS:  # CHANGED: removed the START_JOYPAD_BUTTON check above this
 			LocalPlayers.try_join(event.device)
 	elif event is InputEventKey and event.pressed and not event.echo:
+		# A focused NameEdit already consumes its own key events before they'd
+		# reach here, but belt-and-suspenders: typing a space or hitting enter to
+		# confirm a name must never also register as the keyboard trying to join.
+		# Scoped to the keyboard branch only -- a controller press must still be
+		# able to join a new player while someone else is mid-edit on a name.
+		if get_viewport().gui_get_focus_owner() is LineEdit:
+			return
 		var key: int = event.keycode if event.keycode != KEY_NONE else event.physical_keycode
 		if key in CONFIRM_KEYS:  # CHANGED: removed the START_KEY special-case above this
 			LocalPlayers.try_join(LocalPlayers.KEYBOARD_DEVICE_ID)
@@ -47,7 +54,7 @@ func _on_player_joined(device_id: int) -> void:
 	var slot_index: int = LocalPlayers.get_slot_index(device_id)
 	var slot := slot_scene.instantiate()
 	slot_container.add_child(slot)
-	slot.setup(slot_index, _device_label(device_id))
+	slot.setup(slot_index, _device_label(device_id), device_id)
 	_slot_nodes[device_id] = slot
 	_refresh_start_hint()
 

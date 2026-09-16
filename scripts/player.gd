@@ -152,6 +152,7 @@ var is_celebrating := false
 @onready var dash_afterimage = $DashAfterimage
 
 var _identity_slot: int = -1
+var _identity_name: String = ""
 var _sprite_base_scale: Vector2 = Vector2.ONE
 var _dash_hitbox_base_scale_x: float = 1.0
 var _fall_speed: float = 0.0
@@ -572,11 +573,17 @@ func _update_identity() -> void:
 	if bomb_controller == null:
 		return
 	var slot := bomb_controller.get_slot_index()
-	if slot == _identity_slot:
+	var display_name := bomb_controller.get_player_display_name()
+	# Slot alone isn't enough to gate this: online, the Steam name can arrive (via
+	# Networking's synced RPC) a beat after the player already spawned and its
+	# slot settled, so the tag would get stuck on the P<n> fallback forever if
+	# this only re-checked on slot change.
+	if slot == _identity_slot and display_name == _identity_name:
 		return
 	_identity_slot = slot
+	_identity_name = display_name
 	var color := bomb_controller.get_player_color()
-	player_tag.text = "P%d" % (slot + 1)
+	player_tag.text = display_name
 	player_tag.add_theme_color_override("font_color", color)
 	player_tag.add_theme_color_override("font_shadow_color", Color(color.r, color.g, color.b, 0.35))
 	player_tag.add_theme_constant_override("shadow_offset_x", 0)

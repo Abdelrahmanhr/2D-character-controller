@@ -228,6 +228,15 @@ func _is_networked() -> bool:
 	return multiplayer.multiplayer_peer != null and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer)
 
 
+## Couch-only: slot -> device_id -> whatever was typed into that device's lobby
+## slot, same P<n> fallback as everywhere else. joined_devices is ordered the
+## same way _spawn_local_players spawned from it, so index == slot.
+func _couch_display_name(slot: int) -> String:
+	if slot >= 0 and slot < LocalPlayers.joined_devices.size():
+		return LocalPlayers.get_display_name(LocalPlayers.joined_devices[slot], slot)
+	return "P%d" % (slot + 1)
+
+
 func _on_death_zone_body_entered(body: Node) -> void:
 	# The match is over; nobody dies during the victory lap.
 	if MinigameDirector.is_match_finished():
@@ -277,7 +286,7 @@ func _on_match_finished(winner_peer_id: int) -> void:
 	elif not _is_networked():
 		var winner_slot: int = winner_peer_id - 1
 		var winner_color: Color = BombController.PLAYER_COLORS[clampi(winner_slot, 0, 3)]
-		title = "PLAYER %d WINS!" % winner_peer_id
+		title = "%s WINS!" % _couch_display_name(winner_slot)
 		color = winner_color
 		# One shared screen, so there is no per-viewer loser to show ash to.
 		outcome = Outcome.WIN

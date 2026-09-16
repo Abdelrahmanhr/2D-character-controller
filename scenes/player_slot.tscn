@@ -3,12 +3,24 @@
 [ext_resource type="Script" uid="uid://qgakfh33prxc" path="res://scripts/player_slot.gd" id="1_m0w6y"]
 
 [node name="PlayerSlot" type="PanelContainer" unique_id=1598046341]
-offset_right = 40.0
-offset_bottom = 40.0
+custom_minimum_size = Vector2(110, 64)
+offset_right = 110.0
+offset_bottom = 64.0
 script = ExtResource("1_m0w6y")
 
 [node name="ColorBar" type="ColorRect" parent="." unique_id=94302108]
 layout_mode = 2
 
-[node name="SlotLabel" type="Label" parent="." unique_id=78861752]
+[node name="Layout" type="VBoxContainer" parent="."]
 layout_mode = 2
+alignment = 1
+
+[node name="SlotLabel" type="Label" parent="Layout" unique_id=78861752]
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="NameEdit" type="LineEdit" parent="Layout"]
+layout_mode = 2
+placeholder_text = "P1"
+alignment = 1
+max_length = 16

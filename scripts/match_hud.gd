@@ -21,6 +21,7 @@ class Slot:
 	var last_lives: int = -1
 	var last_urgency_band: int = -1
 	var last_eliminated: bool = false
+	var last_display_name: String = ""
 
 ## A quiet tick as a slot dims - it layers under the louder popup sting the
 ## eliminated player themselves hears, rather than reading as a second event.
@@ -87,8 +88,12 @@ func _rebuild_slots() -> void:
 		slot.player = bomb.get_parent()
 		slot.color = bomb.get_player_color()
 
-		# Static styling, applied once.
-		slot.caption.text = "P%d" % (bomb.get_slot_index() + 1)
+		# Static styling, applied once -- the caption text itself isn't, though (see
+		# _update_slot): a Steam name can arrive a beat after this rebuild via
+		# Networking's synced RPC, so it starts on the P<n> fallback and gets
+		# corrected in place once/if the real name shows up.
+		slot.last_display_name = bomb.get_player_display_name()
+		slot.caption.text = slot.last_display_name
 		_apply_neon_label(slot.caption, slot.color)
 		_apply_neon_label(slot.time, slot.color)
 		_apply_neon_label(slot.lives, slot.color)
@@ -113,6 +118,11 @@ func _update_slot(slot: Slot) -> void:
 	var bomb := slot.bomb
 	if bomb == null or not is_instance_valid(bomb):
 		return
+	var display_name := bomb.get_player_display_name()
+	if display_name != slot.last_display_name:
+		slot.last_display_name = display_name
+		slot.caption.text = display_name
+
 	var max_time: float = maxf(bomb.bomb_time, 0.001)
 	var time_left: float = clampf(bomb.time_left, 0.0, max_time)
 	slot.bar.value = time_left

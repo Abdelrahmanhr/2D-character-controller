@@ -10,6 +10,7 @@ signal join_pending()
 signal arena_spawn_requested(slots: Dictionary)
 signal match_begin(expected_count: int)
 signal bombs_start(start_time_ms: int)
+signal player_name_updated(peer_id: int, display_name: String)
 
 const LOBBY_TYPE := Steam.LobbyType.LOBBY_TYPE_FRIENDS_ONLY
 const MAX_MEMBERS := 4
@@ -42,6 +43,9 @@ var _expected_acks: Array[int] = []
 var _awaiting_acks: bool = false
 var _ack_timeout_left: float = 0.0
 var _assigned_slots: Dictionary = {}
+
+## peer_id -> Steam display name, server-authoritative (see report_player_name).
+var _player_names: Dictionary = {}
 
 var _clock_offset: int = 0
 var _clock_samples: Array[int] = []
@@ -129,6 +133,7 @@ func _reset_peer() -> void:
 	_ready_acks.clear()
 	_expected_acks.clear()
 	_assigned_slots.clear()
+	_player_names.clear()
 	_reset_clock()
 	if peer != null:
 
@@ -226,6 +231,7 @@ func on_lobby_created(connect_result: int, lobby_id: int) -> void:
 
 	Steam.setLobbyData(lobby_id, LOBBY_VPORT_KEY, str(_active_vport))
 	NetDebug.log_event("lobby created %d on vport %d" % [lobby_id, _active_vport])
+	report_player_name(Steam.getPersonaName())
 	lobby_ready.emit(true)
 	peers_changed.emit(0)
 
@@ -269,6 +275,7 @@ func _on_connected_to_server() -> void:
 	NetDebug.log_event("connected to server as %d" % multiplayer.get_unique_id())
 	_reset_clock()
 	_send_ping()
+	report_player_name(Steam.getPersonaName())
 	lobby_ready.emit(false)
 	client_joined.emit()
 	peers_changed.emit(multiplayer.get_peers().size())
@@ -290,6 +297,11 @@ func _on_peer_connected(id: int) -> void:
 	NetDebug.log_event("peer connected %d" % id)
 	if multiplayer.is_server():
 		_receive_arena.rpc_id(id, selected_arena_path, selected_arena_name)
+		# Names reported before this peer connected were only broadcast to whoever
+		# was already here -- catch the newcomer up on everyone already known,
+		# same reasoning as the arena catch-up right above.
+		for known_peer_id: int in _player_names.keys():
+			_commit_player_name.rpc_id(id, known_peer_id, _player_names[known_peer_id])
 	peers_changed.emit(multiplayer.get_peers().size())
 
 
@@ -491,6 +503,55 @@ func _find_bomb(peer_id: int) -> BombController:
 		if node.name.to_int() == peer_id:
 			return node.get_node_or_null("BombController") as BombController
 	return null
+
+
+## Client -> server -> broadcast, same shape as report_time_delta above: whoever
+## calls this reports their own resolved name (Steam persona name online), the
+## server is the single source of truth, and every peer (including the reporter,
+## via call_local) ends up with the same value for that peer_id.
+func report_player_name(display_name: String) -> void:
+	if display_name.is_empty():
+		return
+	if not is_connected_online():
+		return
+	if multiplayer.is_server():
+		_set_player_name(multiplayer.get_unique_id(), display_name)
+	else:
+		_request_player_name.rpc_id(1, display_name)
+
+
+@rpc("any_peer", "reliable")
+func _request_player_name(display_name: String) -> void:
+	if not multiplayer.is_server():
+		return
+	var peer_id := multiplayer.get_remote_sender_id()
+	if peer_id == 0:
+		return
+	_set_player_name(peer_id, display_name)
+
+
+func _set_player_name(peer_id: int, display_name: String) -> void:
+	_player_names[peer_id] = display_name
+	_commit_player_name.rpc(peer_id, display_name)
+
+
+@rpc("authority", "call_local", "reliable")
+func _commit_player_name(peer_id: int, display_name: String) -> void:
+	_player_names[peer_id] = display_name
+	player_name_updated.emit(peer_id, display_name)
+
+
+## What every name-displaying label should call. fallback_slot is the caller's
+## own already-resolved BombController.get_slot_index(), so a name that hasn't
+## arrived yet (network latency, or Steam not answering) reads as "P2" rather
+## than blank -- never null, per spec.
+func get_player_name(peer_id: int, fallback_slot: int = -1) -> String:
+	var known: String = str(_player_names.get(peer_id, ""))
+	if not known.is_empty():
+		return known
+	if fallback_slot >= 0:
+		return "P%d" % (fallback_slot + 1)
+	return "P?"
 
 
 @rpc("authority", "call_local", "reliable")
