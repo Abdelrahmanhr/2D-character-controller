@@ -1,6 +1,7 @@
 [gd_scene format=4 uid="uid://bkm6yjt0473w6"]
 
 [ext_resource type="Script" uid="uid://bwsfkovha1tk2" path="res://scripts/residential_area.gd" id="1"]
+[ext_resource type="AudioStream" uid="uid://c0fo3aivpk7t" path="res://resources/audio/wind-fall.wav" id="60_wind"]
 [ext_resource type="PackedScene" path="res://scenes/pause_menu.tscn" id="2"]
 [ext_resource type="Texture2D" uid="uid://bfdgnpr2icbgo" path="res://resources/example.jpg" id="2_nowf6"]
 [ext_resource type="PackedScene" uid="uid://deiu510u7y2u3" path="res://scenes/match_hud.tscn" id="6_hud"]
@@ -249,6 +250,7 @@ color = Color(1, 0.83, 0.63, 0.6)
 
 [node name="ResidentialArea" type="Node2D" unique_id=84368402]
 script = ExtResource("1")
+death_zap_sound = ExtResource("60_wind")
 
 [node name="background" type="Node2D" parent="." unique_id=1051009932]
 visible = false

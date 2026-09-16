@@ -34,6 +34,7 @@ PadState="*res://scripts/pad_state.gd"
 UISfx="*uid://3suisp3wkvkg"
 UIFeedback="*res://scripts/ui_feedback.gd"
 MusicManager="*uid://d1np3sr422x7"
+Settings="*res://scripts/settings.gd"
 
 [display]
 

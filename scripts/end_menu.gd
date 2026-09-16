@@ -2,6 +2,20 @@ extends CanvasLayer
 
 enum Outcome { WIN, LOSE, DRAW }
 
+## Result stings. These reuse in-match cues pitched down, so the result reads as
+## a heavier version of a sound the player already knows. Deliberately mixed
+## below the action (the loud one-shots in this game sit at -10 to -6) and with
+## no pitch variance - a result should sound identical every time.
+@export var win_sound: AudioStream = preload("res://resources/audio/Minigame Complete .wav")
+@export var lose_sound: AudioStream = preload("res://resources/audio/Time Penalty.wav")
+@export var draw_sound: AudioStream = preload("res://resources/audio/Bonus Time.wav")
+@export var win_volume_db: float = -12.0
+@export var lose_volume_db: float = -12.0
+@export var draw_volume_db: float = -13.0
+@export var win_pitch: float = 0.9
+@export var lose_pitch: float = 0.75
+@export var draw_pitch: float = 0.85
+
 @onready var title_label: Label = $Panel/Box/Title
 @onready var dim: ColorRect = $Dim
 @onready var panel: Panel = $Panel
@@ -56,10 +70,13 @@ func _spawn_result_fx(outcome: int) -> void:
 	match outcome:
 		Outcome.WIN:
 			UIParticles.win(self, rect)
+			SfxManager.play(win_sound, win_volume_db, 0.0, win_pitch)
 		Outcome.DRAW:
 			UIParticles.lose(self, rect, UIParticles.FLARE)
+			SfxManager.play(draw_sound, draw_volume_db, 0.0, draw_pitch)
 		_:
 			UIParticles.lose(self, rect)
+			SfxManager.play(lose_sound, lose_volume_db, 0.0, lose_pitch)
 
 func _on_restart() -> void:
 	get_tree().paused = false

@@ -22,6 +22,12 @@ class Slot:
 	var last_urgency_band: int = -1
 	var last_eliminated: bool = false
 
+## A quiet tick as a slot dims - it layers under the louder popup sting the
+## eliminated player themselves hears, rather than reading as a second event.
+@export var eliminated_sound: AudioStream = preload("res://resources/audio/Stunned.wav")
+@export var eliminated_volume_db: float = -18.0
+@export var eliminated_pitch: float = 0.8
+
 const ELIMINATED_MODULATE := Color(0.5961, 0.5608, 0.3922, 0.75)
 const URGENT_COLOR := Color(0.8667, 0.2157, 0.2706, 1.0)
 const WARN_COLOR := Color(1, 0.4118, 0.3529, 1.0)
@@ -140,6 +146,10 @@ func _update_slot(slot: Slot) -> void:
 	if eliminated != slot.last_eliminated:
 		slot.last_eliminated = eliminated
 		slot.root.modulate = ELIMINATED_MODULATE if eliminated else Color.WHITE
+		# Only on the way out - this flag also flips back on a roster rebuild,
+		# which has to stay silent.
+		if eliminated:
+			SfxManager.play(eliminated_sound, eliminated_volume_db, 0.0, eliminated_pitch)
 
 func _apply_neon_label(label: Label, color: Color) -> void:
 	label.add_theme_color_override("font_color", color)

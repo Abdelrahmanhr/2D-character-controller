@@ -50,6 +50,12 @@ extends CharacterBody2D
 @export var keyboard_down: Key = KEY_S 
 @export var keyboard_jump: Key = KEY_SPACE  
 @export var keyboard_dash: Key = KEY_SHIFT  
+@export var keyboard_dash_alt: Key = KEY_F  # NEW: the itch page advertised F but nothing read it
+
+## Layered under Jump.wav rather than replacing it - effort beneath the jump,
+## not a second event. Only on the real jump; _celebrate_hop stays ungrunted.
+@export var jump_grunt_sound: AudioStream = preload("res://resources/audio/jump-grunt.wav")
+@export var jump_grunt_volume_db: float = -16.0
 
 @export var invulnerability_flash_speed: float = 0.1
 @export var player_light_energy: float = 1.0
@@ -644,7 +650,7 @@ func _handle_input(delta: float) -> void:
 		var kb_move_x: float = float(Input.is_physical_key_pressed(keyboard_right)) - float(Input.is_physical_key_pressed(keyboard_left))
 		var kb_move_y: float = float(Input.is_physical_key_pressed(keyboard_down)) - float(Input.is_physical_key_pressed(keyboard_up))
 		var kb_jump_held: bool = Input.is_physical_key_pressed(keyboard_jump)
-		var kb_dash_held: bool = Input.is_physical_key_pressed(keyboard_dash)
+		var kb_dash_held: bool = Input.is_physical_key_pressed(keyboard_dash) or Input.is_physical_key_pressed(keyboard_dash_alt)
 		
 		var pad_move_x: float = 0.0
 		var pad_move_y: float = 0.0
@@ -672,7 +678,7 @@ func _handle_input(delta: float) -> void:
 			move_x = float(Input.is_physical_key_pressed(keyboard_right)) - float(Input.is_physical_key_pressed(keyboard_left))
 			move_y = float(Input.is_physical_key_pressed(keyboard_down)) - float(Input.is_physical_key_pressed(keyboard_up))
 			jump_held = Input.is_physical_key_pressed(keyboard_jump)
-			dash_held = Input.is_physical_key_pressed(keyboard_dash)
+			dash_held = Input.is_physical_key_pressed(keyboard_dash) or Input.is_physical_key_pressed(keyboard_dash_alt)
 		else:
 			move_x = PadState.get_axis(device_id, JOY_AXIS_LEFT_X)
 			move_y = PadState.get_axis(device_id, JOY_AXIS_LEFT_Y)
@@ -756,6 +762,7 @@ func _apply_movement(delta: float) -> void:
 		velocity.y = jump_velocity * (zone_jump_multiplier if outside_zone else 1.0)  # CHANGED: softened jump in the zone
 		jump_pressed = false
 		SfxManager.play(jump_sound,-10.0,0.1) 
+		SfxManager.play(jump_grunt_sound, jump_grunt_volume_db, 0.12)
 		_fx_jump_net()
 	
 	if cut_jump:

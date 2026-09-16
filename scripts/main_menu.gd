@@ -4,11 +4,10 @@ const LOBBY_SCENE := "res://scenes/lobby.tscn"
 const ARENA_SELECT_SCENE := "res://scenes/arena_select.tscn"
 const LOCAL_LOBBY_SCENE := "res://scenes/local_lobby.tscn"
 const CREDITS_SCENE := "res://scenes/credits.tscn"
-const PAUSE_MENU := preload("res://scenes/pause_menu.tscn")
-const OPTIONS_RISE := 40.0
+const OPTIONS_MENU := preload("res://scenes/options_menu.tscn")
 
 var _joining := false
-var _options: Panel
+var _options: Control
 
 
 func _ready() -> void:
@@ -28,27 +27,13 @@ func _ready() -> void:
 
 
 func _setup_options() -> void:
-	var source := PAUSE_MENU.instantiate()
-	_options = source.get_node("Panel/OptionsPanel")
-	_options.get_parent().remove_child(_options)
-	source.free()
-
+	_options = OPTIONS_MENU.instantiate()
 	add_child(_options)
 	_options.hide()
-	_options.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
-	var menu: Control = $Menu
-	_options.anchor_left = menu.anchor_left
-	_options.anchor_top = menu.anchor_top
-	_options.anchor_right = menu.anchor_right
-	_options.anchor_bottom = menu.anchor_bottom
-	_options.offset_left = menu.offset_left
-	_options.offset_top = menu.offset_top - OPTIONS_RISE
-	_options.offset_right = menu.offset_right
-	_options.offset_bottom = menu.offset_bottom - OPTIONS_RISE
-	_options.grow_horizontal = menu.grow_horizontal
-	_options.grow_vertical = menu.grow_vertical
-	_options.get_node("OptionsLayout/BackButton").pressed.connect(_close_options)
-	_options.get_node("OptionsLayout/VolumeRow/VolumeSlider").value_changed.connect(_set_volume)
+	_options.back_pressed.connect(_close_options)
+	# There is no frame here the way there is in the pause menu, so the options
+	# draw their own and centre themselves per page.
+	_options.set_framed(true)
 
 	var button: Button = $Menu/CreditsButton.duplicate(Node.DUPLICATE_GROUPS | Node.DUPLICATE_SCRIPTS)
 	button.name = "OptionsButton"
@@ -59,20 +44,34 @@ func _setup_options() -> void:
 	button.pressed.connect(_open_options)
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	if not _options.visible:
+		return
+	if event.is_action_pressed("ui_cancel"):
+		# The options scene owns its own page stack; only close once it says it
+		# has nothing left to back out of.
+		if not _options.handle_cancel():
+			_close_options()
+		get_viewport().set_input_as_handled()
+
+
 func _open_options() -> void:
 	$Menu.hide()
-	_options.show()
-	_cascade(_options.get_node("OptionsLayout"))
+	# The title sting occupies the upper half of the screen; the controls page is
+	# tall enough to run into it.
+	$Title.hide()
+	_options.open()
 
 
 func _close_options() -> void:
 	_options.hide()
+	$Title.show()
 	$Menu.show()
 	_cascade($Menu)
 
 
-## OptionsPanel is reparented out of a throwaway pause_menu instance above, so
-## pause_menu.gd never runs for it - the cascade has to be driven from here.
+## The options scene animates its own pages; this is only for the menu list
+## coming back after the options close.
 func _cascade(page: Control) -> void:
 	var elements: Array[Control] = []
 	for child in page.get_children():
@@ -82,10 +81,6 @@ func _cascade(page: Control) -> void:
 	await get_tree().process_frame
 	if is_inside_tree():
 		UICascade.play(elements, 0.0, 0.055)
-
-
-func _set_volume(value: float) -> void:
-	AudioServer.set_bus_volume_db(0, linear_to_db(value))
 
 
 func _on_join_pending() -> void:
@@ -102,11 +97,6 @@ func _on_lobby_failed(_message: String) -> void:
 
 func _on_client_joined() -> void:
 	get_tree().change_scene_to_file(LOBBY_SCENE)
-
-
-
-
-
 
 
 func _on_credits_pressed() -> void:
