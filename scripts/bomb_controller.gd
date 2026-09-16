@@ -162,14 +162,14 @@ func _input(event: InputEvent) -> void:
 		var handled: bool = _active_minigame._handle_input(event)
 		if handled:
 			get_viewport().set_input_as_handled()
-			SfxManager.play(input_sound,-13.0,0.1)
+			_play_input_sound_net()
 		_try_replicate_input(false, event.button_index)
 	elif event is InputEventKey and (_is_networked() or _player.device_id == LocalPlayers.KEYBOARD_DEVICE_ID):
 		var handled: bool = _active_minigame._handle_input(event)
 		if event.pressed and not event.echo:
 			if handled:
 				get_viewport().set_input_as_handled()
-				SfxManager.play(input_sound,-13.0,0.1)
+				_play_input_sound_net()
 			var key: int = event.keycode if event.keycode != KEY_NONE else event.physical_keycode
 			_try_replicate_input(true, key)
 
@@ -231,8 +231,27 @@ func _submit_stick_direction(direction: String, source_device: int) -> void:
 	
 	var handled: bool = _active_minigame._handle_input(synthetic_event)
 	if handled:
-		SfxManager.play(input_sound, -13.0, 0.1)
+		_play_input_sound_net()
 	_try_replicate_input(false, button)
+
+
+## Minigame input feedback (the little "beep" on every accepted press) used to be
+## a bare local SfxManager.play, reached only through the _has_authority() gate
+## above -- meaning only the player actually providing input ever heard it.
+## Routed any_peer/call_local like apply_stun/apply_hitstop, unreliable since a
+## missed input blip on one peer is a non-issue.
+func _play_input_sound_net() -> void:
+	if _is_networked():
+		_play_input_sound.rpc()
+	else:
+		_play_input_sound()
+
+
+@rpc("any_peer", "call_local", "unreliable")
+func _play_input_sound() -> void:
+	SfxManager.play(input_sound, -13.0, 0.1)
+
+
 @rpc("any_peer", "call_local", "reliable")
 func _explode() -> void:
 	var sender := multiplayer.get_remote_sender_id()
@@ -409,15 +428,45 @@ func _power_off_minigame() -> void:
 func _on_minigame_finished() -> void:
 	if _active_minigame == null:
 		return
-	SfxManager.play(minigame_complete_sound,-10.0,0.2)
+	_play_minigame_complete_sound_net()
 	finish_minigame()
 	player_finished_round.emit()
+
+
+## _on_minigame_finished and _on_bomb_time_delta are only ever connected for the
+## authority peer (see _show_minigame), so these were bare local calls nobody else
+## ever heard. Routed the same any_peer/call_local/unreliable way as the input
+## sound above -- state-changing parts of _on_bomb_time_delta below (commit_time_delta
+## / Networking.apply_time_delta / report_time_delta) are untouched, only the sound.
+func _play_minigame_complete_sound_net() -> void:
+	if _is_networked():
+		_play_minigame_complete_sound.rpc()
+	else:
+		_play_minigame_complete_sound()
+
+
+@rpc("any_peer", "call_local", "unreliable")
+func _play_minigame_complete_sound() -> void:
+	SfxManager.play(minigame_complete_sound, -10.0, 0.2)
+
+
+func _play_penalty_sound_net() -> void:
+	if _is_networked():
+		_play_penalty_sound.rpc()
+	else:
+		_play_penalty_sound()
+
+
+@rpc("any_peer", "call_local", "unreliable")
+func _play_penalty_sound() -> void:
+	SfxManager.play(penalty_sound, -15.0, 0.2)
+
 
 func _on_bomb_time_delta(seconds: float) -> void:
 	if seconds > 0.0:
 		_play_bonus_sound()
 	elif seconds < 0.0:
-		SfxManager.play(penalty_sound,-15.0,0.2)
+		_play_penalty_sound_net()
 	if not _is_networked():
 		commit_time_delta(seconds)
 	elif multiplayer.is_server():
@@ -428,6 +477,17 @@ func _on_bomb_time_delta(seconds: float) -> void:
 func _play_bonus_sound() -> void:
 	if bonus_sounds.is_empty():
 		return
+	if _is_networked():
+		_do_play_bonus_sound.rpc()
+	else:
+		_do_play_bonus_sound()
+
+
+## Which specific bonus_sounds entry plays is cosmetic variety, not something that
+## needs to match across peers -- each peer rolls its own pick locally, same as
+## _play_footstep_sound's pitch jitter does.
+@rpc("any_peer", "call_local", "unreliable")
+func _do_play_bonus_sound() -> void:
 	var sound: AudioStream = bonus_sounds[randi() % bonus_sounds.size()]
 	SfxManager.play(sound, -10.0, bonus_pitch_variance)
 

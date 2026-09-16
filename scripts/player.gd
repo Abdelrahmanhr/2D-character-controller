@@ -529,6 +529,38 @@ func _fx_land(impact: float) -> void:
 		_land_dust.restart()
 
 
+## Player action sounds (jump, land, dash, footstep, ...) used to be bare local
+## SfxManager.play calls sitting right next to _fx_jump_net/_fx_land_net -- the
+## squash+dust synced to every peer via that RPC, but the sound itself only ever
+## played for whichever peer's input actually triggered it. Routed the same
+## any_peer/call_local way as apply_stun/apply_hitstop, but unreliable: these are
+## frequent, low-stakes cosmetic triggers, not authoritative state, so a dropped
+## packet just means one peer misses hearing one jump/footstep, not a desync.
+func _play_jump_sound_net() -> void:
+	if _is_networked():
+		_play_jump_sound.rpc()
+	else:
+		_play_jump_sound()
+
+
+@rpc("any_peer", "call_local", "unreliable")
+func _play_jump_sound() -> void:
+	SfxManager.play(jump_sound, -10.0, 0.1)
+	SfxManager.play(jump_grunt_sound, jump_grunt_volume_db, 0.12)
+
+
+func _play_land_sound_net() -> void:
+	if _is_networked():
+		_play_land_sound.rpc()
+	else:
+		_play_land_sound()
+
+
+@rpc("any_peer", "call_local", "unreliable")
+func _play_land_sound() -> void:
+	SfxManager.play(land_sound, -20.0, 0.2)
+
+
 func _setup_life_hearts() -> void:
 	var hearts := LifeHearts.new()
 	hearts.name = "LifeHearts"
@@ -630,8 +662,23 @@ func _celebrate_hop(index: int) -> void:
 	animation_name = ANIM_JUMP[1 if facing_right else 0]
 	animated_sprite.play(animation_name)
 	_squash(0.72, 1.34, 0.20)
-	SfxManager.play(jump_sound, -12.0, 0.18)
+	_play_celebration_hop_sound_net()
 	_fx_jump_net()
+
+
+func _play_celebration_hop_sound_net() -> void:
+	if _is_networked():
+		_play_celebration_hop_sound.rpc()
+	else:
+		_play_celebration_hop_sound()
+
+
+## Deliberately its own RPC rather than reusing _play_jump_sound: the celebration
+## hop plays at a different volume and, per the original comment on jump_grunt_sound,
+## is deliberately "ungrunted."
+@rpc("any_peer", "call_local", "unreliable")
+func _play_celebration_hop_sound() -> void:
+	SfxManager.play(jump_sound, -12.0, 0.18)
 
 
 func _update_animation() -> void:
@@ -781,8 +828,7 @@ func _apply_movement(delta: float) -> void:
 	if jump_pressed:
 		velocity.y = jump_velocity * (zone_jump_multiplier if outside_zone else 1.0)  # CHANGED: softened jump in the zone
 		jump_pressed = false
-		SfxManager.play(jump_sound,-10.0,0.1) 
-		SfxManager.play(jump_grunt_sound, jump_grunt_volume_db, 0.12)
+		_play_jump_sound_net()
 		_fx_jump_net()
 	
 	if cut_jump:
@@ -832,10 +878,23 @@ func _start_dash() -> void:
 	if dash_direction.x != 0.0:
 		dash_hitbox.scale.x = _dash_hitbox_base_scale_x * signf(dash_direction.x)
 	dash_hitbox.monitoring = true
-	SfxManager.play(dash_sound,-15.0)
+	_play_dash_sound_net()
 	_squash(1.3, 0.75, 0.2)
 	dash_afterimage.start()
-	
+
+
+func _play_dash_sound_net() -> void:
+	if _is_networked():
+		_play_dash_sound.rpc()
+	else:
+		_play_dash_sound()
+
+
+@rpc("any_peer", "call_local", "unreliable")
+func _play_dash_sound() -> void:
+	SfxManager.play(dash_sound, -15.0)
+
+
 func _end_dash_immediately() -> void:
 	is_dashing = false
 	dash_hitbox.monitoring = false
@@ -929,16 +988,35 @@ func _play_footstep() -> void:
 	if now - _last_footstep_time < footstep_debounce:
 		return
 	_last_footstep_time = now
-	SfxManager.play(footstep_sound, -4.0 + randf_range(-2.0, 2.0), footstep_pitch_variance)
 	if _run_dust:
 		_run_dust.direction = Vector2(-1.0 if facing_right else 1.0, -0.4)
 		_run_dust.restart()
+	# _on_animation_frame_changed (above) is wired up for every player instance on
+	# every peer, unauthority-gated, because that's what lets everyone already see
+	# everyone else's run-dust kick up correctly off the *replicated* animation_name
+	# -- so this whole function already runs once per peer per footstep. Only
+	# broadcast the sound from the authority, or every peer watching would each
+	# fire their own copy and it'd multiply by player count.
+	if not _is_networked() or is_multiplayer_authority():
+		_play_footstep_sound_net()
+
+
+func _play_footstep_sound_net() -> void:
+	if _is_networked():
+		_play_footstep_sound.rpc()
+	else:
+		_play_footstep_sound()
+
+
+@rpc("any_peer", "call_local", "unreliable")
+func _play_footstep_sound() -> void:
+	SfxManager.play(footstep_sound, -4.0 + randf_range(-2.0, 2.0), footstep_pitch_variance)
 
 
 func _check_landing() -> void:
 	var on_floor_now := is_on_floor()
 	if on_floor_now and not _was_on_floor:
-		SfxManager.play(land_sound,-20.0,0.2)
+		_play_land_sound_net()
 		_fx_land_net(clampf(_fall_speed / land_impact_reference, 0.0, 1.0))
 	_was_on_floor = on_floor_now
 
