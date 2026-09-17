@@ -193,9 +193,11 @@ func player_disconnected(peer_id: int) -> void:
 		return
 	if multiplayer.is_server():
 		# Stamped here too since a disconnect never goes through
-		# BombController._do_player_died/_report_kill - without this the departed
-		# player's row would wrongly read as "survived to the end".
-		record_match_stats(peer_id)
+		# BombController.eliminate_player - without this the departed player's row
+		# would wrongly read as "survived to the end". A disconnect is inherently
+		# final, same as running out of lives, so this uses record_elimination
+		# rather than the per-life-lost record_match_stats.
+		record_elimination(peer_id)
 		_resolve_elimination(peer_id)
 
 func _resolve_elimination(peer_id: int) -> void:
@@ -347,16 +349,24 @@ func schedule_next_round(bomb_controller: BombController) -> void:
 		_cooldowns[bomb_controller] = spawn_cooldown
 
 
-## Records a death (for survival time) and, if credited, a kill (for kill count).
-## Called from the same already-networked BombController._report_kill the kill
-## feed reads from, so it runs identically on every peer for free - no RPC of its
-## own. victim_key/killer_key are player.name.to_int() identifiers; killer_key
-## defaults to -1 for an uncredited/environmental death.
+## Records a kill for the kill count, if credited. Called from the same
+## already-networked BombController._report_kill the kill feed reads from, on
+## every life lost (not just a final elimination) - so it runs identically on
+## every peer for free, no RPC of its own. victim_key/killer_key are
+## player.name.to_int() identifiers; killer_key defaults to -1 for an
+## uncredited/environmental death.
 func record_match_stats(victim_key: int, killer_key: int = -1) -> void:
-	if victim_key >= 0 and not _survival_end_ms.has(victim_key):
-		_survival_end_ms[victim_key] = get_hazard_time_ms()
 	if killer_key >= 0 and killer_key != victim_key:
 		_kill_counts[killer_key] = int(_kill_counts.get(killer_key, 0)) + 1
+
+
+## Stamps survival time. Called only once a player is actually eliminated (out
+## of lives) or disconnects - NOT on every respawn-causing death - so "survival
+## time" measures match-start to when they were fully out, not to their first
+## lost life.
+func record_elimination(player_key: int) -> void:
+	if player_key >= 0 and not _survival_end_ms.has(player_key):
+		_survival_end_ms[player_key] = get_hazard_time_ms()
 
 
 func get_kill_count(player_key: int) -> int:

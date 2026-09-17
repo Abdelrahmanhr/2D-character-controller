@@ -590,6 +590,10 @@ func eliminate_player(cause: String = "fall") -> void:  # CHANGED: added cause p
 	set_process(false)
 	stop_minigame()
 	await _player.play_death_animation(cause)  # CHANGED: pass cause through
+	# Stamps survival time here specifically - eliminate_player only ever runs once
+	# a player is actually out of lives, so this measures match-start to full
+	# elimination, not to whichever life they happened to lose first.
+	MinigameDirector.record_elimination(_player.name.to_int())
 	MinigameDirector.player_eliminated(_player.name.to_int())
 	if _has_authority() and _player.bot == null:
 		var scene := get_tree().current_scene
