@@ -7,6 +7,9 @@ const FONT_SIZE := 34
 const FLASH_INTERVAL := 0.12
 const MIN_ALPHA := 0.15
 
+const WARNING_SOUND := preload("res://resources/audio/warning.wav")
+@export var warning_sound_volume_db: float = -8.0
+
 var _label: Label
 var _tween: Tween
 var _expire_time_ms: int = -1
@@ -37,6 +40,11 @@ func _ready() -> void:
 	_label.position = Vector2(-FONT_SIZE * 0.5, -FONT_SIZE)
 	_label.size = Vector2(FONT_SIZE, FONT_SIZE)
 	MinigameDirector.input_locked_changed.connect(_on_input_locked_changed)
+	# _ready runs exactly once per spawn() instance, so this fires once here
+	# regardless of how long the "!" stays up or how many times it flashes -
+	# same SFX-bus convention as the shield pickup's spawn sound (SfxManager's
+	# pool is already routed to the "SFX" bus).
+	SfxManager.play(WARNING_SOUND, warning_sound_volume_db)
 
 
 func play(duration: float) -> void:

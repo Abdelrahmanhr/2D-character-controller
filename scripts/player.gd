@@ -112,6 +112,15 @@ var freeze_time_left: float = 0.0
 var is_stunned: bool = false
 var stun_time_left: float = 0.0
 
+## Kill-feed attribution: who last landed a stun on this player, and when, so a
+## death shortly afterward can be credited to them instead of read as an anonymous
+## fall/explosion. Cleared on respawn so a hit from a prior life never carries over.
+const ATTACKER_CREDIT_WINDOW_MS := 3000
+var _last_attacker_slot: int = -1
+var _last_attacker_name: String = ""
+var _last_attacker_color: Color = Color.WHITE
+var _last_attacker_time_ms: int = -1000000
+
 ## Independent of is_invulnerable: blocks stun/knockback (see _do_apply_stun) rather
 ## than damage/death, and has its own blue tint instead of the white respawn flash.
 var is_shielded: bool = false
@@ -944,44 +953,67 @@ func _on_dash_hitbox_body_entered(body: Node) -> void:
 			return
 
 	if body.get("is_shielded") == true:
-		# The shield blocks all stun/knockback on the defender (see _do_apply_stun),
-		# so there's nothing to apply to body -- instead the attacker bounces off as if
-		# they'd hit something solid. No flash_dash_loss here: that cue is specifically
-		# for losing your own dash to a conflict, which isn't what happened.
+		# The shield blocks all stun/knockback on the defender (see _do_apply_stun's
+		# is_shielded early return) -- the attacker bounces off as if they'd hit
+		# something solid. No flash_dash_loss here: that cue is specifically for
+		# losing your own dash to a conflict, which isn't what happened. body.apply_stun
+		# still has to be called (even though it never actually stuns the shielded
+		# victim) so this blocked hit reaches _do_apply_stun's single choke point and
+		# consumes the shield there, same as every other source that funnels through it.
 		apply_stun(-dash_direction, dash_conflict_knockback_multiplier)
 		apply_hitstop(hitstop_duration)
+		if body.has_method("apply_stun"):
+			var attacker_slot := bomb_controller.get_slot_index() if bomb_controller else -1
+			body.apply_stun(dash_direction, dash_conflict_knockback_multiplier, -1.0, attacker_slot, _current_identity_name(), _current_identity_color())
 		return
 
 	if body.get("is_dashing") == true:
 		if dash_start_time_ms <= body.dash_start_time_ms:
 			return
 		if body.has_method("apply_stun"):
-			body.apply_stun(dash_direction, dash_conflict_knockback_multiplier)
+			var attacker_slot := bomb_controller.get_slot_index() if bomb_controller else -1
+			body.apply_stun(dash_direction, dash_conflict_knockback_multiplier, -1.0, attacker_slot, _current_identity_name(), _current_identity_color())
 		if body.has_method("apply_hitstop"):
 			body.apply_hitstop(hitstop_duration)
-		if body.has_method("flash_dash_loss"): 
-			body.flash_dash_loss()  
+		if body.has_method("flash_dash_loss"):
+			body.flash_dash_loss()
 		return
-	
+
 	if body.has_method("apply_stun"):
-		body.apply_stun(dash_direction)
+		var attacker_slot := bomb_controller.get_slot_index() if bomb_controller else -1
+		body.apply_stun(dash_direction, 1.0, -1.0, attacker_slot, _current_identity_name(), _current_identity_color())
 	apply_hitstop(hitstop_duration)
 	if body.has_method("apply_hitstop"):
 		body.apply_hitstop(hitstop_duration)
 		
 ## duration_override < 0 keeps the default stun_duration export (dash-collision
 ## behavior is untouched); callers like the lightning strike event pass an explicit
-## duration instead.
-func apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0, duration_override: float = -1.0) -> void:
+## duration instead. attacker_slot/name/color are for kill-feed attribution only -
+## left at their defaults (-1, unset) for environmental stuns like the lightning
+## strike, which have no attacking player to credit.
+func apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0, duration_override: float = -1.0, attacker_slot: int = -1, attacker_name: String = "", attacker_color: Color = Color.WHITE) -> void:
 	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
-		_do_apply_stun(from_direction, knockback_multiplier, duration_override)
+		_do_apply_stun(from_direction, knockback_multiplier, duration_override, attacker_slot, attacker_name, attacker_color)
 	else:
-		_do_apply_stun.rpc(from_direction, knockback_multiplier, duration_override)
+		_do_apply_stun.rpc(from_direction, knockback_multiplier, duration_override, attacker_slot, attacker_name, attacker_color)
 
 @rpc("any_peer", "call_local", "reliable")
-func _do_apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0, duration_override: float = -1.0) -> void:
+func _do_apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0, duration_override: float = -1.0, attacker_slot: int = -1, attacker_name: String = "", attacker_color: Color = Color.WHITE) -> void:
 	if is_shielded:
+		# Single-use: the shield absorbs exactly one blocked stun (storm, another
+		# player's dash, a hazard - anything that funnels through apply_stun) and
+		# drops immediately, rather than continuing to block until its timer runs
+		# out on its own. This is the one choke point every stun source goes
+		# through, so consuming it here covers all of them.
+		is_shielded = false
+		shield_time_left = 0.0
+		_set_shield_particles_active(false)
 		return
+	if attacker_slot >= 0:
+		_last_attacker_slot = attacker_slot
+		_last_attacker_name = attacker_name
+		_last_attacker_color = attacker_color
+		_last_attacker_time_ms = Time.get_ticks_msec()
 	var duration: float = stun_duration if duration_override < 0.0 else duration_override
 	is_dashing = false
 	dash_hitbox.monitoring = false
@@ -1057,6 +1089,7 @@ func _check_landing() -> void:
 func respawn(invuln_duration: float) -> void:
 	_death_animation_id += 1
 	is_dead = false
+	_last_attacker_slot = -1
 	_set_fall_fx(false)
 	_fall_fx_last_y = global_position.y
 	_fall_distance = 0.0
@@ -1100,6 +1133,19 @@ func _current_identity_color() -> Color:
 	if bomb_controller:
 		return bomb_controller.get_player_color()
 	return Color.WHITE
+
+func _current_identity_name() -> String:
+	if bomb_controller:
+		return bomb_controller.get_player_display_name()
+	return "P?"
+
+## Empty dict = no recent attacker, death reads as environmental (fall/explode).
+func get_kill_credit() -> Dictionary:
+	if _last_attacker_slot < 0:
+		return {}
+	if Time.get_ticks_msec() - _last_attacker_time_ms > ATTACKER_CREDIT_WINDOW_MS:
+		return {}
+	return {"name": _last_attacker_name, "color": _last_attacker_color}
 
 ## Refreshes/extends shield_time_left rather than stacking if already shielded. See
 ## _do_apply_stun for where the shield actually blocks stun/knockback.

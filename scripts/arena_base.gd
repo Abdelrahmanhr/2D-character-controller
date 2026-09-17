@@ -39,6 +39,8 @@ enum Outcome { WIN, LOSE, DRAW }
 @export var celebration_delay: float = 0.30
 @export var outro_delay: float = 0.60
 @export var corpse_fade_duration: float = 0.9
+@export var win_focus_zoom: float = 1.7
+@export var win_focus_screen_offset: Vector2 = Vector2(210.0, 0.0)  # NEW: winner lands this many px off screen center; scenes/end_menu.tscn's Panel is centered on the same point (+80 lower) so the winner reads as inside the panel
 
 var _active_zone: SafeZone = null  # NEW
 var _active_zone_spawn_index: int = -1  # NEW
@@ -379,6 +381,11 @@ func _celebrate_winner(winner_peer_id: int) -> void:
 	var winner := get_node_or_null(str(winner_peer_id)) as CharacterBody2D
 	if winner == null or winner.is_dead:
 		return
+	# Purely local/visual, so every peer zooms in - unlike play_celebration below,
+	# which is authority-gated because it drives the winner's own physics.
+	var cam := get_viewport().get_camera_2d()
+	if cam and cam.has_method("focus_on"):
+		cam.focus_on(winner, win_focus_screen_offset, win_focus_zoom)
 	if _is_networked() and not winner.is_multiplayer_authority():
 		return
 	if winner.has_method("play_celebration"):

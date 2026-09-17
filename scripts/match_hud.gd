@@ -3,6 +3,13 @@ extends CanvasLayer
 @onready var timer_block: HBoxContainer = $Header/TimerBlock
 @onready var slot_template: Control = $Header/TimerBlock/TimerSlot
 @onready var alive_label: Label = $Header/AliveBlock/AliveCount
+@onready var kill_feed_container: VBoxContainer = $KillFeed
+@onready var kill_feed_line_template: RichTextLabel = $KillFeed/LineTemplate
+
+## One stacked kill-feed line with its own independent fade timer.
+class KillFeedLine:
+	var label: RichTextLabel
+	var time_left: float
 
 # Per-slot cache. Everything that does not change frame to frame - the styleboxes,
 # the label theme overrides, the player colour - is built once here, at rebuild
@@ -33,12 +40,67 @@ const ELIMINATED_MODULATE := Color(0.5961, 0.5608, 0.3922, 0.75)
 const URGENT_COLOR := Color(0.8667, 0.2157, 0.2706, 1.0)
 const WARN_COLOR := Color(1, 0.4118, 0.3529, 1.0)
 
+## Player-vs-player kills. %s/%s are killer, then victim.
+const DUEL_PHRASES: Array[String] = [
+	"%s yeeted %s into next week",
+	"%s sent %s into orbit",
+	"%s absolutely clotheslined %s",
+	"%s turned %s into a frisbee",
+	"%s gave %s a one-way ticket off the map",
+	"%s punted %s clean off the stage",
+	"%s introduced %s to the void",
+	"%s bodied %s off the edge",
+	"%s launched %s like a rocket",
+	"%s said \"not today\" to %s",
+	"%s sent %s to go touch grass. permanently",
+	"%s dashed %s straight into retirement",
+	"%s slam-dunked %s off the arena",
+	"%s made %s do an unscheduled backflip into the abyss",
+]
+
+## Bomb-timer/safezone deaths with no recent attacker to credit. %s is the victim.
+const SOLO_EXPLODE_PHRASES: Array[String] = [
+	"%s went out with a bang",
+	"%s forgot to defuse in time",
+	"%s turned into confetti a little early",
+	"%s got way too attached to that bomb",
+	"%s discovered the bomb was not a toy",
+	"%s learned fireworks hurt up close",
+	"%s had an explosive personality today",
+	"%s took the countdown personally",
+	"%s became a cautionary tale about timers",
+	"%s went out in a blaze of glory",
+	"%s got the loudest wake-up call ever",
+	"%s ended their run with a big finish",
+]
+
+## Falls/edge deaths with no recent attacker to credit. %s is the victim.
+const SOLO_FALL_PHRASES: Array[String] = [
+	"%s took an unscheduled dive",
+	"%s forgot the floor was optional",
+	"%s discovered gravity the hard way",
+	"%s went for a swim in the void",
+	"%s missed the landing entirely",
+	"%s took the scenic route down",
+	"%s decided the edge looked comfy",
+	"%s just kept walking",
+	"%s wandered off the map like it owed them money",
+	"%s trusted the ground a little too much",
+	"%s tripped into the abyss",
+	"%s took the long way out",
+]
+
+const KILL_FEED_DURATION := 2.0
+const KILL_FEED_MAX_LINES := 5
+
 var _slots: Array[Slot] = []
 var _bombs: Array[BombController] = []
 var _dirty: bool = true
+var _kill_feed_lines: Array[KillFeedLine] = []
 
 func _ready() -> void:
 	slot_template.visible = false
+	kill_feed_line_template.visible = false
 	MinigameDirector.alive_count_changed.connect(_on_alive_count_changed)
 	# The roster only changes when a player registers or drops, and both paths go
 	# through MinigameDirector._notify_alive_count(). Rebuild on that instead of
@@ -49,13 +111,72 @@ func _ready() -> void:
 func _mark_dirty(_alive: int = 0, _total: int = 0) -> void:
 	_dirty = true
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if _dirty:
 		_dirty = false
 		_collect_bombs()
 		_rebuild_slots()
 	for slot in _slots:
 		_update_slot(slot)
+	_update_kill_feed(delta)
+
+## Called by BombController._report_kill, already running identically on every
+## peer since it rides the existing _do_player_died any_peer/call_local/reliable
+## broadcast - no RPC of its own needed here. credit is {} for an environmental
+## death (bomb timer, safe zone, unattributed fall) or {"name","color"} of
+## whoever last stunned this player within the attribution window.
+func report_kill(victim_name: String, victim_color: Color, cause: String, credit: Dictionary = {}) -> void:
+	var victim_tag := _color_tag(victim_name, victim_color)
+	var line: String
+	if not credit.is_empty():
+		var killer_tag := _color_tag(credit.get("name", "?"), credit.get("color", Color.WHITE))
+		var phrase: String = DUEL_PHRASES[randi() % DUEL_PHRASES.size()]
+		line = phrase % [killer_tag, victim_tag]
+	else:
+		var pool: Array[String] = SOLO_EXPLODE_PHRASES if cause == "explode" else SOLO_FALL_PHRASES
+		var phrase: String = pool[randi() % pool.size()]
+		line = phrase % [victim_tag]
+	_push_kill_feed_line(line)
+
+func _color_tag(display_name: String, color: Color) -> String:
+	return "[color=#%s]%s[/color]" % [color.to_html(false), display_name]
+
+## New lines append at the end of KillFeed, closest to the bottom-left anchor (the
+## container's alignment=END keeps a partial stack hugging that corner); older
+## lines sit above. Each line tracks its own fade timer independently of the
+## others, so a burst of kills stacks and each entry drops off on its own clock
+## rather than the whole stack resetting or clearing together.
+func _push_kill_feed_line(text: String) -> void:
+	if _kill_feed_lines.size() >= KILL_FEED_MAX_LINES:
+		_pop_oldest_kill_feed_line()
+	var label := kill_feed_line_template.duplicate() as RichTextLabel
+	label.visible = true
+	label.text = text
+	kill_feed_container.add_child(label)
+	var entry := KillFeedLine.new()
+	entry.label = label
+	entry.time_left = KILL_FEED_DURATION
+	_kill_feed_lines.append(entry)
+
+func _pop_oldest_kill_feed_line() -> void:
+	if _kill_feed_lines.is_empty():
+		return
+	var oldest: KillFeedLine = _kill_feed_lines.pop_front()
+	if is_instance_valid(oldest.label):
+		oldest.label.queue_free()
+
+func _update_kill_feed(delta: float) -> void:
+	if _kill_feed_lines.is_empty():
+		return
+	var expired: Array[KillFeedLine] = []
+	for entry in _kill_feed_lines:
+		entry.time_left -= delta
+		if entry.time_left <= 0.0:
+			expired.append(entry)
+	for entry in expired:
+		_kill_feed_lines.erase(entry)
+		if is_instance_valid(entry.label):
+			entry.label.queue_free()
 
 func _collect_bombs() -> void:
 	_bombs.clear()

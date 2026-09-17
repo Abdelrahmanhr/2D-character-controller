@@ -12,6 +12,9 @@ const MAGENTA := Color("#ff6eaf")
 const BLAZE := Color("#ffaa6e")
 const FLARE := Color("#ffe091")
 const EMBER := Color("#e54286")
+const CONFETTI_RED := Color("#ff4d5e")
+const CONFETTI_LIME := Color("#8dff6e")
+const CONFETTI_CYAN := Color("#6de4ff")
 
 static var _pixel: Texture2D
 
@@ -44,8 +47,21 @@ static func _ramp(colors: Array[Color]) -> Gradient:
 	return gradient
 
 
-## Warm confetti thrown from the panel's top corners, plus a slow drift that keeps
-## the screen alive once the burst has settled.
+## Bright, distinct confetti hues (not the warm INK/NEON palette the rest of this
+## file uses) so color_initial_ramp can hand each particle its own random pick.
+static func _confetti_palette(alpha: float = 1.0) -> Gradient:
+	var colors: Array[Color] = [CONFETTI_RED, BLAZE, FLARE, CONFETTI_LIME, CONFETTI_CYAN, MAGENTA]
+	var out: Array[Color] = []
+	for c in colors:
+		out.append(Color(c, alpha))
+	return _ramp(out)
+
+
+## Multicolor confetti thrown from the panel's top corners, plus a slow drift that
+## keeps the screen alive once the burst has settled. Each particle gets its own
+## random pick off _confetti_palette via color_initial_ramp; color_ramp stays a
+## plain white-to-transparent alpha fade so it doesn't tint that random hue away
+## (color_ramp multiplies over color_initial_ramp's per-particle pick).
 static func win(parent: Node, rect: Rect2, z: int = -1) -> void:
 	for side in [-1.0, 1.0]:
 		var burst := make(parent, 13, 1.1)
@@ -64,7 +80,8 @@ static func win(parent: Node, rect: Rect2, z: int = -1) -> void:
 		burst.damping_max = 60.0
 		burst.scale_amount_min = 3.0
 		burst.scale_amount_max = 6.0
-		burst.color_ramp = _ramp([FLARE, BLAZE, Color(MAGENTA, 0.0)])
+		burst.color_initial_ramp = _confetti_palette()
+		burst.color_ramp = _ramp([Color.WHITE, Color.WHITE, Color(1.0, 1.0, 1.0, 0.0)])
 		burst.emitting = true
 
 	var drift := make(parent, 14, 2.6)
@@ -79,7 +96,7 @@ static func win(parent: Node, rect: Rect2, z: int = -1) -> void:
 	drift.gravity = Vector2(0.0, 40.0)
 	drift.scale_amount_min = 2.0
 	drift.scale_amount_max = 4.0
-	drift.color = Color(FLARE, 0.5)
+	drift.color_initial_ramp = _confetti_palette(0.5)
 	drift.emitting = true
 
 

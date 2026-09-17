@@ -559,11 +559,24 @@ func player_died(cause: String = "fall") -> void:  # CHANGED: added cause param
 func _do_player_died(cause: String = "fall") -> void:  # CHANGED: added cause param
 	if _expired:
 		return
+	_report_kill(cause)
 	_lives_remaining -= 1
 	if _lives_remaining <= 0:
 		eliminate_player(cause)  # CHANGED: pass cause through
 	else:
 		_respawn(cause)  # CHANGED: pass cause through
+
+## Kill feed is a purely local/cosmetic readout, so no RPC of its own is needed -
+## _do_player_died is already the any_peer/call_local/reliable broadcast that runs
+## identically on every peer, this just also feeds the arena's kill feed off of it.
+func _report_kill(cause: String) -> void:
+	var hud := get_tree().current_scene.get_node_or_null("MatchHUD")
+	if hud == null or not hud.has_method("report_kill"):
+		return
+	var credit: Dictionary = {}
+	if _player and _player.has_method("get_kill_credit"):
+		credit = _player.get_kill_credit()
+	hud.report_kill(get_player_display_name(), get_player_color(), cause, credit)
 
 func eliminate_player(cause: String = "fall") -> void:  # CHANGED: added cause param
 	if _expired:

@@ -150,3 +150,31 @@ theme_override_constants/shadow_outline_size = 3
 theme_override_font_sizes/font_size = 22
 text = "1 / 1"
 horizontal_alignment = 2
+
+[node name="KillFeed" type="VBoxContainer" parent="." unique_id=1938204577]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -136.0
+offset_right = 560.0
+offset_bottom = -12.0
+grow_vertical = 0
+mouse_filter = 2
+alignment = 2
+theme_override_constants/separation = 2
+
+[node name="LineTemplate" type="RichTextLabel" parent="KillFeed" unique_id=1938204578]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+shadow_offset_x = 0
+shadow_offset_y = 0
+theme_override_colors/default_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_outline_size = 3
+theme_override_font_sizes/normal_font_size = 16

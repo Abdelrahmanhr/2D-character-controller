@@ -9,7 +9,9 @@ signal expired
 @export var hold_duration: float = 10.0
 @export var outer_gravity_multiplier: float = 0.35
 @export var outside_death_time: float = 3.0
-@export var outside_fill_color: Color = Color(0.55, 0.05, 0.08, 0.5)
+## Animus-style: light blue data-fog fill with a glowing white/blue edge (see
+## OVERLAY_SHADER) instead of the original flat red danger tint.
+@export var outside_fill_color: Color = Color(0.298, 0.702, 1.0, 0.4)
 @export var edge_softness: float = 10.0
 @export var spot_scale: float = 80.0
 @export var spot_speed: float = 0.6
@@ -26,8 +28,20 @@ signal expired
 @export var pixel_size: float = 6.0
 @export var fade_duration: float = 2.0
 @export var outline_core_width: float = 4.0
-@export var outline_glow_range: float = 55.0  
-@export var outline_glow_strength: float = 1.1  
+@export var outline_glow_range: float = 55.0
+@export var outline_glow_strength: float = 1.1
+@export var outline_core_color: Color = Color(1.0, 1.0, 1.0, 1.0)  ## NEW: crisp white line right on the boundary
+@export var outline_glow_color: Color = Color(0.4, 0.8, 1.0, 0.85)  ## NEW: light blue neon bleed, added on top of the core
+
+@export_group("Animus shapes")  ## NEW: white geometric glyphs flickering across the fill, grid-based so it's one shader pass instead of spawned nodes
+@export var shape_color: Color = Color(1.0, 1.0, 1.0, 0.9)
+@export var shape_scale: float = 70.0  ## world units per grid cell
+@export var shape_density: float = 0.55  ## fraction of cells left empty, for a scattered rather than uniform-grid look
+@export var shape_min_radius: float = 0.12  ## fraction of a cell
+@export var shape_max_radius: float = 0.30
+@export var shape_line_width: float = 0.05
+@export var shape_jitter: float = 0.28  ## random offset within a cell, so shapes don't sit dead-center
+@export var shape_flash_speed: float = 1.0
 
 var _activate_time_ms: int = -1
 var _overlay: ColorRect
@@ -64,10 +78,19 @@ uniform float ripple_radius;
 uniform float ripple_strength;
 uniform float pixel_size;
 uniform float fade_alpha;
-uniform vec4 outline_color : source_color;
+uniform vec4 outline_core_color : source_color;
+uniform vec4 outline_glow_color : source_color;
 uniform float outline_core_width;
 uniform float outline_glow_range;
 uniform float outline_glow_strength;
+uniform vec4 shape_color : source_color;
+uniform float shape_scale;
+uniform float shape_density;
+uniform float shape_min_radius;
+uniform float shape_max_radius;
+uniform float shape_line_width;
+uniform float shape_jitter;
+uniform float shape_flash_speed;
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
@@ -126,20 +149,57 @@ void fragment() {
 	COLOR = fill_color;
 	COLOR.rgb *= mix(1.0, 1.0 - spot_darkness, spots);
 	COLOR.a *= outside * fade_alpha;
-	
+
+	// Animus glyphs: a grid of cells on the same pixel-snapped position as the fill
+	// above, each cell independently deciding (via hash, no shared state) whether it
+	// holds a shape at all, which of three shape types, what size, and a randomized
+	// flash cycle - so the whole layer is one shader pass instead of spawned nodes.
+	vec2 shape_uv = pixelated_pos / shape_scale;
+	vec2 shape_cell = floor(shape_uv);
+	vec2 shape_local = fract(shape_uv) - 0.5;
+
+	float cell_present = step(shape_density, hash(shape_cell));
+	vec2 jitter = (vec2(hash(shape_cell + 3.3), hash(shape_cell + 7.7)) - 0.5) * shape_jitter;
+	vec2 sp = shape_local - jitter;
+
+	float shape_radius = mix(shape_min_radius, shape_max_radius, hash(shape_cell + 13.1));
+	float shape_type = hash(shape_cell + 21.9);
+
+	float shape_dist;
+	if (shape_type < 0.34) {
+		shape_dist = abs(abs(sp.x) + abs(sp.y) - shape_radius); // diamond outline
+	} else if (shape_type < 0.67) {
+		shape_dist = abs(max(abs(sp.x), abs(sp.y)) - shape_radius); // square outline
+	} else {
+		shape_dist = length(sp) - shape_radius * 0.4; // filled dot
+	}
+	float shape_mask = 1.0 - smoothstep(0.0, shape_line_width, shape_dist);
+
+	float phase_seed = hash(shape_cell + 91.3);
+	float cycle_len = mix(1.2, 3.5, hash(shape_cell + 45.1));
+	float t_local = mod(time_offset * shape_flash_speed + phase_seed * 20.0, cycle_len);
+	float flash = 1.0 - smoothstep(0.0, cycle_len * 0.12, t_local);
+
+	float shape_alpha = shape_mask * flash * cell_present * outside * fade_alpha;
+	COLOR.rgb += shape_color.rgb * shape_alpha;
+	COLOR.a = max(COLOR.a, shape_color.a * shape_alpha);
+
 	vec2 outline_delta = world_pos - zone_center;
 	float outline_dist = length(outline_delta);
 	float outline_ang = atan(outline_delta.y, outline_delta.x);
 	float outline_jag = sin(outline_ang * zig_frequency + time_offset * zig_speed) * zig_amplitude;
 	float outline_radius = zone_radius + outline_jag;
 	float edge_dist = abs(outline_dist - outline_radius);
-	
+
+	// Neon split: a crisp white core right on the line, plus a light blue glow
+	// bled additively outward from it, instead of one flat outline color.
 	float core = 1.0 - smoothstep(0.0, outline_core_width, edge_dist);
 	float glow = exp(-edge_dist / outline_glow_range) * outline_glow_strength;
-	float outline_intensity = clamp(core + glow, 0.0, 1.0) * fade_alpha;
-	
-	COLOR.rgb = mix(COLOR.rgb, outline_color.rgb, outline_intensity);
-	COLOR.a = max(COLOR.a, outline_color.a * outline_intensity);
+
+	COLOR.rgb = mix(COLOR.rgb, outline_core_color.rgb, core * fade_alpha);
+	COLOR.a = max(COLOR.a, outline_core_color.a * core * fade_alpha);
+	COLOR.rgb += outline_glow_color.rgb * glow * fade_alpha;
+	COLOR.a = max(COLOR.a, outline_glow_color.a * glow * fade_alpha);
 }
 """
 
@@ -172,11 +232,19 @@ func _setup_overlay() -> void:
 	_overlay_material.set_shader_parameter("ripple_strength", ripple_strength)
 	_overlay_material.set_shader_parameter("pixel_size", pixel_size)
 	
-	var matched_outline := Color(outside_fill_color.r, outside_fill_color.g, outside_fill_color.b, outside_fill_color.a) 
-	_overlay_material.set_shader_parameter("outline_color", matched_outline)
+	_overlay_material.set_shader_parameter("outline_core_color", outline_core_color)
+	_overlay_material.set_shader_parameter("outline_glow_color", outline_glow_color)
 	_overlay_material.set_shader_parameter("outline_core_width", outline_core_width)
 	_overlay_material.set_shader_parameter("outline_glow_range", outline_glow_range)
 	_overlay_material.set_shader_parameter("outline_glow_strength", outline_glow_strength)
+	_overlay_material.set_shader_parameter("shape_color", shape_color)
+	_overlay_material.set_shader_parameter("shape_scale", shape_scale)
+	_overlay_material.set_shader_parameter("shape_density", shape_density)
+	_overlay_material.set_shader_parameter("shape_min_radius", shape_min_radius)
+	_overlay_material.set_shader_parameter("shape_max_radius", shape_max_radius)
+	_overlay_material.set_shader_parameter("shape_line_width", shape_line_width)
+	_overlay_material.set_shader_parameter("shape_jitter", shape_jitter)
+	_overlay_material.set_shader_parameter("shape_flash_speed", shape_flash_speed)
 	_overlay.material = _overlay_material
 	_overlay_layer = CanvasLayer.new()
 	_overlay_layer.name = "SafeZoneOverlayLayer"
