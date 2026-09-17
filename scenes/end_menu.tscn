@@ -1,13 +1,10 @@
 [gd_scene format=3 uid="uid://dhrf8ikc3ru6o"]
-
 [ext_resource type="Script" uid="uid://6tvdqgnofmjk" path="res://scripts/end_menu.gd" id="2_script"]
-[ext_resource type="Theme" uid="uid://dgqitluxdgnbd" path="res://resources/themes/cyberpunk.tres" id="cyber_theme"]
-
+[ext_resource type="Theme" path="res://resources/themes/cyberpunk.tres" id="cyber_theme"]
 [node name="EndMenu" type="CanvasLayer" unique_id=1467794685]
 process_mode = 3
 layer = 20
 script = ExtResource("2_script")
-
 [node name="Dim" type="ColorRect" parent="." unique_id=1305043767]
 anchors_preset = 15
 anchor_right = 1.0
@@ -15,23 +12,21 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0.02, 0.04, 0.55)
-
 [node name="Panel" type="Panel" parent="." unique_id=520026436]
-texture_filter = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -389.0
-offset_top = -48.0
-offset_right = -39.0
-offset_bottom = 252.0
+offset_left = -150.0
+offset_top = -150.0
+offset_right = 150.0
+offset_bottom = 150.0
 grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("cyber_theme")
-
-[node name="TitleBar" type="Label" parent="Panel" unique_id=1005986707]
+texture_filter = 1
+[node name="TitleBar" type="Label" parent="Panel"]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
@@ -45,7 +40,6 @@ theme_override_font_sizes/font_size = 16
 text = "GAME OVER"
 horizontal_alignment = 1
 vertical_alignment = 1
-
 [node name="Box" type="VBoxContainer" parent="Panel" unique_id=1002005132]
 layout_mode = 1
 anchors_preset = 15
@@ -59,7 +53,6 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 10
 alignment = 1
-
 [node name="Title" type="Label" parent="Panel/Box" unique_id=2047005371]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.854902, 0.270588, 1)
@@ -68,21 +61,18 @@ theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 24
 text = "YOU WIN"
 horizontal_alignment = 1
-
 [node name="RestartButton" type="Button" parent="Panel/Box" unique_id=1221371149]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
-size_flags_horizontal = 4
 text = "RESTART"
-
+size_flags_horizontal = 4
 [node name="MainMenuButton" type="Button" parent="Panel/Box" unique_id=608836054]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
-size_flags_horizontal = 4
 text = "MAIN MENU"
-
+size_flags_horizontal = 4
 [node name="ExitButton" type="Button" parent="Panel/Box" unique_id=1262217279]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
-size_flags_horizontal = 4
 text = "EXIT"
+size_flags_horizontal = 4
