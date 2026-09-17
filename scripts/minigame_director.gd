@@ -36,6 +36,16 @@ var _lock_mask: int = 0
 var _lock_started_ms: int = -1
 var _paused_accum_ms: int = 0
 
+## End-of-match stats. Keyed by the same player.name.to_int() identifier
+## _alive_peer_ids/winner_peer_id already use (peer_id online, slot+1 couch).
+## Populated by record_match_stats, called from BombController._report_kill - the
+## same already-networked call site the kill feed reads from - so this can never
+## drift out of sync with what the kill feed showed during the match.
+var _match_start_ms: int = -1
+var _match_end_ms: int = -1
+var _kill_counts: Dictionary = {}
+var _survival_end_ms: Dictionary = {}
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -99,6 +109,10 @@ func reset_match() -> void:
 	_lock_started_ms = -1
 	_paused_accum_ms = 0
 	auto_serve = true
+	_match_start_ms = -1
+	_match_end_ms = -1
+	_kill_counts.clear()
+	_survival_end_ms.clear()
 
 func register_player(bomb_controller: BombController) -> void:
 	if _bomb_controllers.has(bomb_controller):
@@ -178,6 +192,10 @@ func player_disconnected(peer_id: int) -> void:
 	if Networking.is_leaving:
 		return
 	if multiplayer.is_server():
+		# Stamped here too since a disconnect never goes through
+		# BombController._do_player_died/_report_kill - without this the departed
+		# player's row would wrongly read as "survived to the end".
+		record_match_stats(peer_id)
 		_resolve_elimination(peer_id)
 
 func _resolve_elimination(peer_id: int) -> void:
@@ -197,6 +215,10 @@ func _resolve_elimination(peer_id: int) -> void:
 func _finish_match(winner_peer_id: int) -> void:
 	if _match_finished:
 		return
+	# Captured before lock_input below freezes get_hazard_time_ms(), so this is the
+	# live moment the match actually ended - every surviving player's stats row
+	# uses this as their end time (see get_survival_seconds).
+	_match_end_ms = get_hazard_time_ms()
 	_match_finished = true
 	_counting_down = false
 	_cooldowns.clear()
@@ -274,6 +296,7 @@ func _process(delta: float) -> void:
 	if _pending_start_ms != 0:
 		if Networking.get_sync_time() >= _pending_start_ms:
 			_pending_start_ms = 0
+			_match_start_ms = get_hazard_time_ms()
 			match_started.emit()
 			_start_rounds()
 		return
@@ -287,6 +310,7 @@ func _process(delta: float) -> void:
 		if _countdown_left <= 0.0:
 			_counting_down = false
 			if _is_offline():
+				_match_start_ms = get_hazard_time_ms()
 				match_started.emit()
 				_start_rounds()
 			else:
@@ -318,6 +342,46 @@ func force_start() -> void:
 	if not _counting_down and not _match_finished:
 		_begin_countdown()
 
-func schedule_next_round(bomb_controller: BombController) -> void:  
+func schedule_next_round(bomb_controller: BombController) -> void:
 	if _cooldowns.has(bomb_controller):
 		_cooldowns[bomb_controller] = spawn_cooldown
+
+
+## Records a death (for survival time) and, if credited, a kill (for kill count).
+## Called from the same already-networked BombController._report_kill the kill
+## feed reads from, so it runs identically on every peer for free - no RPC of its
+## own. victim_key/killer_key are player.name.to_int() identifiers; killer_key
+## defaults to -1 for an uncredited/environmental death.
+func record_match_stats(victim_key: int, killer_key: int = -1) -> void:
+	if victim_key >= 0 and not _survival_end_ms.has(victim_key):
+		_survival_end_ms[victim_key] = get_hazard_time_ms()
+	if killer_key >= 0 and killer_key != victim_key:
+		_kill_counts[killer_key] = int(_kill_counts.get(killer_key, 0)) + 1
+
+
+func get_kill_count(player_key: int) -> int:
+	return int(_kill_counts.get(player_key, 0))
+
+
+## Time from match start to death, or to match end if this player never died.
+func get_survival_seconds(player_key: int) -> float:
+	if _match_start_ms < 0:
+		return 0.0
+	var fallback_end: int = _match_end_ms if _match_end_ms >= 0 else get_hazard_time_ms()
+	var end_ms: int = int(_survival_end_ms.get(player_key, fallback_end))
+	return maxf(float(end_ms - _match_start_ms) / 1000.0, 0.0)
+
+
+## Every player.name.to_int() worth showing a stats row for: currently registered
+## players plus anyone who's already recorded a kill or a death (covers a player
+## who was unregistered - e.g. freed on disconnect - after their stats landed).
+func get_tracked_player_keys() -> Array:
+	var keys: Dictionary = {}
+	for bomb_controller in _bomb_controllers:
+		if is_instance_valid(bomb_controller):
+			keys[bomb_controller.get_parent().name.to_int()] = true
+	for k in _kill_counts.keys():
+		keys[k] = true
+	for k in _survival_end_ms.keys():
+		keys[k] = true
+	return keys.keys()

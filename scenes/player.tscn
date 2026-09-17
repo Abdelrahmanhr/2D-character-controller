@@ -324,6 +324,9 @@ properties/0/replication_mode = 1
 properties/1/path = NodePath(".:animation_name")
 properties/1/spawn = true
 properties/1/replication_mode = 1
+properties/2/path = NodePath(".:dash_start_time_ms")
+properties/2/spawn = false
+properties/2/replication_mode = 1
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_15ncp"]
 atlas = ExtResource("6_tuyoq")
@@ -362,6 +365,7 @@ land_sound = ExtResource("3_ur7pv")
 jump_sound = ExtResource("4_y4r1p")
 slam_sound = ExtResource("5_d2wvv")
 footstep_sound = ExtResource("3_smehm")
+shield_block_volume_db = -5.0
 explode_sound = ExtResource("7_ujl30")
 
 [node name="Glow" type="Sprite2D" parent="." unique_id=1253636982]

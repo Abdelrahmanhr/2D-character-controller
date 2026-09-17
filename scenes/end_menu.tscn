@@ -1,10 +1,13 @@
 [gd_scene format=3 uid="uid://dhrf8ikc3ru6o"]
+
 [ext_resource type="Script" uid="uid://6tvdqgnofmjk" path="res://scripts/end_menu.gd" id="2_script"]
-[ext_resource type="Theme" path="res://resources/themes/cyberpunk.tres" id="cyber_theme"]
+[ext_resource type="Theme" uid="uid://dgqitluxdgnbd" path="res://resources/themes/cyberpunk.tres" id="cyber_theme"]
+
 [node name="EndMenu" type="CanvasLayer" unique_id=1467794685]
 process_mode = 3
 layer = 20
 script = ExtResource("2_script")
+
 [node name="Dim" type="ColorRect" parent="." unique_id=1305043767]
 anchors_preset = 15
 anchor_right = 1.0
@@ -12,7 +15,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0.02, 0.04, 0.55)
+
 [node name="Panel" type="Panel" parent="." unique_id=520026436]
+texture_filter = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -25,8 +30,8 @@ offset_bottom = 150.0
 grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("cyber_theme")
-texture_filter = 1
-[node name="TitleBar" type="Label" parent="Panel"]
+
+[node name="TitleBar" type="Label" parent="Panel" unique_id=991379229]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
@@ -40,6 +45,7 @@ theme_override_font_sizes/font_size = 16
 text = "GAME OVER"
 horizontal_alignment = 1
 vertical_alignment = 1
+
 [node name="Box" type="VBoxContainer" parent="Panel" unique_id=1002005132]
 layout_mode = 1
 anchors_preset = 15
@@ -53,6 +59,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 10
 alignment = 1
+
 [node name="Title" type="Label" parent="Panel/Box" unique_id=2047005371]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.854902, 0.270588, 1)
@@ -61,18 +68,194 @@ theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 24
 text = "YOU WIN"
 horizontal_alignment = 1
+
 [node name="RestartButton" type="Button" parent="Panel/Box" unique_id=1221371149]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
-text = "RESTART"
 size_flags_horizontal = 4
+text = "RESTART"
+
 [node name="MainMenuButton" type="Button" parent="Panel/Box" unique_id=608836054]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
-text = "MAIN MENU"
 size_flags_horizontal = 4
+text = "MAIN MENU"
+
 [node name="ExitButton" type="Button" parent="Panel/Box" unique_id=1262217279]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
-text = "EXIT"
 size_flags_horizontal = 4
+text = "EXIT"
+
+[node name="StatsPanel" type="Panel" parent="." unique_id=-994954449]
+texture_filter = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 170.0
+offset_top = -81.0
+offset_right = 410.0
+offset_bottom = 87.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("cyber_theme")
+
+[node name="StatsTitle" type="Label" parent="StatsPanel" unique_id=-994954448]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 12.0
+offset_top = 9.0
+offset_right = -12.0
+offset_bottom = 31.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.8, 0.886275, 0.882353, 1)
+theme_override_font_sizes/font_size = 16
+text = "MATCH STATS"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StatsBox" type="VBoxContainer" parent="StatsPanel" unique_id=-994954447]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 36.0
+offset_top = 44.0
+offset_right = -35.0
+offset_bottom = -14.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 6
+
+[node name="HeaderRow" type="HBoxContainer" parent="StatsPanel/StatsBox" unique_id=-994954446]
+layout_mode = 2
+
+[node name="HeaderName" type="Label" parent="StatsPanel/StatsBox/HeaderRow" unique_id=-994954445]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.545098, 0.670588, 0.74902, 1)
+theme_override_font_sizes/font_size = 12
+text = "PLAYER"
+
+[node name="HeaderKills" type="Label" parent="StatsPanel/StatsBox/HeaderRow" unique_id=-994954444]
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.545098, 0.670588, 0.74902, 1)
+theme_override_font_sizes/font_size = 12
+text = "KILLS"
+horizontal_alignment = 2
+
+[node name="HeaderTime" type="Label" parent="StatsPanel/StatsBox/HeaderRow" unique_id=-994954443]
+custom_minimum_size = Vector2(56, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.545098, 0.670588, 0.74902, 1)
+theme_override_font_sizes/font_size = 12
+text = "TIME"
+horizontal_alignment = 2
+
+[node name="StatRow1" type="HBoxContainer" parent="StatsPanel/StatsBox" unique_id=-994954442]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="StatsPanel/StatsBox/StatRow1" unique_id=-994954441]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "P1"
+clip_text = true
+
+[node name="Kills" type="Label" parent="StatsPanel/StatsBox/StatRow1" unique_id=-994954440]
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.886275, 0.882353, 1)
+theme_override_font_sizes/font_size = 14
+text = "0"
+horizontal_alignment = 2
+
+[node name="Time" type="Label" parent="StatsPanel/StatsBox/StatRow1" unique_id=-994954439]
+custom_minimum_size = Vector2(56, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.886275, 0.882353, 1)
+theme_override_font_sizes/font_size = 14
+text = "0:00"
+horizontal_alignment = 2
+
+[node name="StatRow2" type="HBoxContainer" parent="StatsPanel/StatsBox" unique_id=-994954438]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="StatsPanel/StatsBox/StatRow2" unique_id=-994954437]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "P2"
+clip_text = true
+
+[node name="Kills" type="Label" parent="StatsPanel/StatsBox/StatRow2" unique_id=-994954436]
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.886275, 0.882353, 1)
+theme_override_font_sizes/font_size = 14
+text = "0"
+horizontal_alignment = 2
+
+[node name="Time" type="Label" parent="StatsPanel/StatsBox/StatRow2" unique_id=-994954435]
+custom_minimum_size = Vector2(56, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.886275, 0.882353, 1)
+theme_override_font_sizes/font_size = 14
+text = "0:00"
+horizontal_alignment = 2
+
+[node name="StatRow3" type="HBoxContainer" parent="StatsPanel/StatsBox" unique_id=-994954434]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="StatsPanel/StatsBox/StatRow3" unique_id=-994954433]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "P3"
+clip_text = true
+
+[node name="Kills" type="Label" parent="StatsPanel/StatsBox/StatRow3" unique_id=-994954432]
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.886275, 0.882353, 1)
+theme_override_font_sizes/font_size = 14
+text = "0"
+horizontal_alignment = 2
+
+[node name="Time" type="Label" parent="StatsPanel/StatsBox/StatRow3" unique_id=-994954431]
+custom_minimum_size = Vector2(56, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.886275, 0.882353, 1)
+theme_override_font_sizes/font_size = 14
+text = "0:00"
+horizontal_alignment = 2
+
+[node name="StatRow4" type="HBoxContainer" parent="StatsPanel/StatsBox" unique_id=-994954430]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="StatsPanel/StatsBox/StatRow4" unique_id=-994954429]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "P4"
+clip_text = true
+
+[node name="Kills" type="Label" parent="StatsPanel/StatsBox/StatRow4" unique_id=-994954428]
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.886275, 0.882353, 1)
+theme_override_font_sizes/font_size = 14
+text = "0"
+horizontal_alignment = 2
+
+[node name="Time" type="Label" parent="StatsPanel/StatsBox/StatRow4" unique_id=-994954427]
+custom_minimum_size = Vector2(56, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.886275, 0.882353, 1)
+theme_override_font_sizes/font_size = 14
+text = "0:00"
+horizontal_alignment = 2

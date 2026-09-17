@@ -34,11 +34,17 @@ extends CharacterBody2D
 @export var footstep_frames: Array[int] = [0,2]
 @export var footstep_pitch_variance: float = 0.15
 @export var footstep_debounce: float = 0.1
-@export var dash_conflict_knockback_multiplier: float = 2.0
+@export var dash_conflict_knockback_multiplier: float = 1.2  ## CHANGED: was 2.0 - attacker still bounces off a shielded victim, just less forcefully
 @export var dash_conflict_flash_color: Color = Color(0.8667, 0.2157, 0.2706, 1.0)
 @export var dash_conflict_flash_duration: float = 0.25
+## NEW: the counter-slam timing window. See _on_dash_hitbox_body_entered's
+## is_counter_clash check.
+@export var counter_window_ms: int = 200
+const COUNTER_TIEBREAK_MS := 60  ## NEW: intentionally not exported, see the comment where it's used
 @export var shield_duration: float = 10.0
 @export var shield_flash_color: Color = Color(0.3216, 0.6392, 1.0, 1.0)
+@export var shield_block_sound: AudioStream = preload("res://resources/audio/SheildBlock.wav")
+@export var shield_block_volume_db: float = -8.0
 @export var explode_sound: AudioStream  
 @export var explode_pitch_variance: float = 0.1  
 
@@ -116,7 +122,7 @@ var stun_time_left: float = 0.0
 ## death shortly afterward can be credited to them instead of read as an anonymous
 ## fall/explosion. Cleared on respawn so a hit from a prior life never carries over.
 const ATTACKER_CREDIT_WINDOW_MS := 3000
-var _last_attacker_slot: int = -1
+var _last_attacker_key: int = -1  ## attacker's player.name.to_int() - the same peer_id/slot+1 identifier MinigameDirector keys everything else by
 var _last_attacker_name: String = ""
 var _last_attacker_color: Color = Color.WHITE
 var _last_attacker_time_ms: int = -1000000
@@ -125,7 +131,6 @@ var _last_attacker_time_ms: int = -1000000
 ## than damage/death, and has its own blue tint instead of the white respawn flash.
 var is_shielded: bool = false
 var shield_time_left: float = 0.0
-var _shield_particles: CPUParticles2D
 
 var is_dashing: bool = false
 var dash_time_left: float = 0.0
@@ -221,7 +226,6 @@ func _ready() -> void:
 	_sprite_base_scale = animated_sprite.scale
 	_setup_dust()
 	_setup_fall_fx()
-	_setup_shield_particles()
 	_net_position = global_position  # so the first sync carries the spawn point, not (0, 0)
 	_refresh_keys()
 	Settings.keys_changed.connect(_refresh_keys)
@@ -326,7 +330,7 @@ func _physics_process(delta: float) -> void:
 		shield_time_left -= delta
 		if shield_time_left <= 0.0:
 			is_shielded = false
-			_set_shield_particles_active(false)
+			_set_shield_outline_active(false)
 
 	if is_frozen:
 		freeze_time_left -= delta
@@ -962,17 +966,37 @@ func _on_dash_hitbox_body_entered(body: Node) -> void:
 		# consumes the shield there, same as every other source that funnels through it.
 		apply_stun(-dash_direction, dash_conflict_knockback_multiplier)
 		apply_hitstop(hitstop_duration)
+		if body.has_method("play_shield_block_sound"):
+			body.play_shield_block_sound()
 		if body.has_method("apply_stun"):
-			var attacker_slot := bomb_controller.get_slot_index() if bomb_controller else -1
-			body.apply_stun(dash_direction, dash_conflict_knockback_multiplier, -1.0, attacker_slot, _current_identity_name(), _current_identity_color())
+			body.apply_stun(dash_direction, dash_conflict_knockback_multiplier, -1.0, name.to_int(), _current_identity_name(), _current_identity_color())
 		return
 
-	if body.get("is_dashing") == true:
-		if dash_start_time_ms <= body.dash_start_time_ms:
+	# Counter-slam clash: body counts as "recently dashed" either because it's
+	# still literally mid-dash, or because its dash started within
+	# counter_window_ms of now - the old behavior only ever allowed the former,
+	# implicitly bounding the window to dash_duration (~150ms) with no tolerance
+	# at all for a dash that had *just* finished.
+	var body_dash_start: int = int(body.get("dash_start_time_ms"))
+	var time_diff: int = dash_start_time_ms - body_dash_start
+	var is_counter_clash: bool = body.get("is_dashing") == true or absi(time_diff) <= counter_window_ms
+	if is_counter_clash:
+		var i_win: bool = time_diff > 0
+		if absi(time_diff) <= COUNTER_TIEBREAK_MS:
+			# Close enough together that dash_start_time_ms can't be trusted to
+			# resolve this alone - it may not have finished replicating to whichever
+			# peer is running this check yet (see net_position's own 33ms
+			# replication_interval on this same synchronizer), and both sides
+			# independently reaching "I'm later" from their own stale view of the
+			# other is exactly how a collision used to resolve as a mutual
+			# knockback. player.name.to_int() has no replication lag at all - every
+			# peer already knows it exactly - so it always picks the same single
+			# winner regardless of which side evaluates it first.
+			i_win = name.to_int() > body.name.to_int()
+		if not i_win:
 			return
 		if body.has_method("apply_stun"):
-			var attacker_slot := bomb_controller.get_slot_index() if bomb_controller else -1
-			body.apply_stun(dash_direction, dash_conflict_knockback_multiplier, -1.0, attacker_slot, _current_identity_name(), _current_identity_color())
+			body.apply_stun(dash_direction, dash_conflict_knockback_multiplier, -1.0, name.to_int(), _current_identity_name(), _current_identity_color())
 		if body.has_method("apply_hitstop"):
 			body.apply_hitstop(hitstop_duration)
 		if body.has_method("flash_dash_loss"):
@@ -980,25 +1004,26 @@ func _on_dash_hitbox_body_entered(body: Node) -> void:
 		return
 
 	if body.has_method("apply_stun"):
-		var attacker_slot := bomb_controller.get_slot_index() if bomb_controller else -1
-		body.apply_stun(dash_direction, 1.0, -1.0, attacker_slot, _current_identity_name(), _current_identity_color())
+		body.apply_stun(dash_direction, 1.0, -1.0, name.to_int(), _current_identity_name(), _current_identity_color())
 	apply_hitstop(hitstop_duration)
 	if body.has_method("apply_hitstop"):
 		body.apply_hitstop(hitstop_duration)
-		
+
 ## duration_override < 0 keeps the default stun_duration export (dash-collision
 ## behavior is untouched); callers like the lightning strike event pass an explicit
-## duration instead. attacker_slot/name/color are for kill-feed attribution only -
-## left at their defaults (-1, unset) for environmental stuns like the lightning
-## strike, which have no attacking player to credit.
-func apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0, duration_override: float = -1.0, attacker_slot: int = -1, attacker_name: String = "", attacker_color: Color = Color.WHITE) -> void:
+## duration instead. attacker_key/name/color are for kill-feed/stats attribution
+## only - left at their defaults (-1, unset) for environmental stuns like the
+## lightning strike, which have no attacking player to credit. attacker_key is the
+## attacker's player.name.to_int(), the same identifier MinigameDirector's match
+## stats and _alive_peer_ids already key everything by.
+func apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0, duration_override: float = -1.0, attacker_key: int = -1, attacker_name: String = "", attacker_color: Color = Color.WHITE) -> void:
 	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
-		_do_apply_stun(from_direction, knockback_multiplier, duration_override, attacker_slot, attacker_name, attacker_color)
+		_do_apply_stun(from_direction, knockback_multiplier, duration_override, attacker_key, attacker_name, attacker_color)
 	else:
-		_do_apply_stun.rpc(from_direction, knockback_multiplier, duration_override, attacker_slot, attacker_name, attacker_color)
+		_do_apply_stun.rpc(from_direction, knockback_multiplier, duration_override, attacker_key, attacker_name, attacker_color)
 
 @rpc("any_peer", "call_local", "reliable")
-func _do_apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0, duration_override: float = -1.0, attacker_slot: int = -1, attacker_name: String = "", attacker_color: Color = Color.WHITE) -> void:
+func _do_apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0, duration_override: float = -1.0, attacker_key: int = -1, attacker_name: String = "", attacker_color: Color = Color.WHITE) -> void:
 	if is_shielded:
 		# Single-use: the shield absorbs exactly one blocked stun (storm, another
 		# player's dash, a hazard - anything that funnels through apply_stun) and
@@ -1007,10 +1032,10 @@ func _do_apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0, 
 		# through, so consuming it here covers all of them.
 		is_shielded = false
 		shield_time_left = 0.0
-		_set_shield_particles_active(false)
+		_set_shield_outline_active(false)
 		return
-	if attacker_slot >= 0:
-		_last_attacker_slot = attacker_slot
+	if attacker_key >= 0:
+		_last_attacker_key = attacker_key
 		_last_attacker_name = attacker_name
 		_last_attacker_color = attacker_color
 		_last_attacker_time_ms = Time.get_ticks_msec()
@@ -1089,7 +1114,7 @@ func _check_landing() -> void:
 func respawn(invuln_duration: float) -> void:
 	_death_animation_id += 1
 	is_dead = false
-	_last_attacker_slot = -1
+	_last_attacker_key = -1
 	_set_fall_fx(false)
 	_fall_fx_last_y = global_position.y
 	_fall_distance = 0.0
@@ -1098,7 +1123,7 @@ func respawn(invuln_duration: float) -> void:
 	is_frozen = false
 	is_shielded = false
 	shield_time_left = 0.0
-	_set_shield_particles_active(false)
+	_set_shield_outline_active(false)
 	is_dashing = false
 	dash_time_left = 0.0
 	dash_hitbox.monitoring = false
@@ -1123,12 +1148,26 @@ func flash_dash_loss() -> void:  # NEW
 	else:
 		_do_flash_dash_loss.rpc()
 
-@rpc("any_peer", "call_local", "reliable") 
-func _do_flash_dash_loss() -> void:  
+@rpc("any_peer", "call_local", "reliable")
+func _do_flash_dash_loss() -> void:
 	var tween := create_tween()
 	tween.tween_property(animated_sprite, "modulate", dash_conflict_flash_color, dash_conflict_flash_duration * 0.3)
 	tween.tween_property(animated_sprite, "modulate", Color.WHITE.lerp(_current_identity_color(), 0.28), dash_conflict_flash_duration * 0.7)
-	
+
+## Called on the shielded player (the one dashed into), from the attacker's
+## _on_dash_hitbox_body_entered - same any_peer/call_local cross-player-triggered
+## pattern as apply_stun/flash_dash_loss above, so it plays once, from the
+## shielded player's side, on every peer.
+func play_shield_block_sound() -> void:
+	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		_do_play_shield_block_sound()
+	else:
+		_do_play_shield_block_sound.rpc()
+
+@rpc("any_peer", "call_local", "unreliable")
+func _do_play_shield_block_sound() -> void:
+	SfxManager.play(shield_block_sound, shield_block_volume_db)
+
 func _current_identity_color() -> Color:
 	if bomb_controller:
 		return bomb_controller.get_player_color()
@@ -1140,12 +1179,15 @@ func _current_identity_name() -> String:
 	return "P?"
 
 ## Empty dict = no recent attacker, death reads as environmental (fall/explode).
+## "key" is the attacker's player.name.to_int(), used to credit the kill to the
+## right player in MinigameDirector's match stats (same identifier the kill feed's
+## name/color already come from).
 func get_kill_credit() -> Dictionary:
-	if _last_attacker_slot < 0:
+	if _last_attacker_key < 0:
 		return {}
 	if Time.get_ticks_msec() - _last_attacker_time_ms > ATTACKER_CREDIT_WINDOW_MS:
 		return {}
-	return {"name": _last_attacker_name, "color": _last_attacker_color}
+	return {"key": _last_attacker_key, "name": _last_attacker_name, "color": _last_attacker_color}
 
 ## Refreshes/extends shield_time_left rather than stacking if already shielded. See
 ## _do_apply_stun for where the shield actually blocks stun/knockback.
@@ -1161,80 +1203,58 @@ func _do_apply_shield(duration: float) -> void:
 	is_shielded = true
 	shield_time_left = duration
 	if is_new_activation:
-		_set_shield_particles_active(true)
+		_set_shield_outline_active(true)
 
-## Built once in _ready (see _setup_shield_particles) and just toggled here -- never
-## recreated per activation. Replaces the old modulate-tint tween entirely: no more
-## flashing the sprite blue then back, is_invulnerable's white respawn flash is the
-## only sprite-modulate effect left.
-func _set_shield_particles_active(active: bool) -> void:
-	if _shield_particles:
-		_shield_particles.emitting = active
+## Toggled at the same on/off points the old shield particle effect used (natural
+## expiry in _process, consumed-by-block in _do_apply_stun, cleared on death in
+## respawn, activation here) - just swapping what visual actually turns on, a
+## silhouette outline on the sprite itself instead of an orbiting particle ring.
+func _set_shield_outline_active(active: bool) -> void:
+	if active:
+		var mat := _shared_shield_outline_material()
+		mat.set_shader_parameter("outline_color", shield_flash_color)
+		animated_sprite.material = mat
+	else:
+		animated_sprite.material = null
 
-## Continuous (not one-shot) aura orbiting the player, following the same
-## CPUParticles2D + cached 1x1-pixel-texture approach _make_dust/UIParticles already
-## use elsewhere in this project rather than GPUParticles2D (unused anywhere else here,
-## and this project explicitly targets the GL Compatibility renderer, which doesn't
-## support the Glow WorldEnvironment effect at all -- only Forward+/Mobile do). The
-## "glow" here is the same trick _setup_glow_texture already uses for the player's own
-## ambient light: a soft radial-gradient texture plus BLEND_MODE_ADD, so overlapping
-## particles brighten instead of just overdrawing flat pixels. preprocess seeds the
-## ring so it's already fully populated the instant emitting flips true, instead of
-## sparsely filling in over its first lifetime.
-##
-## Performance: the gradient texture and its material are built ONCE (static, shared
-## across every Player instance, same caching idiom as UIParticles.pixel_texture())
-## rather than per-player. amount is kept modest (12) since additive blending is what
-## sells "glow" here, not particle count -- bumping amount would cost more per frame
-## for a look that a slightly larger per-particle scale already achieves cheaper.
-static var _shield_glow_texture: Texture2D
-static var _shield_glow_material: CanvasItemMaterial
+const SHIELD_OUTLINE_SHADER := """
+shader_type canvas_item;
 
+uniform vec4 outline_color : source_color = vec4(0.3216, 0.6392, 1.0, 1.0);
+uniform float outline_width : hint_range(0.0, 4.0) = 1.5;
 
-static func _shared_shield_glow_texture() -> Texture2D:
-	if _shield_glow_texture == null:
-		var gradient := Gradient.new()
-		gradient.offsets = PackedFloat32Array([0.0, 1.0])
-		gradient.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
-		var texture := GradientTexture2D.new()
-		texture.gradient = gradient
-		texture.width = 8
-		texture.height = 8
-		texture.fill = GradientTexture2D.FILL_RADIAL
-		texture.fill_from = Vector2(0.5, 0.5)
-		texture.fill_to = Vector2(0.5, 0.0)
-		_shield_glow_texture = texture
-	return _shield_glow_texture
+void fragment() {
+	vec4 tex_color = texture(TEXTURE, UV);
+	if (tex_color.a > 0.5) {
+		COLOR = tex_color;
+	} else {
+		vec2 px = TEXTURE_PIXEL_SIZE * outline_width;
+		float neighbor_alpha = texture(TEXTURE, UV + vec2(px.x, 0.0)).a
+			+ texture(TEXTURE, UV - vec2(px.x, 0.0)).a
+			+ texture(TEXTURE, UV + vec2(0.0, px.y)).a
+			+ texture(TEXTURE, UV - vec2(0.0, px.y)).a;
+		if (neighbor_alpha > 0.0) {
+			COLOR = outline_color;
+		} else {
+			COLOR = tex_color;
+		}
+	}
+}
+"""
 
+## Built once, shared across every Player instance (same caching idiom as the
+## other _shared_* materials in this project) - toggled on/off per-player by
+## assigning/clearing animated_sprite.material rather than by touching any
+## per-instance shader parameters, so idle (unshielded) players pay zero cost.
+static var _shield_outline_material: ShaderMaterial
 
-static func _shared_shield_glow_material() -> CanvasItemMaterial:
-	if _shield_glow_material == null:
-		_shield_glow_material = CanvasItemMaterial.new()
-		_shield_glow_material.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-		_shield_glow_material.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
-	return _shield_glow_material
-
-
-func _setup_shield_particles() -> void:
-	_shield_particles = CPUParticles2D.new()
-	_shield_particles.texture = _shared_shield_glow_texture()
-	_shield_particles.material = _shared_shield_glow_material()
-	_shield_particles.emitting = false
-	_shield_particles.amount = 12
-	_shield_particles.lifetime = 0.9
-	_shield_particles.preprocess = 0.9
-	_shield_particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE_SURFACE
-	_shield_particles.emission_sphere_radius = 26.0
-	_shield_particles.direction = Vector2(0.0, -1.0)
-	_shield_particles.spread = 180.0
-	_shield_particles.initial_velocity_min = 4.0
-	_shield_particles.initial_velocity_max = 14.0
-	_shield_particles.gravity = Vector2.ZERO
-	_shield_particles.scale_amount_min = 1.5
-	_shield_particles.scale_amount_max = 3.0
-	_shield_particles.color = shield_flash_color
-	_shield_particles.z_index = 1
-	add_child(_shield_particles)
+static func _shared_shield_outline_material() -> ShaderMaterial:
+	if _shield_outline_material == null:
+		var shader := Shader.new()
+		shader.code = SHIELD_OUTLINE_SHADER
+		_shield_outline_material = ShaderMaterial.new()
+		_shield_outline_material.shader = shader
+	return _shield_outline_material
 
 func _get_safe_zone() -> Node:  
 	return get_tree().get_first_node_in_group("safe_zones")

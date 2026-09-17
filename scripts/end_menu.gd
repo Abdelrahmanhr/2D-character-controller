@@ -19,6 +19,19 @@ enum Outcome { WIN, LOSE, DRAW }
 @onready var title_label: Label = $Panel/Box/Title
 @onready var dim: ColorRect = $Dim
 @onready var panel: Panel = $Panel
+@onready var stats_panel: Panel = $StatsPanel
+@onready var stats_rows: Array[HBoxContainer] = [$StatsPanel/StatsBox/StatRow1, $StatsPanel/StatsBox/StatRow2, $StatsPanel/StatsBox/StatRow3, $StatsPanel/StatsBox/StatRow4]
+
+## One row per tracked player: display name/color from the same source every other
+## per-player UI (kill feed, scoreboard, lobby) already uses, kills/survival time
+## from MinigameDirector's match stats, which are themselves only ever written from
+## BombController._report_kill - the exact call the kill feed reads from - so this
+## can't drift from what the kill feed showed during the match.
+class StatEntry:
+	var display_name: String
+	var color: Color
+	var kills: int
+	var survival: float
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -35,13 +48,18 @@ func _unhandled_input(event: InputEvent) -> void:
 func set_result(title: String, color: Color, outcome: int = Outcome.WIN) -> void:
 	title_label.text = title
 	title_label.add_theme_color_override("font_color", color)
+	_populate_stats()
 	_play_entrance(outcome)
 
 func _play_entrance(outcome: int) -> void:
 	var elements: Array[Control] = [
 		$Panel/TitleBar, title_label,
 		$Panel/Box/RestartButton, $Panel/Box/MainMenuButton, $Panel/Box/ExitButton,
+		$StatsPanel/StatsTitle,
 	]
+	for row in stats_rows:
+		if row.visible:
+			elements.append(row)
 	UICascade.reset(elements)
 	dim.modulate.a = 0.0
 	# One frame so the VBoxContainer has sized its children; scaling around a
@@ -52,6 +70,7 @@ func _play_entrance(outcome: int) -> void:
 
 	create_tween().tween_property(dim, "modulate:a", 1.0, 0.18)
 	UICascade.slam_panel(panel)
+	UICascade.slam_panel(stats_panel)
 	_shake_camera()
 	_spawn_result_fx(outcome)
 	UICascade.play(elements, UICascade.PANEL_SLAM * 0.55)
@@ -59,6 +78,62 @@ func _play_entrance(outcome: int) -> void:
 	await get_tree().create_timer(1.0).timeout
 	if is_inside_tree():
 		$Panel/Box/RestartButton.grab_focus()
+
+## Sorted highest-survival-time first (kills as a tiebreak): in this last-man-
+## standing mode the winner (or every survivor in a draw) always has the longest
+## survival time by definition, so this reads winner-first without needing
+## winner_peer_id threaded in here separately.
+func _populate_stats() -> void:
+	var entries: Array[StatEntry] = []
+	for key in MinigameDirector.get_tracked_player_keys():
+		var entry := StatEntry.new()
+		var info := _resolve_player_info(int(key))
+		entry.display_name = info["name"]
+		entry.color = info["color"]
+		entry.kills = MinigameDirector.get_kill_count(int(key))
+		entry.survival = MinigameDirector.get_survival_seconds(int(key))
+		entries.append(entry)
+	entries.sort_custom(_compare_stat_entries)
+
+	for i in stats_rows.size():
+		var row := stats_rows[i]
+		if i >= entries.size():
+			row.visible = false
+			continue
+		row.visible = true
+		var entry := entries[i]
+		var name_label: Label = row.get_node("Name")
+		var kills_label: Label = row.get_node("Kills")
+		var time_label: Label = row.get_node("Time")
+		name_label.text = entry.display_name
+		name_label.add_theme_color_override("font_color", entry.color)
+		kills_label.text = str(entry.kills)
+		time_label.text = _format_survival(entry.survival)
+
+
+func _compare_stat_entries(a: StatEntry, b: StatEntry) -> bool:
+	if a.survival != b.survival:
+		return a.survival > b.survival
+	return a.kills > b.kills
+
+
+func _format_survival(seconds: float) -> String:
+	var total := int(seconds)
+	return "%d:%02d" % [total / 60, total % 60]
+
+
+## Player nodes stay in the tree (faded, not freed) through the outro (see
+## arena_base.gd's _send_off_the_fallen), so their name/color -- the same
+## BombController getters the kill feed, scoreboard and lobby all already use --
+## are still resolvable live here rather than needing a separate snapshot.
+func _resolve_player_info(key: int) -> Dictionary:
+	for node in get_tree().get_nodes_in_group("players"):
+		if node.name.to_int() != key:
+			continue
+		var bomb := node.get_node_or_null("BombController") as BombController
+		if bomb:
+			return {"name": bomb.get_player_display_name(), "color": bomb.get_player_color()}
+	return {"name": "P?", "color": Color.WHITE}
 
 func _shake_camera() -> void:
 	var cam := get_viewport().get_camera_2d()

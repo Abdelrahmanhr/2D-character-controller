@@ -566,17 +566,20 @@ func _do_player_died(cause: String = "fall") -> void:  # CHANGED: added cause pa
 	else:
 		_respawn(cause)  # CHANGED: pass cause through
 
-## Kill feed is a purely local/cosmetic readout, so no RPC of its own is needed -
-## _do_player_died is already the any_peer/call_local/reliable broadcast that runs
-## identically on every peer, this just also feeds the arena's kill feed off of it.
+## Kill feed and match stats are both purely reactive to this one already-networked
+## event - _do_player_died is already the any_peer/call_local/reliable broadcast
+## that runs identically on every peer, so both the HUD's kill feed and
+## MinigameDirector's per-player survival/kill tracking stay in sync for free off
+## this single call, with no stats-specific RPC of their own.
 func _report_kill(cause: String) -> void:
-	var hud := get_tree().current_scene.get_node_or_null("MatchHUD")
-	if hud == null or not hud.has_method("report_kill"):
-		return
 	var credit: Dictionary = {}
 	if _player and _player.has_method("get_kill_credit"):
 		credit = _player.get_kill_credit()
-	hud.report_kill(get_player_display_name(), get_player_color(), cause, credit)
+	var hud := get_tree().current_scene.get_node_or_null("MatchHUD")
+	if hud and hud.has_method("report_kill"):
+		hud.report_kill(get_player_display_name(), get_player_color(), cause, credit)
+	var victim_key: int = _player.name.to_int() if _player else -1
+	MinigameDirector.record_match_stats(victim_key, int(credit.get("key", -1)))
 
 func eliminate_player(cause: String = "fall") -> void:  # CHANGED: added cause param
 	if _expired:
