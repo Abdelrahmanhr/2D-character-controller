@@ -58,6 +58,18 @@ func _update_behind_sky_anchor() -> void:
 	behind_sky_anchor.scale = camera.zoom
 
 
+## Cutscene hook, called from the "intro" animation at t=4.4 - the beat an audio
+## track on a local AudioStreamPlayer used to start the song on instead.
+##
+## It goes through MusicManager so the song survives the change into the main menu.
+## A player living in this scene is freed by change_scene_to_file, which is exactly
+## what used to cut the music dead the moment PLAY was pressed. This is the menu's
+## own track, just run louder here; intro_end_card settles it down to the menu's
+## level on the way out. See MusicManager.play_id.
+func start_music() -> void:
+	MusicManager.play_id(&"menu", 0.6, MusicManager.CUTSCENE_DB)
+
+
 ## Cutscene hook, called from the "intro" animation's method track the instant
 ## Player:position:y reaches -360 (partway down from the explosion launch arc).
 ## A no-op if already switched, so scrubbing the timeline back and forth can't

@@ -29,6 +29,9 @@ extends CharacterBody2D
 @export var dash_sound: AudioStream
 @export var land_sound: AudioStream
 @export var jump_sound: AudioStream  
+## Jump.wav is pitched up to match the intro cutscene's jump cue (Audio/jump plays
+## the same file at pitch_scale 1.35); in-game it used to sit at the raw 1.0.
+const JUMP_PITCH := 1.35
 @export var slam_sound: AudioStream  
 @export var footstep_sound: AudioStream
 @export var footstep_frames: Array[int] = [0,2]
@@ -598,7 +601,7 @@ func _play_jump_sound_net() -> void:
 
 @rpc("any_peer", "call_local", "unreliable")
 func _play_jump_sound() -> void:
-	SfxManager.play(jump_sound, -10.0, 0.1)
+	SfxManager.play(jump_sound, -10.0, 0.1, JUMP_PITCH)
 	SfxManager.play(jump_grunt_sound, jump_grunt_volume_db, 0.12)
 
 
@@ -739,7 +742,7 @@ func _play_celebration_hop_sound_net() -> void:
 ## is deliberately "ungrunted."
 @rpc("any_peer", "call_local", "unreliable")
 func _play_celebration_hop_sound() -> void:
-	SfxManager.play(jump_sound, -12.0, 0.18)
+	SfxManager.play(jump_sound, -12.0, 0.18, JUMP_PITCH)
 
 
 func _update_animation() -> void:

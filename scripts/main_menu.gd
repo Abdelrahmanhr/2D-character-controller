@@ -42,10 +42,10 @@ func _setup_singleplayer_button() -> void:
 	button.pressed.connect(_on_singleplayer_pressed)
 
 
-## Neither offline mode is finished, so both show the same "not finished yet"
-## notice first -- routing to the right destination is this callback's job, not
-## ModeNotice's, since which mode was picked also changes the LocalPlayers setup
-## each destination needs (see _enter_singleplayer/_enter_tutorial).
+## Singleplayer is not finished, so it shows a "not finished yet" notice first --
+## routing to the right destination is this callback's job, not ModeNotice's,
+## since the mode picked also changes the LocalPlayers setup its destination
+## needs (see _enter_singleplayer). The tutorial goes straight in.
 func _show_mode_notice(on_confirmed: Callable) -> void:
 	var notice := MODE_NOTICE.instantiate()
 	add_child(notice)
@@ -75,7 +75,7 @@ func _setup_tutorial_button() -> void:
 
 
 func _on_tutorial_pressed() -> void:
-	_show_mode_notice(_enter_tutorial)
+	_enter_tutorial()
 
 
 func _enter_tutorial() -> void:

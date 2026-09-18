@@ -50,7 +50,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_font_sizes/font_size = 15
 theme_override_colors/font_color = Color(0.8, 0.886275, 0.882353, 1)
-text = "The Tutorial and Singleplayer modes aren't finished yet. They're here so you can still get a feel for the game if nobody else is around to play with."
+text = "Singleplayer mode isn't finished yet. It's here so you can still get a feel for the game if nobody else is around to play with."
 horizontal_alignment = 1
 autowrap_mode = 3
 

@@ -72,4 +72,9 @@ func show_card() -> void:
 
 
 func _on_play_pressed() -> void:
+	# Same track the menu is about to ask for, so this does not restart anything -
+	# it just fades the cutscene's louder level down to the menu's. Done here rather
+	# than in main_menu._ready so the drop plays out under the circle wipe instead
+	# of landing after the menu is already up.
+	MusicManager.play_id(&"menu")
 	SceneTransition.circle_to(MENU_SCENE)

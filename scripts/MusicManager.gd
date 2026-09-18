@@ -23,7 +23,7 @@ const TRACKS := {
 			"res://resources/audio/menu_theme.ogg",
 			"res://resources/audio/MAINMENUSOUNDTRACK.ogg",
 		],
-		"volume_db": -20.0,
+		"volume_db": -16.0,
 	},
 	&"arena_power_station": {
 		"paths": [
@@ -49,7 +49,16 @@ const TRACKS := {
 
 const SILENT_DB := -80.0
 
+## How loud the menu track runs under the intro cutscene, before it settles to the
+## track's own volume_db on the way into the menu. The cutscene used to play its
+## copy at 0 dB on Master; these players are on Music, which default_bus_layout
+## mixes +6 dB hotter, so -6 reproduces the loudness the cutscene always had.
+const CUTSCENE_DB := -6.0
+
 @export var crossfade_duration: float = 1.2
+## How long the hand-off out of the cutscene takes to settle to the menu level.
+## Tuned to land under SceneTransition.circle_to's wipe rather than after it.
+@export var relevel_duration: float = 1.5
 ## Boot has nothing to fade out of, so it uses a shorter lead-in.
 @export var fade_in_duration: float = 0.5
 ## How far the music drops while the pause menu is open.
@@ -80,24 +89,41 @@ func _ready() -> void:
 
 
 ## The one call sites use. Re-requesting the track that is already playing does
-## nothing, so walking main menu -> arena select -> lobby never restarts it.
-func play_id(id: StringName, duration: float = -1.0) -> void:
+## not restart it, so walking main menu -> arena select -> lobby never cuts the
+## music - but it does re-level it, which is how the intro cutscene hands its
+## music to the menu: the cutscene asks for the menu track at CUTSCENE_DB, and
+## the end card asking for the same track again simply fades it down to the
+## track's own volume_db with the song still running.
+##
+## level_db overrides the track's authored volume; leave it at INF for that volume.
+func play_id(id: StringName, duration: float = -1.0, level_db: float = INF) -> void:
 	if not TRACKS.has(id):
 		push_warning("MusicManager: unknown track id '%s'" % id)
 		return
+	var target_db: float = level_db if is_finite(level_db) else float(TRACKS[id]["volume_db"])
 	if id == _current_id and _players[_active].playing:
+		if not is_equal_approx(target_db, _base_db):
+			set_level(target_db, duration if duration >= 0.0 else relevel_duration)
 		return
 	var stream := _resolve(id)
 	if stream == null:
 		push_warning("MusicManager: no file found for track '%s'" % id)
 		return
 	_current_id = id
-	_base_db = float(TRACKS[id]["volume_db"])
+	_base_db = target_db
 	var fade: float = duration
 	if fade < 0.0:
 		# Nothing to cross with on the first track of the session.
 		fade = crossfade_duration if _players[_active].playing else fade_in_duration
 	_crossfade(stream, fade)
+
+
+## Move the playing track to a new level without restarting it. Goes through the
+## same _base_db/_duck_offset split as duck(), so a pause mid-hand-off leaves the
+## music at the ducked version of the new level rather than the two fighting.
+func set_level(db: float, duration: float = -1.0) -> void:
+	_base_db = db
+	_apply_volume(duration if duration >= 0.0 else relevel_duration)
 
 
 func stop(fade_out: float = 0.6) -> void:
@@ -124,7 +150,8 @@ func duck(enable: bool) -> void:
 ## Tween the active player to whatever the track volume plus the duck offset
 ## currently is. Split out because pausing during a scene change has to wait for
 ## the crossfade rather than fight it for the same volume_db.
-func _apply_volume() -> void:
+func _apply_volume(duration: float = -1.0) -> void:
+	var fade: float = duration if duration >= 0.0 else duck_duration
 	if _duck_tween != null and _duck_tween.is_valid():
 		_duck_tween.kill()
 	if not _players[_active].playing:
@@ -136,7 +163,7 @@ func _apply_volume() -> void:
 	_duck_tween = create_tween()
 	# _active may have flipped while awaiting, so read it now, not before.
 	_duck_tween.tween_property(_players[_active], "volume_db",
-		_base_db + _duck_offset, duck_duration)
+		_base_db + _duck_offset, fade)
 
 
 func _crossfade(stream: AudioStream, duration: float) -> void:

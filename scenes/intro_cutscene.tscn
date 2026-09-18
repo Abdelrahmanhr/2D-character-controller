@@ -481,7 +481,7 @@ tracks/17/keys = {
 tracks/17/use_blend = true
 tracks/18/type = "audio"
 tracks/18/imported = false
-tracks/18/enabled = true
+tracks/18/enabled = false
 tracks/18/path = NodePath("Audio/music")
 tracks/18/interp = 1
 tracks/18/loop_wrap = true
@@ -681,7 +681,7 @@ tracks/32/keys = {
 }
 tracks/33/type = "value"
 tracks/33/imported = false
-tracks/33/enabled = true
+tracks/33/enabled = false
 tracks/33/path = NodePath("Audio/music:volume_db")
 tracks/33/interp = 1
 tracks/33/loop_wrap = true
@@ -690,6 +690,21 @@ tracks/33/keys = {
 "transitions": PackedFloat32Array(1, 1, 1),
 "update": 0,
 "values": [0.0, 0.0, -40.0]
+}
+
+tracks/34/type = "method"
+tracks/34/imported = false
+tracks/34/enabled = true
+tracks/34/path = NodePath(".")
+tracks/34/interp = 1
+tracks/34/loop_wrap = true
+tracks/34/keys = {
+"times": PackedFloat32Array(4.4),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"start_music"
+}]
 }
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_fxsd4"]
