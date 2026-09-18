@@ -494,6 +494,18 @@ position = Vector2(40, 0)
 script = ExtResource("1_oijbj")
 ambient_tint = Color(0.6845803, 0.7189973, 0.8244178, 1)
 glow_layer_lift = 1.4
+lightning_electrify_duration = 0.5
+lightning_strike_path_duration = 0.3
+shield_pickup_interval_min = 10.0
+shield_pickup_interval_max = 20.0
+shield_pickup_duration = 5.0
+shield_pickup_hover_height = 40.0
+safe_zone_event_interval_min = 10.0
+safe_zone_event_interval_max = 20.0
+safe_zone_active_duration = 10.0
+safe_zone_end_radius = 250.0
+safe_zone_outside_death_time = 2.0
+safe_zone_hold_duration = 3.0
 death_zap_sound = ExtResource("2_1kume")
 
 [node name="background" type="Node2D" parent="." unique_id=1051009932]

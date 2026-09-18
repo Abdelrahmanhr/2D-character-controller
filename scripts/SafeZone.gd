@@ -4,11 +4,11 @@ class_name SafeZone
 signal expired
 
 @export var start_radius: float = 1200.0
-@export var end_radius: float = 220.0
-@export var shrink_duration: float = 30.0
-@export var hold_duration: float = 10.0
+@export var end_radius: float = 400.0
+@export var shrink_duration: float = 10.0
+@export var hold_duration: float = 3.0
 @export var outer_gravity_multiplier: float = 0.35
-@export var outside_death_time: float = 3.0
+@export var outside_death_time: float = 2.0
 ## Animus-style: light blue data-fog fill with a glowing white/blue edge (see
 ## OVERLAY_SHADER) instead of the original flat red danger tint.
 @export var outside_fill_color: Color = Color(0.298, 0.702, 1.0, 0.4)
