@@ -185,13 +185,18 @@ func _input(event: InputEvent) -> void:
 		return
 	if MinigameDirector.is_input_locked():
 		return
-	if event is InputEventJoypadButton and (_is_networked() or event.device == device_id):
+	# LocalPlayers.singleplayer covers both singleplayer and tutorial: the one
+	# real player there isn't locked to a specific device the way couch play's
+	# device_id assignment locks each player, so it accepts a joypad button or a
+	# keyboard key the same way online play does, regardless of which device_id
+	# LocalPlayers.try_join happened to hand out for roster bookkeeping.
+	if event is InputEventJoypadButton and (_is_networked() or LocalPlayers.singleplayer or event.device == device_id):
 		var handled: bool = _active_minigame._handle_input(event)
 		if handled:
 			get_viewport().set_input_as_handled()
 			_play_input_sound_net()
 		_try_replicate_input(false, event.button_index)
-	elif event is InputEventKey and (_is_networked() or _player.device_id == LocalPlayers.KEYBOARD_DEVICE_ID):
+	elif event is InputEventKey and (_is_networked() or LocalPlayers.singleplayer or _player.device_id == LocalPlayers.KEYBOARD_DEVICE_ID):
 		var handled: bool = _active_minigame._handle_input(event)
 		if event.pressed and not event.echo:
 			if handled:
@@ -212,7 +217,7 @@ func _poll_right_stick() -> void:
 		return
 	
 	var poll_device: int = device_id
-	if _is_networked():
+	if _is_networked() or LocalPlayers.singleplayer:
 		var pads := Input.get_connected_joypads()
 		if pads.is_empty():
 			_prev_stick_direction = ""

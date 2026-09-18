@@ -782,7 +782,7 @@ func _handle_input(delta: float) -> void:
 		move_y = bot.move_y
 		jump_held = bot.jump_held
 		dash_held = bot.dash_held
-	elif _is_networked():  # NEW: online players merge keyboard + first controller
+	elif _is_networked() or LocalPlayers.singleplayer:  # CHANGED: also covers solo local play (singleplayer/tutorial) - there's only one real player there too, so it merges keyboard + first controller the same way online does, instead of couch play's per-device lock below (which only applies once LocalPlayers.singleplayer is false, i.e. actual couch play with multiple locked-in devices)
 		var kb_move_x: float = float(Input.is_physical_key_pressed(keyboard_right)) - float(Input.is_physical_key_pressed(keyboard_left))
 		var kb_move_y: float = float(Input.is_physical_key_pressed(keyboard_down)) - float(Input.is_physical_key_pressed(keyboard_up))
 		var kb_jump_held: bool = Input.is_physical_key_pressed(keyboard_jump)
@@ -1065,7 +1065,17 @@ func _do_apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0, 
 		_last_attacker_time_ms = Time.get_ticks_msec()
 	var duration: float = stun_duration if duration_override < 0.0 else duration_override
 	is_dashing = false
-	dash_hitbox.monitoring = false
+	# set_deferred, not a direct assignment: the shielded-bounce path in
+	# _on_dash_hitbox_body_entered calls apply_stun on self synchronously from
+	# inside dash_hitbox's own body_entered signal (attacker bouncing off the
+	# shield it just dashed into) - Godot silently refuses an Area2D.monitoring
+	# write made mid-signal ("Function blocked during in/out signal"), so the
+	# plain assignment here left monitoring stuck true. That meant the hitbox
+	# was still live after the bounce, so the very next plain walking contact
+	# with anyone else fired body_entered again and stunned them like a real
+	# dash hit. Deferring the write sidesteps the restriction in every caller,
+	# not just this one, since it's always safe to defer.
+	dash_hitbox.set_deferred("monitoring", false)
 	dash_afterimage.stop()
 	is_stunned = true
 	stun_time_left = duration
