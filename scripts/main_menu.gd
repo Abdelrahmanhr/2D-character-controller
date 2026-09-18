@@ -6,6 +6,7 @@ const LOCAL_LOBBY_SCENE := "res://scenes/local_lobby.tscn"
 const CREDITS_SCENE := "res://scenes/credits.tscn"
 const TUTORIAL_ARENA_SCENE := "res://scenes/tutorial_arena.tscn"
 const OPTIONS_MENU := preload("res://scenes/options_menu.tscn")
+const MODE_NOTICE := preload("res://scenes/mode_notice.tscn")
 
 var _joining := false
 var _options: Control
@@ -39,7 +40,21 @@ func _setup_singleplayer_button() -> void:
 	button.pressed.connect(_on_singleplayer_pressed)
 
 
+## Neither offline mode is finished, so both show the same "not finished yet"
+## notice first -- routing to the right destination is this callback's job, not
+## ModeNotice's, since which mode was picked also changes the LocalPlayers setup
+## each destination needs (see _enter_singleplayer/_enter_tutorial).
+func _show_mode_notice(on_confirmed: Callable) -> void:
+	var notice := MODE_NOTICE.instantiate()
+	add_child(notice)
+	notice.confirmed.connect(on_confirmed)
+
+
 func _on_singleplayer_pressed() -> void:
+	_show_mode_notice(_enter_singleplayer)
+
+
+func _enter_singleplayer() -> void:
 	LocalPlayers.singleplayer = true
 	LocalPlayers.entering_arena_select_for_local = true
 	get_tree().change_scene_to_file(ARENA_SELECT_SCENE)
@@ -56,6 +71,10 @@ func _setup_tutorial_button() -> void:
 
 
 func _on_tutorial_pressed() -> void:
+	_show_mode_notice(_enter_tutorial)
+
+
+func _enter_tutorial() -> void:
 	LocalPlayers.reset()
 	LocalPlayers.singleplayer = true
 	LocalPlayers.tutorial_practice = false

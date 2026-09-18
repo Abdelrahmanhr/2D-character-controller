@@ -29,7 +29,17 @@ func setup(slot_index: int, label_text: String, device_id: int) -> void:
 	name_edit.add_theme_color_override("font_color", color)
 	if not name_edit.text_changed.is_connected(_on_name_changed):
 		name_edit.text_changed.connect(_on_name_changed)
+	# LineEdit never releases focus on its own once clicked into -- without this,
+	# hitting Enter (or clicking away, since nothing else in this UI steals focus
+	# back) left it eating every subsequent key press as more typing, with no way
+	# back to the lobby's own keyboard handling (join/start) or into a match.
+	if not name_edit.text_submitted.is_connected(_on_name_submitted):
+		name_edit.text_submitted.connect(_on_name_submitted)
 
 
 func _on_name_changed(new_text: String) -> void:
 	LocalPlayers.set_player_name(_device_id, new_text)
+
+
+func _on_name_submitted(_new_text: String) -> void:
+	name_edit.release_focus()
