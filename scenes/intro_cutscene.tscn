@@ -4,23 +4,22 @@
 [ext_resource type="Texture2D" uid="uid://dypnxv6tst0vq" path="res://resources/residential-area-tileset-pixel-art/1 Tiles/tileset_atlas.png" id="1_vuduy"]
 [ext_resource type="Script" uid="uid://yv5cfb7voxbn" path="res://scripts/parallax_layer.gd" id="2_plx"]
 [ext_resource type="Script" uid="uid://dhhvk4en5plpd" path="res://scripts/title_logo_frames.gd" id="2_sign"]
-[ext_resource type="Texture2D" uid="uid://bkh0l3i5pcrxl" path="res://resources/residential-area-tileset-pixel-art/2 Background/Day/Background.png" id="3_day0"]
-[ext_resource type="Texture2D" uid="uid://ccq6clbpk4kho" path="res://resources/residential-area-tileset-pixel-art/2 Background/Day/1.png" id="3_day1"]
-[ext_resource type="Texture2D" uid="uid://bgpij3sfdqwb3" path="res://resources/residential-area-tileset-pixel-art/2 Background/Day/2.png" id="3_day2"]
-[ext_resource type="Texture2D" uid="uid://dk6c6qh2130s0" path="res://resources/residential-area-tileset-pixel-art/2 Background/Day/3.png" id="3_day3"]
 [ext_resource type="Texture2D" uid="uid://1lqowbe1mqda" path="res://resources/residential-area-tileset-pixel-art/2 Background/Day/4.png" id="3_day4"]
-[ext_resource type="Texture2D" uid="uid://ctd5lopd4nluj" path="res://resources/residential-area-tileset-pixel-art/2 Background/Day/5.png" id="3_day5"]
 [ext_resource type="AudioStream" uid="uid://djl5jt11o7pln" path="res://resources/audio/teaser_song.wav" id="7_1kwg4"]
 [ext_resource type="Texture2D" uid="uid://b4rlo3xmuot5n" path="res://resources/idle_left.png" id="9_idlel"]
 [ext_resource type="Texture2D" uid="uid://bu4qj88iwekls" path="res://resources/idle_right.png" id="9_idler"]
 [ext_resource type="Texture2D" uid="uid://f2f7qw6vqo1a" path="res://resources/character_bomb.png" id="9_sheet"]
 [ext_resource type="Texture2D" uid="uid://cav8vjggrrhlu" path="res://resources/idle_right_bomb.png" id="10_fxsd4"]
 [ext_resource type="Texture2D" uid="uid://1kekbi8hcj2m" path="res://resources/Explode Frames/FireExplosion_VFX1_frame1.png" id="14_yx07r"]
+[ext_resource type="Texture2D" uid="uid://ci0r5fmlale66" path="res://resources/RS Cyberpunk City Background/4layer looping background PNG/420x240px/background.png" id="15_dqogl"]
 [ext_resource type="Texture2D" uid="uid://ddapllqi8axmn" path="res://resources/Explode Frames/FireExplosion_VFX1_frame2.png" id="15_flcbd"]
+[ext_resource type="Texture2D" uid="uid://bjcssjq8va7r" path="res://resources/RS Cyberpunk City Background/4layer looping background PNG/420x240px/03building.png" id="16_jb140"]
 [ext_resource type="Texture2D" uid="uid://pkc84s2s5trn" path="res://resources/Explode Frames/FireExplosion_VFX1_frame3.png" id="16_ujkvu"]
 [ext_resource type="Texture2D" uid="uid://k2biavnw6y1k" path="res://resources/Explode Frames/FireExplosion_VFX1_frame4.png" id="17_8onrj"]
+[ext_resource type="Texture2D" uid="uid://d3cj54clw6qgv" path="res://resources/RS Cyberpunk City Background/4layer looping background PNG/420x240px/02building.png" id="17_s8yb1"]
 [ext_resource type="Texture2D" uid="uid://ha8x42ppk5ue" path="res://resources/Explode Frames/FireExplosion_VFX1_frame5.png" id="18_o5aua"]
 [ext_resource type="Texture2D" uid="uid://ckg55n2wx6hvj" path="res://resources/Explode Frames/FireExplosion_VFX1_frame6.png" id="19_475n0"]
+[ext_resource type="Texture2D" uid="uid://djewnpb8yyg4m" path="res://resources/RS Cyberpunk City Background/4layer looping background PNG/420x240px/01building.png" id="20_tuck1"]
 [ext_resource type="Texture2D" uid="uid://duq0cvhig0jeg" path="res://resources/Explode Frames/FireExplosion_VFX1_frame7.png" id="20_y11t0"]
 [ext_resource type="Texture2D" uid="uid://cim2ahx81npn" path="res://resources/Explode Frames/FireExplosion_VFX1_frame8.png" id="21_ixccy"]
 [ext_resource type="Texture2D" uid="uid://dtqt27ho1ypvs" path="res://resources/Explode Frames/0001.png" id="22_dafp8"]
@@ -36,6 +35,7 @@
 [ext_resource type="Shader" uid="uid://8moraua44xlm" path="res://resources/cinema_grade.gdshader" id="48_grade"]
 [ext_resource type="PackedScene" path="res://scenes/intro_end_card.tscn" id="49_card"]
 [ext_resource type="Script" uid="uid://yjxuo048bmay" path="res://scripts/tracking_camera.gd" id="50_shake"]
+[ext_resource type="Script" uid="uid://cf7b7rmx75d1u" path="res://scripts/intro_cutscene.gd" id="51_behind_sky"]
 
 [sub_resource type="Environment" id="Environment_intro"]
 glow_enabled = true
@@ -187,6 +187,18 @@ tracks/10/keys = {
 "times": PackedFloat32Array()
 }
 tracks/10/use_blend = true
+tracks/11/type = "value"
+tracks/11/imported = false
+tracks/11/enabled = true
+tracks/11/path = NodePath("World/Mushroom:position")
+tracks/11/interp = 1
+tracks/11/loop_wrap = true
+tracks/11/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(285, 190)]
+}
 
 [sub_resource type="Animation" id="Animation_pbanw"]
 resource_name = "intro"
@@ -587,6 +599,74 @@ tracks/27/keys = {
 "method": &"shake"
 }]
 }
+tracks/28/type = "method"
+tracks/28/imported = false
+tracks/28/enabled = true
+tracks/28/path = NodePath(".")
+tracks/28/interp = 1
+tracks/28/loop_wrap = true
+tracks/28/keys = {
+"times": PackedFloat32Array(5.25),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"send_player_behind_sky"
+}]
+}
+tracks/29/type = "method"
+tracks/29/imported = false
+tracks/29/enabled = true
+tracks/29/path = NodePath(".")
+tracks/29/interp = 1
+tracks/29/loop_wrap = true
+tracks/29/keys = {
+"times": PackedFloat32Array(8.440001),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"restore_player_layering"
+}]
+}
+tracks/30/type = "method"
+tracks/30/imported = false
+tracks/30/enabled = true
+tracks/30/path = NodePath(".")
+tracks/30/interp = 1
+tracks/30/loop_wrap = true
+tracks/30/keys = {
+"times": PackedFloat32Array(6.9900002),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"send_mushroom_behind_sky"
+}]
+}
+tracks/31/type = "method"
+tracks/31/imported = false
+tracks/31/enabled = true
+tracks/31/path = NodePath(".")
+tracks/31/interp = 1
+tracks/31/loop_wrap = true
+tracks/31/keys = {
+"times": PackedFloat32Array(8.440001),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"restore_mushroom_layering"
+}]
+}
+tracks/32/type = "value"
+tracks/32/imported = false
+tracks/32/enabled = true
+tracks/32/path = NodePath("World/Mushroom:position")
+tracks/32/interp = 1
+tracks/32/loop_wrap = true
+tracks/32/keys = {
+"times": PackedFloat32Array(4.7899365),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(285, 190)]
+}
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_fxsd4"]
 _data = {
@@ -789,6 +869,10 @@ region = Rect2(80, 160, 80, 80)
 atlas = ExtResource("47_mush")
 region = Rect2(160, 160, 80, 80)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_holxr"]
+atlas = ExtResource("22_dafp8")
+region = Rect2(0, 0, 64, 64)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_mush"]
 animations = [{
 "frames": [{
@@ -818,10 +902,13 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("Mush_8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_holxr")
 }],
 "loop": 0,
 "name": &"bloom",
-"speed": 5.0
+"speed": 10.0
 }]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_rqbdd"]
@@ -1118,14 +1205,15 @@ shader_parameter/grade_amount = 0.25
 shader_parameter/contrast = 1.03
 shader_parameter/exposure = 1.06
 shader_parameter/lift = 0.05
-shader_parameter/vignette_strength = 0.38244454622268675
+shader_parameter/vignette_strength = 0.2776518738269806
 shader_parameter/vignette_softness = 0.85
 shader_parameter/grain = 0.02
 shader_parameter/grain_pixel = 2.0
-shader_parameter/warmth = 0.0
+shader_parameter/warmth = 0.1620126724243164
 shader_parameter/flash = 0.0
 
 [node name="IntroCutscene" type="Node2D" unique_id=1626367663]
+script = ExtResource("51_behind_sky")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1204471883]
 environment = SubResource("Environment_intro")
@@ -1210,9 +1298,9 @@ z_index = 1
 texture_filter = 1
 layout_mode = 3
 anchors_preset = 0
-offset_left = -659.0
-offset_top = 120.00001
-offset_right = -19.0
+offset_left = -665.0
+offset_top = 120.0
+offset_right = -25.0
 offset_bottom = 320.0
 rotation = -0.09424778
 scale = Vector2(1.185, 1.185)
@@ -1233,7 +1321,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("2_plx")
-texture = ExtResource("3_day0")
+texture = ExtResource("15_dqogl")
 scroll_speed = 3.0
 
 [node name="Far" type="Control" parent="Sky" unique_id=741142507]
@@ -1246,7 +1334,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("2_plx")
-texture = ExtResource("3_day1")
+texture = ExtResource("16_jb140")
 scroll_speed = 8.0
 
 [node name="Mid" type="Control" parent="Sky" unique_id=1818689348]
@@ -1259,7 +1347,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("2_plx")
-texture = ExtResource("3_day2")
+texture = ExtResource("17_s8yb1")
 scroll_speed = 14.0
 
 [node name="Near" type="Control" parent="Sky" unique_id=1522935126]
@@ -1272,7 +1360,6 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("2_plx")
-texture = ExtResource("3_day3")
 
 [node name="Closer" type="Control" parent="Sky" unique_id=226189597]
 modulate = Color(0.75, 0.81, 0.96, 1)
@@ -1287,6 +1374,8 @@ script = ExtResource("2_plx")
 texture = ExtResource("3_day4")
 scroll_speed = 28.0
 
+[node name="BehindSkyAnchor" type="Node2D" parent="Sky" unique_id=845152954]
+
 [node name="Front" type="Control" parent="Sky" unique_id=845152953]
 modulate = Color(0.67, 0.74, 0.93, 1)
 layout_mode = 3
@@ -1297,7 +1386,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("2_plx")
-texture = ExtResource("3_day5")
+texture = ExtResource("20_tuck1")
 scroll_speed = 40.0
 
 [node name="NeonSign" parent="." unique_id=1383149403 instance=ExtResource("23_flcbd")]
