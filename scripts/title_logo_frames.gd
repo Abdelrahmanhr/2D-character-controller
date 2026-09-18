@@ -30,6 +30,10 @@ const MAGENTA := Color("#ff6eaf")
 const BLAZE := Color("#ffaa6e")
 const FLARE := Color("#ffe091")
 const EMBER := Color("#e54286")
+# Pre-blast palette. The sign before it is a sign: bone-grey on indigo, no
+# magenta bleed and no neon, so the sting's jump to full colour actually lands.
+const MUTED := Color("#b9bcd4")
+const MUTED_SHADOW := Color("#2a2f5c")
 # Burst ramp steps down in luminance (flare 78 -> blaze 71 -> ember 57) so the
 # shading reads; MAGENTA is kept brighter for the sign glow under the letters.
 const TONE_COLORS := [Color(0.0, 0.0, 0.0, 0.0), INK, BLAZE, FLARE, EMBER]
@@ -47,7 +51,7 @@ const CAP_RATIO := 0.49
 
 const PIXEL := 6.0
 const BURST_RX := 208.0
-const BURST_RY := 86.0
+const BURST_RY := 108.0
 const BURST_SPIKES := 11.0
 const BURST_INNER := 0.58
 
@@ -66,6 +70,9 @@ const HOLD := 0.004
 @export var blast_sound: AudioStream = preload("res://resources/audio/Explode.wav")
 @export var blast_volume_db: float = -20.0
 @export var blast_pitch_shift: float = 0.8
+## Holds the sting on "BON VOYAGE" until fire() is called, so a cutscene can detonate
+## it on cue. Defaults false, so the main menu keeps auto-playing exactly as before.
+@export var armed: bool = false
 @export var blast_pitch_variance: float = 0.05
 
 var burst_scale := 0.0:
@@ -98,6 +105,7 @@ var _shards: Array = []
 var _burst_cache := {}
 var _overlay: Node2D
 var _fire: AnimatedSprite2D
+var _anim: AnimationPlayer
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -107,6 +115,7 @@ func _ready() -> void:
 	var left := roundf((size.x - WORD_BOX.x) * 0.5)
 
 	var bon := _make_word("BON", BOMB_FONT, NEON, MAGENTA)
+	_style_quiet(bon)
 	bon.position = Vector2(left, BOMB_TOP)
 	bon.z_index = -1
 	_register_word(bon)
@@ -122,7 +131,7 @@ func _ready() -> void:
 	voyage.name = "VoyageWord"
 	voyage.position = Vector2(left, VOYAGE_TOP)
 	voyage.add_theme_color_override("font_outline_color", INK)
-	voyage.add_theme_constant_override("shadow_offset_y", 5)
+	_style_quiet(voyage)
 	_register_word(voyage)
 
 	_fire = _make_fire()
@@ -198,6 +207,33 @@ func _make_word(value: String, font_size: int, face_color: Color, shadow_color: 
 	word.add_theme_constant_override("outline_size", 5)
 	return word
 
+## Same pixel face, letterspaced and stripped of its glow - reads as a quiet
+## engraved plaque rather than the arcade lockup. Spacing is a whole number of
+## pixels, so nothing here softens the edges.
+func _quiet_font() -> FontVariation:
+	var face := FontVariation.new()
+	face.base_font = LOGO_FONT
+	face.spacing_glyph = 6
+	return face
+
+## The "BON VOYAGE" state: demure face, flat colour, thin outline, no shadow.
+func _style_quiet(word: Label) -> void:
+	word.add_theme_font_override("font", _quiet_font())
+	word.add_theme_color_override("font_color", MUTED)
+	word.add_theme_color_override("font_shadow_color", MUTED_SHADOW)
+	word.add_theme_constant_override("shadow_offset_y", 0)
+	word.add_theme_constant_override("shadow_outline_size", 0)
+	word.add_theme_constant_override("outline_size", 3)
+
+## Snapped on at the blast, so VOYAGE detonates into the same lockup as BOMB.
+func _style_loud(word: Label) -> void:
+	word.add_theme_font_override("font", LOGO_FONT)
+	word.add_theme_color_override("font_color", NEON)
+	word.add_theme_color_override("font_shadow_color", MAGENTA)
+	word.add_theme_constant_override("shadow_offset_y", 5)
+	word.add_theme_constant_override("shadow_outline_size", 4)
+	word.add_theme_constant_override("outline_size", 5)
+
 func _make_fire() -> AnimatedSprite2D:
 	var frames := SpriteFrames.new()
 	frames.add_animation("blast")
@@ -236,6 +272,9 @@ func _fire_blast() -> void:
 	_fire.visible = true
 	_fire.frame = 0
 	_fire.play("blast")
+	var voyage := get_node_or_null("VoyageWord") as Label
+	if voyage != null:
+		_style_loud(voyage)
 	SfxManager.play(blast_sound, blast_volume_db, blast_pitch_variance, blast_pitch_shift)
 
 # --- timeline -----------------------------------------------------------------
@@ -305,6 +344,9 @@ func _build_animation() -> void:
 	library.add_animation("explosion", animation)
 	library.add_animation("idle", _build_idle_animation())
 	player.add_animation_library("", library)
+	_anim = player
+	if armed:
+		return
 	player.play("explosion")
 	# The sting used to settle on a frozen badge; this picks up where it lands.
 	player.queue("idle")
@@ -504,3 +546,12 @@ func _draw_shards(canvas: CanvasItem, origin: Vector2) -> void:
 			color = BLAZE
 		var extent := SHARD_PIXEL * float(shard["cells"])
 		canvas.draw_rect(Rect2(spot, Vector2(extent, extent)), color)
+
+
+## Cutscene hook: detonates BON -> BOMB on cue. A no-op once it is already running,
+## so retriggering from a timeline cannot restart it mid-blast.
+func fire() -> void:
+	if _anim == null or _anim.is_playing():
+		return
+	_anim.play("explosion")
+	_anim.queue("idle")
