@@ -199,6 +199,18 @@ tracks/11/keys = {
 "update": 0,
 "values": [Vector2(285, 190)]
 }
+tracks/12/type = "value"
+tracks/12/imported = false
+tracks/12/enabled = true
+tracks/12/path = NodePath("Audio/music:volume_db")
+tracks/12/interp = 1
+tracks/12/loop_wrap = true
+tracks/12/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [-10.0]
+}
 
 [sub_resource type="Animation" id="Animation_pbanw"]
 resource_name = "intro"
@@ -666,6 +678,18 @@ tracks/32/keys = {
 "transitions": PackedFloat32Array(1),
 "update": 0,
 "values": [Vector2(285, 190)]
+}
+tracks/33/type = "value"
+tracks/33/imported = false
+tracks/33/enabled = true
+tracks/33/path = NodePath("Audio/music:volume_db")
+tracks/33/interp = 1
+tracks/33/loop_wrap = true
+tracks/33/keys = {
+"times": PackedFloat32Array(0.25, 52.75, 58.95),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0, -40.0]
 }
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_fxsd4"]
@@ -1205,11 +1229,11 @@ shader_parameter/grade_amount = 0.25
 shader_parameter/contrast = 1.03
 shader_parameter/exposure = 1.06
 shader_parameter/lift = 0.05
-shader_parameter/vignette_strength = 0.2776518738269806
+shader_parameter/vignette_strength = 0.3
 shader_parameter/vignette_softness = 0.85
 shader_parameter/grain = 0.02
 shader_parameter/grain_pixel = 2.0
-shader_parameter/warmth = 0.1620126724243164
+shader_parameter/warmth = 0.0
 shader_parameter/flash = 0.0
 
 [node name="IntroCutscene" type="Node2D" unique_id=1626367663]
@@ -1286,6 +1310,7 @@ color = Color(0.93, 0.95, 1, 0.4)
 color_ramp = SubResource("Gradient_cloud")
 
 [node name="Mushroom" type="AnimatedSprite2D" parent="World" unique_id=1900552041]
+visible = false
 z_index = -1
 texture_filter = 1
 position = Vector2(285, 190)
@@ -1472,6 +1497,7 @@ pitch_scale = 1.25
 bus = &"SFX"
 
 [node name="music" type="AudioStreamPlayer" parent="Audio" unique_id=651131221]
+volume_db = -10.0
 
 [node name="boom_far" type="AudioStreamPlayer" parent="Audio" unique_id=1755213904]
 volume_db = -3.0
@@ -1498,6 +1524,7 @@ layer = 20
 [node name="Top" type="ColorRect" parent="Letterbox" unique_id=522544059]
 anchors_preset = 10
 anchor_right = 1.0
+offset_bottom = 324.0
 grow_horizontal = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 1)
@@ -1507,6 +1534,7 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = -324.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
