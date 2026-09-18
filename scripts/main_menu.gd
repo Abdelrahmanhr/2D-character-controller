@@ -35,6 +35,8 @@ func _setup_singleplayer_button() -> void:
 	button.name = "SingleplayerButton"
 	button.text = "SINGLEPLAYER"
 	button.visible = true
+	button.custom_minimum_size.x = 220.0
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	$Menu.add_child(button)
 	$Menu.move_child(button, $Menu/MultiplayerButton.get_index() + 1)
 	button.pressed.connect(_on_singleplayer_pressed)
@@ -65,6 +67,8 @@ func _setup_tutorial_button() -> void:
 	button.name = "TutorialButton"
 	button.text = "TUTORIAL"
 	button.visible = true
+	button.custom_minimum_size.x = 180.0
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	$Menu.add_child(button)
 	$Menu.move_child(button, $Menu/SingleplayerButton.get_index() + 1)
 	button.pressed.connect(_on_tutorial_pressed)
@@ -96,6 +100,12 @@ func _setup_options() -> void:
 	button.name = "OptionsButton"
 	button.text = "OPTIONS"
 	button.visible = true
+	# Narrower than the other menu buttons, same as ExitButton -- shrink-center
+	# instead of the fill flag it inherited from CreditsButton, or a smaller
+	# custom_minimum_size alone would still get stretched back to full width by
+	# the VBoxContainer.
+	button.custom_minimum_size.x = 140.0
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	$Menu.add_child(button)
 	$Menu.move_child(button, $Menu/CreditsButton.get_index() + 1)
 	button.pressed.connect(_open_options)

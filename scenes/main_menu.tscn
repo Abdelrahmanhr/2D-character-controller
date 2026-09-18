@@ -34,7 +34,7 @@ grow_horizontal = 2
 mouse_filter = 2
 script = ExtResource("7_title")
 
-[node name="Menu" type="GridContainer" parent="." unique_id=652719526]
+[node name="Menu" type="VBoxContainer" parent="." unique_id=652719526]
 texture_filter = 1
 layout_mode = 1
 anchors_preset = 8
@@ -42,38 +42,35 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -244.0
-offset_top = 14.0
-offset_right = 244.0
-offset_bottom = 174.0
+offset_left = -141.0
+offset_right = 141.0
+offset_bottom = 300.0
 grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("6_cyber")
-theme_override_constants/h_separation = 16
-theme_override_constants/v_separation = 14
-columns = 2
+theme_override_constants/separation = 8
 
 [node name="LocalMultiplayerButton" type="Button" parent="Menu" unique_id=1861124297]
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(260, 36)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "COUCH PLAY"
 
 [node name="MultiplayerButton" type="Button" parent="Menu" unique_id=680130786]
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(260, 36)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "ONLINE MULTIPLAYER"
 
 [node name="CreditsButton" type="Button" parent="Menu" unique_id=968154274]
 visible = false
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "CREDITS"
 
 [node name="ExitButton" type="Button" parent="Menu" unique_id=298939229]
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(100, 36)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_horizontal = 4
 text = "EXIT"

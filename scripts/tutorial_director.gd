@@ -99,8 +99,15 @@ func _task(body: String, predicate: Callable, caps: Array = [], objectives: Arra
 	_overlay.hide_card()
 
 
+## is_inside_tree() guards both loops the same way tutorial_overlay.gd's own
+## post-await checks already do: the pause menu's Restart button reloads the
+## scene directly (Networking.restart_game -> get_tree().reload_current_scene),
+## with no signal to this director first, unlike _on_skip_requested's _skipped
+## flag. That tears this node out of the tree mid-await, and the next loop
+## iteration's get_tree() call - still reachable for a beat, briefly detached -
+## returned null instead of the SceneTree, which is what crashed here.
 func _until(predicate: Callable) -> void:
-	while not _skipped:
+	while not _skipped and is_inside_tree():
 		if bool(predicate.call()):
 			return
 		await get_tree().process_frame
@@ -108,7 +115,7 @@ func _until(predicate: Callable) -> void:
 
 func _wait(seconds: float) -> void:
 	var left: float = seconds
-	while left > 0.0 and not _skipped:
+	while left > 0.0 and not _skipped and is_inside_tree():
 		await get_tree().process_frame
 		left -= get_process_delta_time()
 
