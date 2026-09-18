@@ -349,7 +349,10 @@ func _update_electrified_hazards() -> void:
 			if _is_networked() and not player.is_multiplayer_authority():
 				continue
 			var duration: float = randf_range(lightning_stun_min, lightning_stun_max)
-			player.apply_stun(Vector2.ZERO, 0.0, duration)
+			# CHANGED: was a bare apply_stun call - apply_electrocution still calls
+			# apply_stun itself (same stun/damage as before) and layers the shock
+			# jitter on top, synced to the same duration.
+			player.apply_electrocution(duration)
 
 
 ## Makes the struck platform visibly crackle for a moment by reusing LightningEmitter's

@@ -118,6 +118,19 @@ var freeze_time_left: float = 0.0
 var is_stunned: bool = false
 var stun_time_left: float = 0.0
 
+## Electrocution shake. Layered on top of apply_stun (the hazard's existing
+## damage/stun call) rather than reusing is_stunned itself, since is_stunned is
+## shared by every stun source (dash conflicts, shield bounces, ...) and only
+## the electrify hazard should read as an electrical shock. Position-based, and
+## nothing else in this script ever touches animated_sprite.position, so this
+## can't collide with the scale/rotation/modulate/material effects already here.
+const ELECTROCUTION_SHAKE_AMPLITUDE := 3.0
+const ELECTROCUTION_SHAKE_INTERVAL := 0.03
+const ELECTROCUTION_SETTLE_DURATION := 0.08
+var _electrocution_tween: Tween
+var _electrocution_base_position: Vector2 = Vector2.ZERO
+var _electrocution_shake_id: int = 0
+
 ## Kill-feed attribution: who last landed a stun on this player, and when, so a
 ## death shortly afterward can be credited to them instead of read as an anonymous
 ## fall/explosion. Cleared on respawn so a hit from a prior life never carries over.
@@ -544,7 +557,7 @@ func _fx_jump_net() -> void:
 
 @rpc("any_peer", "call_local", "reliable")
 func _fx_jump() -> void:
-	_squash(0.78, 1.28, 0.18)
+	_squash(0.75, 1.32, 0.18)  ## CHANGED: was (0.78, 1.28) - a little more pronounced
 	if _jump_dust:
 		_jump_dust.restart()
 
@@ -558,7 +571,7 @@ func _fx_land_net(impact: float) -> void:
 
 @rpc("any_peer", "call_local", "reliable")
 func _fx_land(impact: float) -> void:
-	_squash(lerpf(1.0, 1.38, impact), lerpf(1.0, 0.66, impact), 0.22)
+	_squash(lerpf(1.0, 1.44, impact), lerpf(1.0, 0.61, impact), 0.22)  ## CHANGED: was (1.38, 0.66) - a little more pronounced
 	if _land_dust and impact > 0.08:
 		_land_dust.amount = int(lerpf(4.0, 14.0, impact))
 		_land_dust.initial_velocity_max = lerpf(80.0, 190.0, impact)
@@ -644,6 +657,8 @@ func play_death_animation(cause: String = "fall") -> void:
 	is_dead = true
 	_death_animation_id += 1
 	var my_id := _death_animation_id
+	if _electrocution_tween and _electrocution_tween.is_valid():
+		_stop_electrocution_shake()
 	velocity = Vector2.ZERO
 	var anim_name: StringName
 	if cause == "explode":
@@ -1055,6 +1070,67 @@ func _tilt_on_stun(from_direction: Vector2, duration: float) -> void:
 	tween.tween_property(animated_sprite, "rotation", tilt_angle, 0.08)
 	tween.tween_property(animated_sprite, "rotation", 0.0, duration - 0.08)
 
+## Electrocution: the same apply_stun the hazard already used for its stun/damage,
+## plus a shock jitter layered on top for exactly the same duration. Called from
+## power_station.gd's electrified-platform check in place of the bare apply_stun
+## call it used before.
+func apply_electrocution(duration: float) -> void:
+	apply_stun(Vector2.ZERO, 0.0, duration)
+	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		_do_apply_electrocution(duration)
+	else:
+		_do_apply_electrocution.rpc(duration)
+
+@rpc("any_peer", "call_local", "reliable")
+func _do_apply_electrocution(duration: float) -> void:
+	_start_electrocution_shake(duration)
+
+## Loops a tween_callback + tween_interval pair rather than tween_property, since
+## tween_property bakes in fixed values that would just repeat the same motion
+## every loop - a callback re-rolls a fresh random offset each time it fires,
+## which is what actually reads as a vibration instead of a wobble.
+func _start_electrocution_shake(duration: float) -> void:
+	_electrocution_shake_id += 1
+	var my_id := _electrocution_shake_id
+	var already_shaking: bool = _electrocution_tween != null and _electrocution_tween.is_valid()
+	if already_shaking:
+		_electrocution_tween.kill()
+	else:
+		# Only capture the resting position when actually starting from rest - a
+		# re-electrocution mid-shake must keep the ORIGINAL base, not re-anchor to
+		# wherever the jitter happened to be at that instant, or every subsequent
+		# settle would drift to that jittered spot instead of true (0,0)-local rest.
+		_electrocution_base_position = animated_sprite.position
+	_electrocution_tween = create_tween()
+	_electrocution_tween.set_loops()
+	_electrocution_tween.tween_callback(_apply_electrocution_jitter)
+	_electrocution_tween.tween_interval(ELECTROCUTION_SHAKE_INTERVAL)
+	await get_tree().create_timer(duration).timeout
+	# A newer shake (re-zapped mid-shake) or an explicit interrupt (death/respawn)
+	# may have already taken over and stopped this one - don't stomp on whatever
+	# state it left behind.
+	if my_id != _electrocution_shake_id or not is_inside_tree():
+		return
+	_stop_electrocution_shake()
+
+func _apply_electrocution_jitter() -> void:
+	var offset := Vector2(
+		randf_range(-ELECTROCUTION_SHAKE_AMPLITUDE, ELECTROCUTION_SHAKE_AMPLITUDE),
+		randf_range(-ELECTROCUTION_SHAKE_AMPLITUDE, ELECTROCUTION_SHAKE_AMPLITUDE)
+	)
+	animated_sprite.position = _electrocution_base_position + offset
+
+## Also used as the interrupt path (death/respawn) - eases back rather than
+## snapping either way, per spec ("snap or ease"), so there's one code path for
+## both the normal end-of-duration stop and an early interrupt.
+func _stop_electrocution_shake() -> void:
+	_electrocution_shake_id += 1  # invalidates any pending auto-stop still awaiting above
+	if _electrocution_tween and _electrocution_tween.is_valid():
+		_electrocution_tween.kill()
+	var tween := create_tween()
+	tween.tween_property(animated_sprite, "position", _electrocution_base_position, ELECTROCUTION_SETTLE_DURATION) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
 func apply_hitstop(duration: float) -> void:
 	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
 		_do_apply_hitstop(duration)
@@ -1124,6 +1200,8 @@ func respawn(invuln_duration: float) -> void:
 	is_shielded = false
 	shield_time_left = 0.0
 	_set_shield_outline_active(false)
+	if _electrocution_tween and _electrocution_tween.is_valid():
+		_stop_electrocution_shake()
 	is_dashing = false
 	dash_time_left = 0.0
 	dash_hitbox.monitoring = false

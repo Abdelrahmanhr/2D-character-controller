@@ -248,7 +248,7 @@ tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {
 "handle_modes": PackedInt32Array(2, 0, 0, 0, 0, 0, 0),
-"points": PackedFloat32Array(-69, 0, 0, 0.16833334, 0, -69, -0.25, 0, 0.25, 0, -69, -0.25333333, 0, 0, 0, -480, -0.07833334, 68.5, 0, 0, -560, -0.049999993, 13.333334, 0, 0, -360, -0.05833336, -33.333336, 0, 0, 420, -0.24166664, -130, 0, 0),
+"points": PackedFloat32Array(-69, 0, 0, 0.16833334, 0, -69, -0.25, 0, 0.25, 0, -69, -0.25333333, 0, 0, 0, -480, -0.07833334, 68.5, 0, 0, -560, -0.049999993, 13.333334, 0, 0, -360, -0.05833336, -33.333336, 0, 0, 430, -0.24166664, -130, 0, 0),
 "times": PackedFloat32Array(0, 2.4099998, 4.1299996, 4.6, 4.8999996, 5.25, 6.7)
 }
 tracks/5/type = "value"
@@ -1171,11 +1171,11 @@ color_ramp = SubResource("Gradient_cloud")
 visible = false
 z_index = -1
 texture_filter = 1
-position = Vector2(285, 179.99998)
+position = Vector2(285, 190)
 scale = Vector2(6.17, 6.17)
 sprite_frames = SubResource("SpriteFrames_mush")
 animation = &"bloom"
-frame = 8
+frame = 1
 
 [node name="Sign" type="Control" parent="World" unique_id=1418937476]
 z_index = 1
@@ -1328,7 +1328,7 @@ frame = 8
 
 [node name="footsteps" type="AudioStreamPlayer" parent="Audio" unique_id=1946778710]
 stream = SubResource("AudioStreamPolyphonic_1qbbb")
-volume_db = -4.0
+volume_db = 20.0
 bus = &"SFX"
 
 [node name="huh" type="AudioStreamPlayer" parent="Audio" unique_id=708743631]
@@ -1381,6 +1381,7 @@ layer = 20
 [node name="Top" type="ColorRect" parent="Letterbox" unique_id=522544059]
 anchors_preset = 10
 anchor_right = 1.0
+offset_bottom = 324.0
 grow_horizontal = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 1)
@@ -1390,6 +1391,7 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = -324.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
