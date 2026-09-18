@@ -73,8 +73,8 @@ radius = 22.0
 
 [node name="ShieldPickup" type="Area2D" unique_id=1435531470]
 script = ExtResource("1_script")
-spawn_sound_volume_db = 15.0
-collect_sound_volume_db = 15.0
+spawn_sound_volume_db = 30.0
+collect_sound_volume_db = 30.0
 glow_idle_alpha_min = 0.6
 glow_idle_alpha_max = 3.0
 

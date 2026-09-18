@@ -25,6 +25,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_532o6")
+bonus_per_correct = 1.0
+penalty_per_wrong = 0.5
 slide_duration = 0.1
 
 [node name="ArrowContainer" type="Control" parent="." unique_id=1723190828]

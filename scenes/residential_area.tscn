@@ -1,7 +1,6 @@
 [gd_scene format=4 uid="uid://bkm6yjt0473w6"]
 
 [ext_resource type="Script" uid="uid://bwsfkovha1tk2" path="res://scripts/residential_area.gd" id="1"]
-[ext_resource type="AudioStream" uid="uid://c0fo3aivpk7t" path="res://resources/audio/wind-fall.wav" id="60_wind"]
 [ext_resource type="PackedScene" path="res://scenes/pause_menu.tscn" id="2"]
 [ext_resource type="Texture2D" uid="uid://bfdgnpr2icbgo" path="res://resources/example.jpg" id="2_nowf6"]
 [ext_resource type="PackedScene" uid="uid://deiu510u7y2u3" path="res://scenes/match_hud.tscn" id="6_hud"]
@@ -18,6 +17,9 @@
 [ext_resource type="Texture2D" uid="uid://bnqunqqo18vxu" path="res://resources/residential-area-tileset-pixel-art/2 Background/Overlay_illumination.png" id="56_day_overlay"]
 [ext_resource type="Texture2D" uid="uid://dpbo05pqrppw3" path="res://resources/pixel_dot.tres" id="58_dot"]
 [ext_resource type="Texture2D" uid="uid://dtb13jm8edrqi" path="res://resources/pit_fade.tres" id="59_pit"]
+[ext_resource type="AudioStream" uid="uid://c0fo3aivpk7t" path="res://resources/audio/wind-fall.wav" id="60_wind"]
+[ext_resource type="Script" uid="uid://dnjnuco3v8bdf" path="res://scripts/lightning_emitter.gd" id="70_light"]
+[ext_resource type="AudioStream" uid="uid://cihodc8aynwdg" path="res://resources/audio/Light Flicker.mp3" id="71_flick"]
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_7ptiw"]
 particle_flag_disable_z = true
@@ -248,8 +250,51 @@ gravity = Vector3(0, -4, 0)
 scale_max = 3.0
 color = Color(1, 0.83, 0.63, 0.6)
 
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_firefly"]
+blend_mode = 1
+light_mode = 1
+
+[sub_resource type="Gradient" id="Gradient_firefly"]
+offsets = PackedFloat32Array(0, 0.2, 0.8, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_firefly"]
+gradient = SubResource("Gradient_firefly")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_firefly"]
+particle_flag_disable_z = true
+emission_shape = 3
+emission_box_extents = Vector3(700, 400, 1)
+direction = Vector3(0, -1, 0)
+spread = 180.0
+initial_velocity_min = 3.0
+initial_velocity_max = 9.0
+gravity = Vector3(0, 0, 0)
+scale_min = 2.0
+scale_max = 4.5
+color = Color(0.8, 1, 0.4, 0.85)
+color_ramp = SubResource("GradientTexture1D_firefly")
+turbulence_enabled = true
+turbulence_noise_strength = 1.8
+turbulence_noise_scale = 2.0
+turbulence_noise_speed = Vector3(0.15, 0.1, 0)
+turbulence_influence_min = 0.4
+turbulence_influence_max = 0.8
+
 [node name="ResidentialArea" type="Node2D" unique_id=84368402]
 script = ExtResource("1")
+lightning_electrify_duration = 0.5
+lightning_strike_path_duration = 0.5
+shield_pickup_interval_min = 10.0
+shield_pickup_interval_max = 20.0
+shield_pickup_duration = 5.0
+shield_pickup_hover_height = 40.0
+safe_zone_event_interval_min = 10.0
+safe_zone_event_interval_max = 20.0
+safe_zone_active_duration = 10.0
+safe_zone_end_radius = 250.0
+safe_zone_outside_death_time = 2.0
+safe_zone_hold_duration = 3.0
 death_zap_sound = ExtResource("60_wind")
 
 [node name="background" type="Node2D" parent="." unique_id=1051009932]
@@ -360,16 +405,16 @@ stretch_mode = 6
 [node name="PauseMenu" parent="." unique_id=699686374 instance=ExtResource("2")]
 
 [node name="SpawnPoint1" type="Marker2D" parent="." unique_id=47199142]
-position = Vector2(178, 407)
+position = Vector2(2025, 475)
 
 [node name="SpawnPoint2" type="Marker2D" parent="." unique_id=47199143]
-position = Vector2(1416, 407)
+position = Vector2(1434, 538)
 
 [node name="SpawnPoint3" type="Marker2D" parent="." unique_id=47199144]
-position = Vector2(397, 247)
+position = Vector2(335, 522)
 
 [node name="SpawnPoint4" type="Marker2D" parent="." unique_id=47199145]
-position = Vector2(1186, 247)
+position = Vector2(1145, 623)
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=1874139806]
 _spawnable_scenes = PackedStringArray("uid://dg4t5o3xnmwxn")
@@ -487,7 +532,7 @@ tile_set = SubResource("TileSet_5d6vn")
 
 [node name="TileMapLayer3" type="TileMapLayer" parent="tiles" unique_id=1423905816]
 position = Vector2(-153, -58)
-tile_map_data = PackedByteArray("AAALABQAAAADAAQAAGAMABQAAAAEAAQAAGANABQAAAAEAAQAAGAOABQAAAAEAAQAAGAPABQAAAAFAAQAAGAPABgAAAADAAQAAGAQABgAAAAEAAQAAGARABgAAAAEAAQAAGASABgAAAAEAAQAAGATABgAAAAFAAQAAGAWABYAAAAJAAQAAAAZABQAAAAJAAQAAAAdABYAAAAJAAQAAAAaABQAAAAJAAQAAAAYABkAAAAJAAQAAAAXABkAAAAJAAQAAAAcABkAAAAJAAQAAAAbABkAAAAJAAQAAAAhABQAAAAGAAIAAAAiABQAAAAHAAIAAAAjABQAAAAIAAIAAAAlABcAAAAGAAIAAAAmABcAAAAHAAIAAAAnABcAAAAGAAIAAAAuABQAAAAGAAIAAAAvABQAAAAHAAIAAAAwABQAAAAIAAIAAAAqABYAAAAGAAIAAAArABYAAAAHAAIAAAAsABYAAAAIAAIAAAAyABcAAAAGAAQAAAAyABgAAAAHAAQAAAAyABkAAAAHAAQAAAAyABoAAAAIAAQAAAAeABsAAAAGAAQAAAAeABwAAAAHAAQAAAAeAB0AAAAHAAQAAAAeAB4AAAAIAAQAAAAJABQAAAAGAAQAAAAJABUAAAAHAAQAAAAJABYAAAAHAAQAAAAJABcAAAAIAAQAAAA1ABYAAAADAAQAAGA2ABYAAAAEAAQAAGA3ABYAAAAEAAQAAGA4ABYAAAAEAAQAAGA5ABYAAAAFAAQAAGA+ABQAAAAGAAQAAAA+ABUAAAAHAAQAAAA+ABYAAAAHAAQAAAA+ABcAAAAIAAQAAAAzAA4AAAAHAAcAAAA0AA4AAAAHAAcAAAA1AA4AAAAHAAcAAAA2AA4AAAAHAAcAAAA3AA4AAAAHAAcAAAA4AA4AAAAHAAcAAAA5AA4AAAAHAAcAAAA6AA4AAAAHAAcAAAA7AA4AAAAHAAcAAAAzABQAAAAHAAcAAAA0ABQAAAAHAAcAAAA1ABQAAAAHAAcAAAA2ABQAAAAHAAcAAAA3ABQAAAAHAAcAAAA4ABQAAAAHAAcAAAA5ABQAAAAHAAcAAAA6ABQAAAAHAAcAAAA7ABQAAAAHAAcAAAAzABoAAAAHAAcAAAA0ABoAAAAHAAcAAAA1ABoAAAAHAAcAAAA2ABoAAAAHAAcAAAA3ABoAAAAHAAcAAAA4ABoAAAAHAAcAAAA5ABoAAAAHAAcAAAA6ABoAAAAHAAcAAAA7ABoAAAAHAAcAAAAzACAAAAAHAAcAAAA0ACAAAAAHAAcAAAA1ACAAAAAHAAcAAAA2ACAAAAAHAAcAAAA3ACAAAAAHAAcAAAA4ACAAAAAHAAcAAAA5ACAAAAAHAAcAAAA6ACAAAAAHAAcAAAA7ACAAAAAHAAcAAAAzACYAAAAHAAcAAAA0ACYAAAAHAAcAAAA1ACYAAAAHAAcAAAA2ACYAAAAHAAcAAAA3ACYAAAAHAAcAAAA4ACYAAAAHAAcAAAA5ACYAAAAHAAcAAAA6ACYAAAAHAAcAAAA7ACYAAAAHAAcAAAA=")
+tile_map_data = PackedByteArray("AAALABQAAAADAAQAAGAMABQAAAAEAAQAAGANABQAAAAEAAQAAGAOABQAAAAEAAQAAGAPABQAAAAFAAQAAGAPABgAAAADAAQAAGAQABgAAAAEAAQAAGARABgAAAAEAAQAAGASABgAAAAEAAQAAGATABgAAAAFAAQAAGAuABQAAAAGAAIAAAAvABQAAAAHAAIAAAAwABQAAAAIAAIAAAAqABYAAAAGAAIAAAArABYAAAAHAAIAAAAsABYAAAAIAAIAAAAyABcAAAAGAAQAAAAyABgAAAAHAAQAAAAyABkAAAAHAAQAAAAyABoAAAAIAAQAAAAeABsAAAAGAAQAAAAeABwAAAAHAAQAAAAeAB0AAAAHAAQAAAAeAB4AAAAIAAQAAAAJABQAAAAGAAQAAAAJABUAAAAHAAQAAAAJABYAAAAHAAQAAAAJABcAAAAIAAQAAAA1ABYAAAADAAQAAGA2ABYAAAAEAAQAAGA3ABYAAAAEAAQAAGA4ABYAAAAEAAQAAGA5ABYAAAAFAAQAAGA+ABQAAAAGAAQAAAA+ABUAAAAHAAQAAAA+ABYAAAAHAAQAAAA+ABcAAAAIAAQAAAAzAA4AAAAHAAcAAAA0AA4AAAAHAAcAAAA1AA4AAAAHAAcAAAA2AA4AAAAHAAcAAAA3AA4AAAAHAAcAAAA4AA4AAAAHAAcAAAA5AA4AAAAHAAcAAAA6AA4AAAAHAAcAAAA7AA4AAAAHAAcAAAAzABQAAAAHAAcAAAA0ABQAAAAHAAcAAAA1ABQAAAAHAAcAAAA2ABQAAAAHAAcAAAA3ABQAAAAHAAcAAAA4ABQAAAAHAAcAAAA5ABQAAAAHAAcAAAA6ABQAAAAHAAcAAAA7ABQAAAAHAAcAAAAzABoAAAAHAAcAAAA0ABoAAAAHAAcAAAA1ABoAAAAHAAcAAAA2ABoAAAAHAAcAAAA3ABoAAAAHAAcAAAA4ABoAAAAHAAcAAAA5ABoAAAAHAAcAAAA6ABoAAAAHAAcAAAA7ABoAAAAHAAcAAAAzACAAAAAHAAcAAAA0ACAAAAAHAAcAAAA1ACAAAAAHAAcAAAA2ACAAAAAHAAcAAAA3ACAAAAAHAAcAAAA4ACAAAAAHAAcAAAA5ACAAAAAHAAcAAAA6ACAAAAAHAAcAAAA7ACAAAAAHAAcAAAAzACYAAAAHAAcAAAA0ACYAAAAHAAcAAAA1ACYAAAAHAAcAAAA2ACYAAAAHAAcAAAA3ACYAAAAHAAcAAAA4ACYAAAAHAAcAAAA5ACYAAAAHAAcAAAA6ACYAAAAHAAcAAAA7ACYAAAAHAAcAAAAYABcAAAAJAAQAAAAZABcAAAAJAAQAAAAaABcAAAAJAAQAAAAbABcAAAAJAAQAAAAcABcAAAAJAAQAAAAlABcAAAAGAAIAAAAmABcAAAAHAAIAAAAnABcAAAAGAAIAAAAgABYAAAAGAAIAAAAhABYAAAAHAAIAAAAiABYAAAAGAAIAAAAXABcAAAAJAAQAAAA=")
 tile_set = SubResource("TileSet_5d6vn")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1627620925]
@@ -885,3 +930,64 @@ texture_filter = 1
 position = Vector2(1098, 1784.0001)
 scale = Vector2(334.92, 33.006)
 texture = ExtResource("59_pit")
+
+[node name="DeathRail" type="Node2D" parent="." unique_id=-889634592]
+position = Vector2(-310, 1378)
+script = ExtResource("70_light")
+interval_min = 0.15
+interval_max = 0.5
+bolt_sound = ExtResource("71_flick")
+sound_volume_db = -26.0
+sound_chance = 0.15
+rail_mode = true
+rail_x_min = 0.0
+rail_x_max = 2909.0
+
+[node name="LightningPlatforms" type="Node2D" parent="." unique_id=-889634591]
+
+[node name="PlatformOuterLeft" type="Marker2D" parent="LightningPlatforms" unique_id=-889634590]
+position = Vector2(92, 504)
+metadata/platform_width = 288.0
+metadata/high_traffic = false
+
+[node name="PlatformLeftMid" type="Marker2D" parent="LightningPlatforms" unique_id=-889634589]
+position = Vector2(346, 599)
+metadata/platform_width = 288.0
+metadata/high_traffic = false
+
+[node name="PlatformInnerLeft" type="Marker2D" parent="LightningPlatforms" unique_id=-889634588]
+position = Vector2(474, 726)
+metadata/platform_width = 288.0
+metadata/high_traffic = true
+
+[node name="PlatformCenter" type="Marker2D" parent="LightningPlatforms" unique_id=-889634587]
+position = Vector2(747, 694)
+metadata/platform_width = 352.0
+metadata/high_traffic = true
+
+[node name="PlatformInnerRight" type="Marker2D" parent="LightningPlatforms" unique_id=-889634586]
+position = Vector2(1692, 662)
+metadata/platform_width = 288.0
+metadata/high_traffic = true
+
+[node name="PlatformOuterRight" type="Marker2D" parent="LightningPlatforms" unique_id=-889634585]
+position = Vector2(2048, 536)
+metadata/platform_width = 288.0
+metadata/high_traffic = false
+
+[node name="PlatformRightMid" type="Marker2D" parent="LightningPlatforms" unique_id=-889634584]
+position = Vector2(1149, 695)
+metadata/platform_width = 288.0
+metadata/high_traffic = false
+
+[node name="Fireflies" type="GPUParticles2D" parent="." unique_id=-889634583]
+z_index = 1
+texture_filter = 1
+material = SubResource("CanvasItemMaterial_firefly")
+position = Vector2(1000, 700)
+amount = 20
+texture = ExtResource("58_dot")
+lifetime = 6.0
+preprocess = 6.0
+randomness = 0.8
+process_material = SubResource("ParticleProcessMaterial_firefly")
