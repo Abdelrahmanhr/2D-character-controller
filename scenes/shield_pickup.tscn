@@ -1,7 +1,7 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene format=3 uid="uid://dt60beuo1oiql"]
 
-[ext_resource type="Script" path="res://scripts/shield_pickup.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://resources/residential-area-tileset-pixel-art/4 Animated objects/Card.png" id="2_card"]
+[ext_resource type="Script" uid="uid://4axxrnm4al08" path="res://scripts/shield_pickup.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dj60u3n2h1hic" path="res://resources/residential-area-tileset-pixel-art/4 Animated objects/Card.png" id="2_card"]
 [ext_resource type="Texture2D" uid="uid://bl6w4l4qvlnm" path="res://resources/light_glow.tres" id="3_glow"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_card0"]
@@ -71,29 +71,32 @@ animations = [{
 [sub_resource type="CircleShape2D" id="CircleShape2D_shield"]
 radius = 22.0
 
-[node name="ShieldPickup" type="Area2D"]
+[node name="ShieldPickup" type="Area2D" unique_id=1435531470]
 script = ExtResource("1_script")
+spawn_sound_volume_db = 15.0
+collect_sound_volume_db = 15.0
+glow_idle_alpha_min = 0.6
+glow_idle_alpha_max = 3.0
 
-[node name="Glow" type="Sprite2D" parent="."]
+[node name="Glow" type="Sprite2D" parent="." unique_id=1575310042]
 modulate = Color(0.3216, 0.6392, 1, 0.5)
 scale = Vector2(0.35, 0.35)
 texture = ExtResource("3_glow")
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1766492353]
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_shield")
-animation = &"default"
 autoplay = "default"
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=139191601]
 shape = SubResource("CircleShape2D_shield")
 
-[node name="SpawnSound" type="AudioStreamPlayer2D" parent="."]
-bus = &"SFX"
+[node name="SpawnSound" type="AudioStreamPlayer2D" parent="." unique_id=1041834075]
 max_distance = 1400.0
 attenuation = 1.5
+bus = &"SFX"
 
-[node name="CollectSound" type="AudioStreamPlayer2D" parent="."]
-bus = &"SFX"
+[node name="CollectSound" type="AudioStreamPlayer2D" parent="." unique_id=908976955]
 max_distance = 1400.0
 attenuation = 1.5
+bus = &"SFX"

@@ -10,8 +10,8 @@ class_name ShieldPickup
 @export var lifetime: float = 20.0
 
 @export_group("Audio")
-@export var spawn_sound_volume_db: float = -6.0
-@export var collect_sound_volume_db: float = -4.0
+@export var spawn_sound_volume_db: float = 3.0  ## CHANGED: was -6.0
+@export var collect_sound_volume_db: float = 3.0 ## CHANGED: was -4.0
 
 @export_group("Glow")
 ## Same blue as player.gd's shield_flash_color, so the pickup's glow reads as a

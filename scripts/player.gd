@@ -42,7 +42,11 @@ extends CharacterBody2D
 @export var counter_window_ms: int = 200
 const COUNTER_TIEBREAK_MS := 60  ## NEW: intentionally not exported, see the comment where it's used
 @export var shield_duration: float = 10.0
-@export var shield_flash_color: Color = Color(0.3216, 0.6392, 1.0, 1.0)
+@export var shield_flash_color: Color = Color(0.3216, 0.6392, 1.0, 1.0)  ## outline color at the largest point of its breathing pulse
+@export var shield_outline_dark_color: Color = Color(0.1126, 0.2237, 0.35, 1.0)  ## outline color at the smallest point of its breathing pulse
+@export var shield_outline_pulse_speed: float = 3.0  ## radians/sec of the shrink-grow/color-shift cycle
+@export var shield_outline_width_min: float = 0.6
+@export var shield_outline_width_max: float = 2.4
 @export var shield_block_sound: AudioStream = preload("res://resources/audio/SheildBlock.wav")
 @export var shield_block_volume_db: float = -8.0
 @export var explode_sound: AudioStream  
@@ -978,11 +982,10 @@ func _on_dash_hitbox_body_entered(body: Node) -> void:
 		# losing your own dash to a conflict, which isn't what happened. body.apply_stun
 		# still has to be called (even though it never actually stuns the shielded
 		# victim) so this blocked hit reaches _do_apply_stun's single choke point and
-		# consumes the shield there, same as every other source that funnels through it.
+		# consumes the shield there, same as every other source that funnels through it -
+		# the block sound plays from that same choke point, not from here.
 		apply_stun(-dash_direction, dash_conflict_knockback_multiplier)
 		apply_hitstop(hitstop_duration)
-		if body.has_method("play_shield_block_sound"):
-			body.play_shield_block_sound()
 		if body.has_method("apply_stun"):
 			body.apply_stun(dash_direction, dash_conflict_knockback_multiplier, -1.0, name.to_int(), _current_identity_name(), _current_identity_color())
 		return
@@ -1044,10 +1047,13 @@ func _do_apply_stun(from_direction: Vector2, knockback_multiplier: float = 1.0, 
 		# player's dash, a hazard - anything that funnels through apply_stun) and
 		# drops immediately, rather than continuing to block until its timer runs
 		# out on its own. This is the one choke point every stun source goes
-		# through, so consuming it here covers all of them.
+		# through, so consuming it here covers all of them - the block sound plays
+		# from here too, rather than at each call site, so dash and electrocution
+		# both get it for free without duplicating the "was I shielded" check.
 		is_shielded = false
 		shield_time_left = 0.0
 		_set_shield_outline_active(false)
+		_play_shield_block_sound()
 		return
 	if attacker_key >= 0:
 		_last_attacker_key = attacker_key
@@ -1232,18 +1238,10 @@ func _do_flash_dash_loss() -> void:
 	tween.tween_property(animated_sprite, "modulate", dash_conflict_flash_color, dash_conflict_flash_duration * 0.3)
 	tween.tween_property(animated_sprite, "modulate", Color.WHITE.lerp(_current_identity_color(), 0.28), dash_conflict_flash_duration * 0.7)
 
-## Called on the shielded player (the one dashed into), from the attacker's
-## _on_dash_hitbox_body_entered - same any_peer/call_local cross-player-triggered
-## pattern as apply_stun/flash_dash_loss above, so it plays once, from the
-## shielded player's side, on every peer.
-func play_shield_block_sound() -> void:
-	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
-		_do_play_shield_block_sound()
-	else:
-		_do_play_shield_block_sound.rpc()
-
-@rpc("any_peer", "call_local", "unreliable")
-func _do_play_shield_block_sound() -> void:
+## Called only from _do_apply_stun's is_shielded branch, which is itself already
+## replicated any_peer/call_local - no separate RPC dispatch needed here, it just
+## runs alongside the rest of that branch on every peer.
+func _play_shield_block_sound() -> void:
 	SfxManager.play(shield_block_sound, shield_block_volume_db)
 
 func _current_identity_color() -> Color:
@@ -1287,10 +1285,18 @@ func _do_apply_shield(duration: float) -> void:
 ## expiry in _process, consumed-by-block in _do_apply_stun, cleared on death in
 ## respawn, activation here) - just swapping what visual actually turns on, a
 ## silhouette outline on the sprite itself instead of an orbiting particle ring.
+## The breathing pulse itself (shrink/grow + color shift) runs entirely inside the
+## shader off the engine's own TIME, so there's nothing to start/stop/tick from
+## script beyond assigning/clearing the material here - it loops for exactly as
+## long as the material is assigned and stops dead the instant it's cleared.
 func _set_shield_outline_active(active: bool) -> void:
 	if active:
 		var mat := _shared_shield_outline_material()
-		mat.set_shader_parameter("outline_color", shield_flash_color)
+		mat.set_shader_parameter("outline_color_light", shield_flash_color)
+		mat.set_shader_parameter("outline_color_dark", shield_outline_dark_color)
+		mat.set_shader_parameter("outline_width_min", shield_outline_width_min)
+		mat.set_shader_parameter("outline_width_max", shield_outline_width_max)
+		mat.set_shader_parameter("pulse_speed", shield_outline_pulse_speed)
 		animated_sprite.material = mat
 	else:
 		animated_sprite.material = null
@@ -1298,14 +1304,22 @@ func _set_shield_outline_active(active: bool) -> void:
 const SHIELD_OUTLINE_SHADER := """
 shader_type canvas_item;
 
-uniform vec4 outline_color : source_color = vec4(0.3216, 0.6392, 1.0, 1.0);
-uniform float outline_width : hint_range(0.0, 4.0) = 1.5;
+uniform vec4 outline_color_light : source_color = vec4(0.3216, 0.6392, 1.0, 1.0);
+uniform vec4 outline_color_dark : source_color = vec4(0.1126, 0.2237, 0.35, 1.0);
+uniform float outline_width_min : hint_range(0.0, 4.0) = 0.6;
+uniform float outline_width_max : hint_range(0.0, 4.0) = 2.4;
+uniform float pulse_speed : hint_range(0.0, 10.0) = 3.0;
 
 void fragment() {
 	vec4 tex_color = texture(TEXTURE, UV);
 	if (tex_color.a > 0.5) {
 		COLOR = tex_color;
 	} else {
+		// Single sine drives both size and color together so they peak/bottom out
+		// in lock-step: light blue at the largest outline, dark blue at the smallest.
+		float pulse = (sin(TIME * pulse_speed) + 1.0) * 0.5;
+		float outline_width = mix(outline_width_min, outline_width_max, pulse);
+		vec4 outline_color = mix(outline_color_dark, outline_color_light, pulse);
 		vec2 px = TEXTURE_PIXEL_SIZE * outline_width;
 		float neighbor_alpha = texture(TEXTURE, UV + vec2(px.x, 0.0)).a
 			+ texture(TEXTURE, UV - vec2(px.x, 0.0)).a

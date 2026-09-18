@@ -43,10 +43,17 @@ signal expired
 @export var shape_jitter: float = 0.28  ## random offset within a cell, so shapes don't sit dead-center
 @export var shape_flash_speed: float = 1.0
 
+@export_group("Audio")  ## NEW: ambient storm static, fading in/out in lockstep with the overlay's own fade_alpha
+@export var static_sound: AudioStream = preload("res://resources/audio/SafeZoneSound.wav")
+@export var static_sound_volume_db: float = -10.0
+
 var _activate_time_ms: int = -1
 var _overlay: ColorRect
 var _overlay_material: ShaderMaterial
 var _overlay_layer: CanvasLayer
+var _static_sound_player: AudioStreamPlayer
+
+const STATIC_SOUND_SILENT_DB := -80.0
 
 
 const MAX_PLAYERS := 4
@@ -206,6 +213,7 @@ void fragment() {
 func _ready() -> void:
 	add_to_group("safe_zones")
 	_setup_overlay()
+	_setup_static_sound()
 
 func _setup_overlay() -> void:
 	_overlay = ColorRect.new()
@@ -255,6 +263,35 @@ func _setup_overlay() -> void:
 	_overlay_layer.add_child(_overlay)
 	get_tree().current_scene.add_child.call_deferred(_overlay_layer)
 
+## Child of the zone itself rather than the overlay's CanvasLayer -- audio has no
+## rendering-order concerns, and parenting it here means it's freed automatically
+## the instant the zone is (see _process's expiry queue_free), same as everything
+## else that just goes away with the storm rather than needing its own cleanup.
+## Starts playing immediately at _ready, silent (see _update_static_sound) until
+## activate() (called right after add_child by whoever spawns the zone) lets
+## _get_fade_alpha start returning nonzero - so it's already rolling the instant
+## the fade-in actually begins, with nothing to separately start/stop later.
+func _setup_static_sound() -> void:
+	if static_sound == null:
+		return
+	_static_sound_player = AudioStreamPlayer.new()
+	_static_sound_player.name = "SafeZoneStaticSound"
+	_static_sound_player.bus = "SFX"
+	var stream := static_sound
+	# Same AudioStreamWAV loop gotcha as MusicManager._set_looping: loop_mode alone
+	# loops an empty 0/0 region and stops dead almost immediately instead of
+	# looping for the storm's full shrink+hold duration.
+	if stream is AudioStreamWAV:
+		stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		stream.loop_begin = 0
+		stream.loop_end = int(stream.get_length() * stream.mix_rate)
+	elif stream is AudioStreamOggVorbis or stream is AudioStreamMP3:
+		stream.loop = true
+	_static_sound_player.stream = stream
+	_static_sound_player.volume_db = STATIC_SOUND_SILENT_DB
+	add_child(_static_sound_player)
+	_static_sound_player.play()
+
 func activate() -> void:
 	_activate_time_ms = _get_timestamp()
 
@@ -286,8 +323,17 @@ func _get_fade_alpha() -> float:
 		return clampf((total - elapsed) / fade_duration, 0.0, 1.0)
 	return 1.0
 
+## Same fade_alpha curve the overlay shader multiplies its own COLOR.a by, so the
+## static rides in and out on exactly the same schedule as the visual fade rather
+## than a separately-tuned audio fade that could drift out of sync with it.
+func _update_static_sound() -> void:
+	if _static_sound_player == null:
+		return
+	_static_sound_player.volume_db = lerpf(STATIC_SOUND_SILENT_DB, static_sound_volume_db, _get_fade_alpha())
+
 func _process(_delta: float) -> void:
 	_update_overlay()
+	_update_static_sound()
 	if _activate_time_ms < 0:
 		return
 	var elapsed: float = float(_get_timestamp() - _activate_time_ms) / 1000.0
