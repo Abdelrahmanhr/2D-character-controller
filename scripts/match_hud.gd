@@ -90,7 +90,7 @@ const SOLO_FALL_PHRASES: Array[String] = [
 	"%s took the long way out",
 ]
 
-const KILL_FEED_DURATION := 2.0
+const KILL_FEED_DURATION := 3.5
 const KILL_FEED_MAX_LINES := 5
 
 var _slots: Array[Slot] = []

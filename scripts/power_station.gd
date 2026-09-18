@@ -27,6 +27,14 @@ extends ArenaBase
 @export var lightning_hit_vertical_slack: float = 12.0  ## small allowance below the surface (landing jitter)
 @export var lightning_hit_horizontal_margin: float = 20.0  ## extra reach past the platform edges (~player capsule radius)
 @export var lightning_sky_y: float = 0.0  ## world Y the strike visually falls from -- above every platform (which sit between 288 and 544)
+## Lightning's own sound, separate from death_zap_sound, which also fires for the
+## fall-death zap via ArenaBase._play_death_zone_zap - while the two shared one
+## property, retuning the strike retuned the death boundary with it.
+##
+## Left unassigned this falls back to death_zap_sound at its volume, so lightning
+## is never silent before a clip is picked and the arena sounds exactly as it did.
+@export var lightning_sound: AudioStream
+@export var lightning_volume_db: float = -6.0
 @export var lightning_strike_path_half_width: float = 6.0  ## width of the falling-bolt hazard corridor -- matches the bolt sprite, not the platform
 
 @export_group("Lightning Strike Electrify Effect")
@@ -261,8 +269,7 @@ func _update_pending_strike() -> void:
 ## rely on stays untouched; only the origin point differs (lightning_sky_y instead of
 ## the rail's own y), still spawning through the same rail emitter/pool.
 func _play_lightning_strike_bolt(at: Vector2) -> void:
-	if death_zap_sound:
-		SfxManager.play(death_zap_sound, death_zap_volume_db, 0.12)
+	_play_lightning_sound()
 	var rail := get_tree().get_first_node_in_group("lightning_emitters")
 	if rail and rail.has_method("strike_global"):
 		rail.strike_global(Vector2(at.x, lightning_sky_y), at)
@@ -344,8 +351,7 @@ func _update_electrified_hazards() -> void:
 			if not (_player_landed_on_platform(idx, player) or in_path):
 				continue
 			zapped[player] = true
-			if death_zap_sound:
-				SfxManager.play(death_zap_sound, death_zap_volume_db, 0.12)
+			_play_lightning_sound()
 			if _is_networked() and not player.is_multiplayer_authority():
 				continue
 			var duration: float = randf_range(lightning_stun_min, lightning_stun_max)
@@ -500,3 +506,13 @@ func _lift_platforms() -> void:
 		platform_tint.g * platform_lift,
 		platform_tint.b * platform_lift,
 	)
+
+
+## Every lightning-caused sound goes through here - the falling bolt and the zap
+## on a player it catches - so one property retunes all of it.
+func _play_lightning_sound() -> void:
+	var clip: AudioStream = lightning_sound if lightning_sound != null else death_zap_sound
+	if clip == null:
+		return
+	var db: float = lightning_volume_db if lightning_sound != null else death_zap_volume_db
+	SfxManager.play(clip, db, 0.12)

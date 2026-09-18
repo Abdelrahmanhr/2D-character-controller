@@ -45,6 +45,12 @@ var _match_start_ms: int = -1
 var _match_end_ms: int = -1
 var _kill_counts: Dictionary = {}
 var _survival_end_ms: Dictionary = {}
+## Time a player spent dead, so survival time can measure time actually spent
+## alive in the arena rather than raw match-start-to-elimination wall time.
+## _dead_ms banks finished death->respawn windows; _death_started_ms holds the
+## one currently open, if any.
+var _dead_ms: Dictionary = {}
+var _death_started_ms: Dictionary = {}
 
 
 func _ready() -> void:
@@ -113,6 +119,8 @@ func reset_match() -> void:
 	_match_end_ms = -1
 	_kill_counts.clear()
 	_survival_end_ms.clear()
+	_dead_ms.clear()
+	_death_started_ms.clear()
 
 func register_player(bomb_controller: BombController) -> void:
 	if _bomb_controllers.has(bomb_controller):
@@ -369,17 +377,44 @@ func record_elimination(player_key: int) -> void:
 		_survival_end_ms[player_key] = get_hazard_time_ms()
 
 
+## Opens a dead window. Called the instant a player dies, for the last life as
+## well as a respawning one, so the death animation and the respawn delay both
+## fall outside time-alive. Idempotent: a second death cannot reopen a window
+## that is already open and lose the original start.
+func record_death_start(player_key: int) -> void:
+	if player_key < 0 or _death_started_ms.has(player_key):
+		return
+	_death_started_ms[player_key] = get_hazard_time_ms()
+
+
+## Closes the window record_death_start opened and banks how long it ran.
+func record_respawn(player_key: int) -> void:
+	if player_key < 0 or not _death_started_ms.has(player_key):
+		return
+	var started: int = int(_death_started_ms[player_key])
+	_death_started_ms.erase(player_key)
+	_dead_ms[player_key] = int(_dead_ms.get(player_key, 0)) + maxi(get_hazard_time_ms() - started, 0)
+
+
 func get_kill_count(player_key: int) -> int:
 	return int(_kill_counts.get(player_key, 0))
 
 
-## Time from match start to death, or to match end if this player never died.
+## Time actually spent alive in the arena: match start to elimination (or to
+## match end for a survivor), minus every death->respawn window in between.
 func get_survival_seconds(player_key: int) -> float:
 	if _match_start_ms < 0:
 		return 0.0
 	var fallback_end: int = _match_end_ms if _match_end_ms >= 0 else get_hazard_time_ms()
 	var end_ms: int = int(_survival_end_ms.get(player_key, fallback_end))
-	return maxf(float(end_ms - _match_start_ms) / 1000.0, 0.0)
+	var dead_ms: int = int(_dead_ms.get(player_key, 0))
+	# A window still open at end_ms was never banked by record_respawn. For an
+	# eliminated player that window opened at their death, which is end_ms, so
+	# this adds nothing; it only matters for someone still mid-respawn when the
+	# match ended, whose wait would otherwise count as time alive.
+	if _death_started_ms.has(player_key):
+		dead_ms += maxi(end_ms - int(_death_started_ms[player_key]), 0)
+	return maxf(float(end_ms - _match_start_ms - dead_ms) / 1000.0, 0.0)
 
 
 ## Every player.name.to_int() worth showing a stats row for: currently registered

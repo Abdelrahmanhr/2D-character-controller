@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bwsfkovha1tk2" path="res://scripts/residential_area.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/pause_menu.tscn" id="2"]
+[ext_resource type="AudioStream" uid="uid://bc2gw4kgx8ihr" path="res://resources/audio/zap.wav" id="2_1o0l6"]
 [ext_resource type="Texture2D" uid="uid://bfdgnpr2icbgo" path="res://resources/example.jpg" id="2_nowf6"]
 [ext_resource type="PackedScene" uid="uid://deiu510u7y2u3" path="res://scenes/match_hud.tscn" id="6_hud"]
 [ext_resource type="Script" uid="uid://yjxuo048bmay" path="res://scripts/tracking_camera.gd" id="7_camera"]
@@ -283,6 +284,7 @@ turbulence_influence_max = 0.8
 
 [node name="ResidentialArea" type="Node2D" unique_id=84368402]
 script = ExtResource("1")
+lightning_sound = ExtResource("2_1o0l6")
 lightning_electrify_duration = 0.5
 lightning_strike_path_duration = 0.5
 shield_pickup_interval_min = 10.0
@@ -506,7 +508,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_slot3")
 position = Vector2(736, 459)
 script = ExtResource("7_camera")
 margin = 120.0
-min_zoom = 0.8
+min_zoom = 0.5
 max_zoom = 1.0
 position_lerp_speed = 6.0
 zoom_lerp_speed = 5.0

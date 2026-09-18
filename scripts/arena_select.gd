@@ -61,6 +61,7 @@ func _populate_arena_list() -> void:
 		button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		_style_menu_button(button, preview != null)
 		button.pressed.connect(_on_arena_pressed.bind(i))
+		button.gui_input.connect(_on_arena_gui_input.bind(i))
 		row.add_child(button)
 		_arena_buttons.append(button)
 
@@ -111,7 +112,30 @@ func _on_arena_pressed(index: int) -> void:
 	for i in _arena_buttons.size():
 		_arena_buttons[i].button_pressed = i == index
 
+
+## Double-clicking a row is a shortcut for "select it, then Continue". The
+## Continue button stays as the discoverable path and is still the only way in
+## with a controller or the keyboard, since a double-click is mouse-only.
+##
+## The first click of the pair has already run _on_arena_pressed through the
+## pressed signal, but this re-asserts the selection anyway: these buttons are
+## toggles, so clicking the already-selected row would otherwise untoggle it,
+## and _launch_selected must never run against a stale selected_index.
+func _on_arena_gui_input(event: InputEvent, index: int) -> void:
+	if event is InputEventMouseButton \
+			and event.button_index == MOUSE_BUTTON_LEFT \
+			and event.double_click:
+		_on_arena_pressed(index)
+		get_viewport().set_input_as_handled()
+		_launch_selected()
+
 func _on_continue_pressed() -> void:
+	_launch_selected()
+
+
+## Shared by the Continue button and the double-click shortcut, so the two can
+## never drift apart on which roster/lobby each mode needs.
+func _launch_selected() -> void:
 	var arena: Dictionary = ARENAS[selected_index]
 	if LocalPlayers.singleplayer:
 		# No lobby to walk through - there is only one device, and the roster is

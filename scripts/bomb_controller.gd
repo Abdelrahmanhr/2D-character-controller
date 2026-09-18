@@ -183,6 +183,12 @@ func bot_submit() -> void:
 func _input(event: InputEvent) -> void:
 	if _active_minigame == null or not _has_authority() or _player.is_stunned:
 		return
+	# A bot's minigame is driven solely by bot_submit(); no real device input may
+	# reach it. Offline _has_authority() is true for every controller, and the
+	# singleplayer branches below deliberately ignore device_id, so without this
+	# a bot's controller would answer the human's presses as its own.
+	if _player.bot != null:
+		return
 	if MinigameDirector.is_input_locked():
 		return
 	# LocalPlayers.singleplayer covers both singleplayer and tutorial: the one
@@ -212,6 +218,12 @@ func _input(event: InputEvent) -> void:
 
 func _poll_right_stick() -> void:
 	if _active_minigame == null or not _has_authority() or _player.is_stunned:
+		return
+	# A bot's minigame is driven solely by bot_submit(); no real device input may
+	# reach it. Offline _has_authority() is true for every controller, and the
+	# singleplayer branches below deliberately ignore device_id, so without this
+	# a bot's controller would answer the human's presses as its own.
+	if _player.bot != null:
 		return
 	if MinigameDirector.is_input_locked():
 		return
@@ -565,6 +577,9 @@ func _do_player_died(cause: String = "fall") -> void:  # CHANGED: added cause pa
 	if _expired:
 		return
 	_report_kill(cause)
+	# Opens the dead window here rather than in each branch below, so the death
+	# animation is excluded from time-alive whether this life was the last one.
+	MinigameDirector.record_death_start(_player.name.to_int() if _player else -1)
 	_lives_remaining -= 1
 	if _lives_remaining <= 0:
 		eliminate_player(cause)  # CHANGED: pass cause through
@@ -594,11 +609,13 @@ func eliminate_player(cause: String = "fall") -> void:  # CHANGED: added cause p
 	_frozen_value = 0.0
 	set_process(false)
 	stop_minigame()
-	await _player.play_death_animation(cause)  # CHANGED: pass cause through
-	# Stamps survival time here specifically - eliminate_player only ever runs once
-	# a player is actually out of lives, so this measures match-start to full
-	# elimination, not to whichever life they happened to lose first.
+	# Stamped before the death animation is awaited: eliminate_player only runs
+	# once a player is out of lives, so this is match-start to full elimination
+	# rather than to whichever life they happened to lose first - but the seconds
+	# spent playing out the death are not time alive, so they must not land
+	# inside the stamp.
 	MinigameDirector.record_elimination(_player.name.to_int())
+	await _player.play_death_animation(cause)  # CHANGED: pass cause through
 	MinigameDirector.player_eliminated(_player.name.to_int())
 	if _has_authority() and _player.bot == null:
 		var scene := get_tree().current_scene
@@ -624,6 +641,7 @@ func _respawn(cause: String = "fall") -> void:  # CHANGED: added cause param
 	var scene := get_tree().current_scene
 	if scene.has_method("respawn_player"):
 		scene.respawn_player(_player)
+	MinigameDirector.record_respawn(_player.name.to_int())
 	_player.respawn(respawn_invulnerability_duration)
 	
 
