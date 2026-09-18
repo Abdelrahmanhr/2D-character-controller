@@ -35,6 +35,7 @@
 [ext_resource type="Texture2D" uid="uid://b8dq1udgo8qj" path="res://resources/mushroom_cloud.png" id="47_mush"]
 [ext_resource type="Shader" uid="uid://8moraua44xlm" path="res://resources/cinema_grade.gdshader" id="48_grade"]
 [ext_resource type="PackedScene" path="res://scenes/intro_end_card.tscn" id="49_card"]
+[ext_resource type="Script" uid="uid://yjxuo048bmay" path="res://scripts/tracking_camera.gd" id="50_shake"]
 
 [sub_resource type="Environment" id="Environment_intro"]
 glow_enabled = true
@@ -527,10 +528,10 @@ tracks/23/path = NodePath("Grade/Rect:material:shader_parameter/flash")
 tracks/23/interp = 1
 tracks/23/loop_wrap = true
 tracks/23/keys = {
-"times": PackedFloat32Array(4.18, 4.2, 4.23, 4.27, 6.98, 6.99, 7.05),
+"times": PackedFloat32Array(4.18, 4.2, 4.23, 4.27, 6.98, 6.99, 7.1),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [0.0, 0.5, 0.18, 0.0, 0.0, 0.22, 0.0]
+"values": [0.0, 0.5, 0.18, 0.0, 0.0, 0.95, 0.0]
 }
 tracks/24/type = "value"
 tracks/24/imported = false
@@ -556,6 +557,34 @@ tracks/25/keys = {
 "values": [{
 "args": [],
 "method": &"show_card"
+}]
+}
+tracks/26/type = "method"
+tracks/26/imported = false
+tracks/26/enabled = true
+tracks/26/path = NodePath("Camera2D")
+tracks/26/interp = 1
+tracks/26/loop_wrap = true
+tracks/26/keys = {
+"times": PackedFloat32Array(4.1),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [20.0, 0.7],
+"method": &"shake"
+}]
+}
+tracks/27/type = "method"
+tracks/27/imported = false
+tracks/27/enabled = true
+tracks/27/path = NodePath("Camera2D")
+tracks/27/interp = 1
+tracks/27/loop_wrap = true
+tracks/27/keys = {
+"times": PackedFloat32Array(6.9900002),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [50.0, 1.0],
+"method": &"shake"
 }]
 }
 
@@ -1078,7 +1107,7 @@ animations = [{
 "speed": 20.0
 }]
 
-[sub_resource type="AudioStreamPolyphonic" id="AudioStreamPolyphonic_1qbbb"]
+[sub_resource type="AudioStreamPolyphonic" id="AudioStreamPolyphonic_dqogl"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_grade"]
 shader = ExtResource("48_grade")
@@ -1089,7 +1118,7 @@ shader_parameter/grade_amount = 0.25
 shader_parameter/contrast = 1.03
 shader_parameter/exposure = 1.06
 shader_parameter/lift = 0.05
-shader_parameter/vignette_strength = 0.3
+shader_parameter/vignette_strength = 0.38244454622268675
 shader_parameter/vignette_softness = 0.85
 shader_parameter/grain = 0.02
 shader_parameter/grain_pixel = 2.0
@@ -1103,6 +1132,7 @@ environment = SubResource("Environment_intro")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1364148844]
 position = Vector2(0, 56)
+script = ExtResource("50_shake")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1298557619]
 libraries/ = SubResource("AnimationLibrary_fxsd4")
@@ -1168,24 +1198,22 @@ color = Color(0.93, 0.95, 1, 0.4)
 color_ramp = SubResource("Gradient_cloud")
 
 [node name="Mushroom" type="AnimatedSprite2D" parent="World" unique_id=1900552041]
-visible = false
 z_index = -1
 texture_filter = 1
 position = Vector2(285, 190)
 scale = Vector2(6.17, 6.17)
 sprite_frames = SubResource("SpriteFrames_mush")
 animation = &"bloom"
-frame = 1
 
 [node name="Sign" type="Control" parent="World" unique_id=1418937476]
 z_index = 1
 texture_filter = 1
 layout_mode = 3
 anchors_preset = 0
-offset_left = -699.0
-offset_top = 101.00001
-offset_right = -59.0
-offset_bottom = 301.0
+offset_left = -659.0
+offset_top = 120.00001
+offset_right = -19.0
+offset_bottom = 320.0
 rotation = -0.09424778
 scale = Vector2(1.185, 1.185)
 mouse_filter = 2
@@ -1327,7 +1355,7 @@ frame = 8
 [node name="Audio" type="Node2D" parent="." unique_id=798669071]
 
 [node name="footsteps" type="AudioStreamPlayer" parent="Audio" unique_id=1946778710]
-stream = SubResource("AudioStreamPolyphonic_1qbbb")
+stream = SubResource("AudioStreamPolyphonic_dqogl")
 volume_db = 20.0
 bus = &"SFX"
 
@@ -1381,7 +1409,6 @@ layer = 20
 [node name="Top" type="ColorRect" parent="Letterbox" unique_id=522544059]
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 324.0
 grow_horizontal = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 1)
@@ -1391,7 +1418,6 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -324.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
