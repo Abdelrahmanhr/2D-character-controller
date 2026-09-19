@@ -315,12 +315,12 @@ func _beat_minigames() -> void:
 		MG_MATH, 3,
 		"MATH",
 		"Pick the correct answer.",
-		[["mg_left", "left"], ["mg_right", "right"]],
+		[["mg_left", "left arrow key"], ["mg_right", "right arrow key"]],
 	)
 	await _practice_minigame(
 		MG_MATH, 2,
 		"Same game, real size. That is where it appears in a match.",
-		[["mg_left", "left"], ["mg_right", "right"]],
+		[["mg_left", "left arrow key"], ["mg_right", "right arrow key"]],
 	)
 
 	await _teach_minigame(
@@ -385,32 +385,46 @@ func _beat_lightning() -> void:
 	_overlay.hide_card()
 
 
+## Only counts as passed once the storm itself has fully closed and faded out
+## (the zone's own natural end of life, not just a couple seconds of standing
+## inside partway through) with the player still alive at that moment. Dying to
+## it mid-shrink dismisses the failed zone and repeats the whole beat - a fresh
+## card and a fresh full-duration zone - rather than moving on regardless.
 func _beat_safe_zone() -> void:
 	if _skipped:
 		return
 	_unfreeze()
-	var index: int = _arena.nearest_spawn_index(_player.global_position)
-	_arena.start_safe_zone(index)
-	await _until(func() -> bool: return _arena.get_active_safe_zone() != null)
-	var zone: SafeZone = _arena.get_active_safe_zone()
+	while true:
+		var index: int = _arena.nearest_spawn_index(_player.global_position)
+		_arena.start_safe_zone(index)
+		await _until(func() -> bool: return _arena.get_active_safe_zone() != null)
+		if _skipped:
+			return
+		var zone: SafeZone = _arena.get_active_safe_zone()
 
-	await _card(
-		"THE SAFE ZONE",
-		"Sometimes only one patch of the arena is safe. Outside it you move like you are wading, and the ring over your head fills up. When it fills, you die.",
-		[{"node": zone, "radius": zone.get_radius()}],
-	)
+		await _card(
+			"THE SAFE ZONE",
+			"Sometimes only one patch of the arena is safe. Outside it you move like you are wading, and the ring over your head fills up. When it fills, you die.",
+			[{"node": zone, "radius": zone.get_radius()}],
+		)
+		if _skipped:
+			return
 
-	var dwell: Array[float] = [0.0]
-	await _task(
-		"Get inside the circle and stay there.",
-		func() -> bool:
-			if not is_instance_valid(zone) or zone.is_outside(_player.global_position):
-				dwell[0] = 0.0
-			else:
-				dwell[0] += get_process_delta_time()
-			return dwell[0] >= ZONE_DWELL_TO_PASS,
-	)
-	_arena.dismiss_safe_zone()
+		var died: Array[bool] = [false]
+		await _task(
+			"Get inside the circle and stay there until the storm fully closes.",
+			func() -> bool:
+				if _player.is_dead:
+					died[0] = true
+					return true
+				return not is_instance_valid(zone),
+		)
+		if _skipped:
+			return
+		if not died[0]:
+			return
+		_arena.dismiss_safe_zone()
+		await _until(func() -> bool: return not _player.is_dead)
 
 
 func _beat_shield() -> void:

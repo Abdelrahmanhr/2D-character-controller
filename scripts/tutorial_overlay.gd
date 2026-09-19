@@ -46,6 +46,13 @@ var _awaiting_continue: bool = false
 var _pumped_minigame: Control = null
 var banner_only: bool = false
 
+## Whatever show_card was last given, so _refresh_device_prompts can rebuild the
+## same caps/hint in place when the player switches device mid-card instead of
+## only picking up the change the next time a new card is shown.
+var _current_caps: Array = []
+var _showing_continue_hint: bool = false
+var _last_prompt_is_pad: bool = false
+
 
 func _ready() -> void:
 	layer = LAYER
@@ -175,7 +182,12 @@ func show_card(title: String, body: String, caps: Array = [], continue_hint: Str
 	_title.visible = not title.is_empty()
 	_body.text = body
 	_body.visible = not body.is_empty()
+	_current_caps = caps
 	_set_caps(caps)
+	# continue_hint is always either "" or exactly continue_hint_text()'s current
+	# value (see every show_card call site) - remembering *that* rather than the
+	# resolved string is what lets the refresh below regenerate it live.
+	_showing_continue_hint = not continue_hint.is_empty()
 	_continue.text = continue_hint
 	_continue.visible = not continue_hint.is_empty()
 	_card.visible = true
@@ -194,7 +206,7 @@ func await_continue() -> void:
 
 
 func continue_hint_text() -> String:
-	return "PRESS [ %s ] TO CONTINUE" % TutorialKeycap.key_text(&"confirm")
+	return "PRESS [ %s ] TO CONTINUE" % TutorialKeycap.key_text(&"confirm_alt")
 
 
 func set_objectives(items: Array) -> void:
@@ -341,6 +353,7 @@ func show_completion() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	TutorialKeycap.note_input(event)
 	if banner_only:
 		return
 
@@ -370,13 +383,20 @@ func _input(event: InputEvent) -> void:
 			_toggle_pause_menu()
 
 
+## Enter on keyboard, Circle (JOY_BUTTON_B - the same positional right-face
+## button across every layout, see PAD_BUTTON_NAMES) on a controller - one
+## shared "advance dialogue" check both devices funnel through, rather than a
+## controller accepting literally any button press. Deliberately just Enter
+## ("confirm_alt"), not also Space ("confirm") - the dialogue advance is its
+## own single binding, not every key that happens to double as confirm
+## elsewhere.
 func _is_confirm(event: InputEvent) -> bool:
 	if event is InputEventJoypadButton and event.pressed:
-		return true
+		return event.button_index == JOY_BUTTON_B
 	if not (event is InputEventKey) or not event.pressed or event.echo:
 		return false
 	var raw_key: int = event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode
-	return raw_key == Settings.get_key(&"confirm") or raw_key == Settings.get_key(&"confirm_alt")
+	return raw_key == Settings.get_key(&"confirm_alt")
 
 
 func _end_skip_hold() -> void:
@@ -408,6 +428,22 @@ func _process(delta: float) -> void:
 			skip_requested.emit()
 	if _dim.visible:
 		_update_holes()
+	_refresh_device_prompts()
+
+
+## Rebuilds the currently-shown card's caps/hint in place the moment the
+## player switches between keyboard and controller, rather than only picking
+## up the new device the next time a card happens to be (re)shown.
+func _refresh_device_prompts() -> void:
+	var using_pad: bool = TutorialKeycap.is_using_pad()
+	if using_pad == _last_prompt_is_pad:
+		return
+	_last_prompt_is_pad = using_pad
+	if not _card.visible:
+		return
+	_set_caps(_current_caps)
+	if _showing_continue_hint:
+		_continue.text = continue_hint_text()
 
 
 func _update_holes() -> void:
@@ -481,15 +517,15 @@ func _layout() -> void:
 	_card.reset_size()
 	var card_size: Vector2 = _card.size
 	_card.position = Vector2(
-		(viewport_size.x - card_size.x) * 0.5,
-		viewport_size.y - card_size.y - 46.0,
+		viewport_size.x - card_size.x - 40.0,
+		100.0,
 	)
 
 	_teach_panel.reset_size()
 	var teach_size: Vector2 = _teach_panel.size
 	_teach_panel.position = Vector2(
 		(viewport_size.x - teach_size.x) * 0.5,
-		viewport_size.y * 0.34 - teach_size.y * 0.5,
+		viewport_size.y * 0.6 - teach_size.y * 0.5,
 	)
 
 	_banner.reset_size()

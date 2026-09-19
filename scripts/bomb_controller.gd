@@ -617,6 +617,12 @@ func eliminate_player(cause: String = "fall") -> void:  # CHANGED: added cause p
 	MinigameDirector.record_elimination(_player.name.to_int())
 	await _player.play_death_animation(cause)  # CHANGED: pass cause through
 	MinigameDirector.player_eliminated(_player.name.to_int())
+	# The node can be freed mid-await (round end, arena unload, peer disconnect) -
+	# same situation player.gd's own play_death_animation already guards against
+	# for itself - at which point _has_authority()'s multiplayer.multiplayer_peer
+	# read below errors on a null multiplayer instead of just being false.
+	if not is_inside_tree():
+		return
 	if _has_authority() and _player.bot == null:
 		var scene := get_tree().current_scene
 		if scene.has_method("show_lose_popup"):
@@ -629,6 +635,11 @@ func _respawn(cause: String = "fall") -> void:  # CHANGED: added cause param
 	MinigameDirector.schedule_next_round(self)
 	await get_tree().create_timer(respawn_delay).timeout
 	if _expired:
+		return
+	# Same node-freed-mid-await risk as eliminate_player() above (round end,
+	# arena unload, peer disconnect) - get_tree()/_is_networked() below would
+	# error on a detached node instead of just resolving false/null.
+	if not is_inside_tree():
 		return
 	if _is_networked():
 		_start_time_ms = Networking.get_sync_time()

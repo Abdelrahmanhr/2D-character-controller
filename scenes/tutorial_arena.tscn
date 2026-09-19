@@ -1,7 +1,7 @@
-[gd_scene load_steps=3 format=4]
+[gd_scene format=3 uid="uid://dadq5djr426gl"]
 
 [ext_resource type="PackedScene" uid="uid://dwyw3xhkihekd" path="res://scenes/power_station2.tscn" id="1_base"]
-[ext_resource type="Script" path="res://scripts/tutorial_arena.gd" id="2_script"]
+[ext_resource type="Script" uid="uid://fy8c8bgnrmq0" path="res://scripts/tutorial_arena.gd" id="2_script"]
 
-[node name="PowerStation" instance=ExtResource("1_base")]
+[node name="PowerStation" unique_id=1760103022 instance=ExtResource("1_base")]
 script = ExtResource("2_script")
