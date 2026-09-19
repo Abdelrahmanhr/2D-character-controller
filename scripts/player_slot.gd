@@ -24,6 +24,11 @@ func setup(slot_index: int, label_text: String, device_id: int) -> void:
 	color_bar.color = color
 	slot_label.text = "P%d - %s" % [slot_index + 1, label_text]
 	slot_label.add_theme_color_override("font_color", color)
+	# Mouse/click focus only, never keyboard or pad navigation. A pad cannot type,
+	# so a name field is a dead end for it -- and now that the couch lobby's Start
+	# and Back are pad-reachable, a D-pad run down the slot list would otherwise
+	# land here and eat the presses meant for the menu.
+	name_edit.focus_mode = Control.FOCUS_CLICK
 	name_edit.placeholder_text = "P%d" % (slot_index + 1)
 	name_edit.text = LocalPlayers.get_raw_player_name(device_id)
 	name_edit.add_theme_color_override("font_color", color)

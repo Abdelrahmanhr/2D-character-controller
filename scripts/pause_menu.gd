@@ -31,16 +31,38 @@ func _ready() -> void:
 	$Panel/Menu/OptionsButton.pressed.connect(_show_options)
 	$Panel/Menu/ExitButton.pressed.connect(_exit_game)
 
+## CHANGED: opening and closing are no longer the same check.
+##
+## ui_cancel now carries JOY_BUTTON_B so menus can be backed out of with a pad,
+## and B is unused by gameplay - but it is the tutorial's "advance dialogue"
+## button, so leaving "open" on ui_cancel meant tapping through tutorial dialogue
+## popped this open. Opening is therefore START (pad) or Escape (keyboard), which
+## is where a pause belongs anyway; closing stays on ui_cancel, so B backs out of
+## this screen exactly like it backs out of every other one.
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
+	if panel.visible:
+		if not event.is_action_pressed("ui_cancel"):
+			return
 		# The options scene owns its own page stack, so give it first refusal -
 		# otherwise cancelling on the controls page would close the whole screen.
 		if options.visible:
 			if not options.handle_cancel():
 				_hide_options()
 		else:
-			_toggle_pause()
+			_resume()
 		get_viewport().set_input_as_handled()
+		return
+
+	if _is_pause_request(event):
+		_toggle_pause()
+		get_viewport().set_input_as_handled()
+
+
+func _is_pause_request(event: InputEvent) -> bool:
+	if event is InputEventJoypadButton:
+		return event.pressed and event.button_index == JOY_BUTTON_START
+	# Escape, via ui_cancel's keyboard half.
+	return event.is_action_pressed("ui_cancel")
 
 func toggle() -> void:
 	_toggle_pause()
@@ -116,5 +138,19 @@ func _cascade_page(page: Control) -> void:
 	UICascade.reset(elements)
 	UICascade.slam_panel(panel, 0.20)
 	await get_tree().process_frame
-	if is_inside_tree():
-		UICascade.play(elements, 0.0, 0.055)
+	if not is_inside_tree():
+		return
+	UICascade.play(elements, 0.0, 0.055)
+
+	# Opening the pause menu adds nothing to the tree -- it only flips visible on
+	# nodes that were always there -- so UINav's node_added sweep never fires for
+	# it and a pad would arrive with nothing highlighted.
+	#
+	# After the entrance rather than before it, because UIFeedback pops the scale
+	# of whatever gains focus and UICascade is animating that same scale property
+	# through its pose ladder; overlapping them makes the button jump. Scoped to
+	# the page rather than the whole panel so this lands on RESUME instead of the
+	# little close X above it.
+	await get_tree().create_timer(UICascade.PANEL_SLAM).timeout
+	if is_inside_tree() and page.visible:
+		UINav.focus_first(page)

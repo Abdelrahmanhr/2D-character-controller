@@ -482,24 +482,13 @@ func _cascade(page: Control) -> void:
 	_focus_first(page)
 
 
-## This is a controller-first game and the project sets no focus neighbours
-## anywhere, so without this a pad player has nothing selected to move from.
+## CHANGED: was a local walk for the first focusable child. That was this file
+## noticing, on its own, that a pad player has nothing selected to move from;
+## UINav now does exactly that for every menu in the game, so this defers to it
+## rather than keeping a second copy that can drift. UINav's version also skips
+## disabled buttons and FOCUS_CLICK controls, which the local one did not.
 func _focus_first(page: Control) -> void:
-	for child in page.get_children():
-		var target := _first_focusable(child)
-		if target != null:
-			target.grab_focus()
-			return
-
-
-func _first_focusable(node: Node) -> Control:
-	if node is Control and node.visible and node.focus_mode != Control.FOCUS_NONE:
-		return node
-	for child in node.get_children():
-		var found := _first_focusable(child)
-		if found != null:
-			return found
-	return null
+	UINav.focus_first(page)
 
 
 # --- shared builders --------------------------------------------------------

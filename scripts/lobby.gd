@@ -37,6 +37,15 @@ func _ready() -> void:
 	_refresh_players()
 
 
+## ui_cancel is Escape and, since menus became pad-navigable, B/Circle. Routed
+## through _exit_game rather than just changing scene, so leaving this way still
+## drops the Steam lobby the same as pressing Back does.
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		_exit_game()
+
+
 func _on_host_pressed() -> void:
 	host_button.disabled = true
 	status_label.text = "Creating lobby..."

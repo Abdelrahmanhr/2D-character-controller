@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bnqunqqo18vxu"
 path.s3tc="res://.godot/imported/Overlay_illumination.png-a1894e3ea710757efeb06ef4eb187018.s3tc.ctex"
+path.etc2="res://.godot/imported/Overlay_illumination.png-a1894e3ea710757efeb06ef4eb187018.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://resources/residential-area-tileset-pixel-art/2 Background/Overlay_illumination.png"
-dest_files=["res://.godot/imported/Overlay_illumination.png-a1894e3ea710757efeb06ef4eb187018.s3tc.ctex"]
+dest_files=["res://.godot/imported/Overlay_illumination.png-a1894e3ea710757efeb06ef4eb187018.s3tc.ctex", "res://.godot/imported/Overlay_illumination.png-a1894e3ea710757efeb06ef4eb187018.etc2.ctex"]
 
 [params]
 

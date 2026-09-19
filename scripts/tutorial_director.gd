@@ -84,6 +84,8 @@ func _card(title: String, body: String, targets: Array = [], caps: Array = []) -
 	_overlay.set_objectives([])
 	_overlay.show_card(title, body, caps, _overlay.continue_hint_text())
 	await _overlay.await_continue()
+	if not _overlay_alive():
+		return
 	_overlay.hide_card()
 
 
@@ -95,8 +97,19 @@ func _task(body: String, predicate: Callable, caps: Array = [], objectives: Arra
 	_overlay.set_objectives(objectives)
 	_overlay.show_card("", body, caps, "")
 	await _until(predicate)
+	if not _overlay_alive():
+		return
 	_overlay.set_objectives([])
 	_overlay.hide_card()
+
+
+## Pressing Exit/Replay/Practice tears the whole tutorial scene down while
+## _card/_task are still suspended on their awaits. The overlay is out of the
+## tree (and shortly freed) by the time they resume, so anything they touch
+## after an await has to confirm it survived first - set_objectives ->
+## _layout -> get_viewport() was returning null and crashing.
+func _overlay_alive() -> bool:
+	return _overlay != null and is_instance_valid(_overlay) and _overlay.is_inside_tree()
 
 
 ## is_inside_tree() guards both loops the same way tutorial_overlay.gd's own
@@ -314,7 +327,7 @@ func _beat_minigames() -> void:
 	await _teach_minigame(
 		MG_MATH, 3,
 		"MATH",
-		"Pick the correct answer.",
+		"Pick the correct answer. On a controller, the right stick works too.",
 		[["mg_left", "left arrow key"], ["mg_right", "right arrow key"]],
 	)
 	await _practice_minigame(
@@ -556,7 +569,12 @@ func show_completion() -> void:
 	_overlay.show_completion()
 
 
+## _skipped, same as _on_skip_requested sets: all three of these leave the
+## scene, and the tutorial script is very likely still suspended mid-beat when
+## they do. Without this the beat chain keeps unwinding through the teardown
+## and touches an overlay that is already out of the tree (see _overlay_alive).
 func _on_practice_requested() -> void:
+	_skipped = true
 	LocalPlayers.reset()
 	LocalPlayers.singleplayer = true
 	LocalPlayers.tutorial_practice = true
@@ -566,6 +584,7 @@ func _on_practice_requested() -> void:
 
 
 func _on_replay_requested() -> void:
+	_skipped = true
 	LocalPlayers.reset()
 	LocalPlayers.singleplayer = true
 	LocalPlayers.tutorial_practice = false
@@ -575,6 +594,7 @@ func _on_replay_requested() -> void:
 
 
 func _on_quit_requested() -> void:
+	_skipped = true
 	LocalPlayers.reset()
 	LocalPlayers.singleplayer = false
 	LocalPlayers.tutorial_practice = false

@@ -13,7 +13,12 @@ const COLOR_NAMES := ["RED", "GREEN", "BLUE", "YELLOW"]
 const COLOR_VALUES := {
 	"RED": Color.RED,
 	"GREEN": Color.GREEN,
-	"BLUE": Color.BLUE,
+	## CHANGED: was Color.BLUE (0, 0, 1) - pure blue reads as much darker/lower
+	## contrast than the other three against this project's dark UI, since blue
+	## contributes the least to perceived brightness of any channel. Reusing the
+	## same light blue already used for the shield accent elsewhere (player.gd's
+	## shield_flash_color) instead of picking an unrelated new shade.
+	"BLUE": Color(0.3216, 0.6392, 1.0),
 	"YELLOW": Color.YELLOW,
 }
 

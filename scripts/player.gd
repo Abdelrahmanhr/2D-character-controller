@@ -792,9 +792,13 @@ func _handle_input(delta: float) -> void:
 		var pad_move_y: float = 0.0
 		var pad_jump_held: bool = false
 		var pad_dash_held: bool = false
-		var pads: Array[int] = Input.get_connected_joypads()
-		if not pads.is_empty():
-			var pad_id: int = pads[0]
+		# CHANGED: was Input.get_connected_joypads()[0], a fixed first-enumerated
+		# device - with two pads connected at once (switching controllers
+		# mid-session without unplugging the old one), that never adapted to
+		# whichever one was actually being pressed. active_device() tracks
+		# whichever pad most recently sent real input instead.
+		var pad_id: int = PadState.active_device()
+		if pad_id >= 0:
 			pad_move_x = PadState.get_axis(pad_id, JOY_AXIS_LEFT_X)
 			pad_move_y = PadState.get_axis(pad_id, JOY_AXIS_LEFT_Y)
 			if abs(pad_move_x) < STICK_DEADZONE:

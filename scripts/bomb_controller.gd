@@ -230,11 +230,12 @@ func _poll_right_stick() -> void:
 	
 	var poll_device: int = device_id
 	if _is_networked() or LocalPlayers.singleplayer:
-		var pads := Input.get_connected_joypads()
-		if pads.is_empty():
+		# CHANGED: was Input.get_connected_joypads()[0] - see PadState.active_device
+		# for why that never adapted to switching controllers mid-session.
+		poll_device = PadState.active_device()
+		if poll_device < 0:
 			_prev_stick_direction = ""
 			return
-		poll_device = pads[0]
 	elif device_id < 0:
 		_prev_stick_direction = ""
 		return

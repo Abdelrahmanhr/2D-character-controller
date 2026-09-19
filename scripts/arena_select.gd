@@ -35,6 +35,14 @@ func _ready() -> void:
 	continue_button.pressed.connect(_on_continue_pressed)
 	back_button.pressed.connect(_on_back_pressed)
 
+## ui_cancel is Escape and, since menus became pad-navigable, B/Circle. Routed
+## through the Back button's own handler so the two can't drift on which lobby
+## each mode has to tear down on the way out.
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		_on_back_pressed()
+
 func _populate_arena_list() -> void:
 	for i in ARENAS.size():
 		var arena: Dictionary = ARENAS[i]

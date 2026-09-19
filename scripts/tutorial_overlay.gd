@@ -35,6 +35,7 @@ var _continue: Label
 var _banner: PanelContainer
 var _banner_label: Label
 var _skip_root: VBoxContainer
+var _skip_hint: Label
 var _skip_bar: ProgressBar
 var _teach_panel: PanelContainer
 var _complete: PanelContainer
@@ -148,11 +149,11 @@ func _build_skip() -> void:
 	_skip_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_skip_root)
 
-	var hint := Label.new()
-	hint.text = "HOLD ESC TO SKIP"
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	MinigameUI.style_label(hint, PENDING_COLOR, 11)
-	_skip_root.add_child(hint)
+	_skip_hint = Label.new()
+	_skip_hint.text = skip_hint_text()
+	_skip_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	MinigameUI.style_label(_skip_hint, PENDING_COLOR, 11)
+	_skip_root.add_child(_skip_hint)
 
 	_skip_bar = ProgressBar.new()
 	_skip_bar.custom_minimum_size = Vector2(150.0, 6.0)
@@ -367,7 +368,7 @@ func _input(event: InputEvent) -> void:
 		continue_pressed.emit()
 		return
 
-	if not _skip_root.visible or not event.is_action("ui_cancel"):
+	if not _skip_root.visible or not _is_skip(event):
 		return
 	if _pause_menu_open():
 		return
@@ -381,6 +382,33 @@ func _input(event: InputEvent) -> void:
 		_end_skip_hold()
 		if _skip_timer < SKIP_HOLD_TIME:
 			_toggle_pause_menu()
+
+
+## Escape on keyboard, START/OPTIONS on a controller.
+##
+## CHANGED: was event.is_action("ui_cancel"). That action now carries
+## JOY_BUTTON_B as well as Escape, so that every menu in the game can be backed
+## out of with a pad - but B is also this screen's "advance dialogue" button, so
+## sharing the action here would mean tapping through tutorial dialogue popped
+## the pause menu open the moment a card stopped awaiting a press. The pad half
+## therefore moves to START, which is where a pause belongs anyway and is the
+## same button the options screen's CONTROLS table already lists for the pads.
+## Keyboard behaviour is unchanged.
+func _is_skip(event: InputEvent) -> bool:
+	if event is InputEventJoypadButton:
+		return event.button_index == JOY_BUTTON_START
+	if not (event is InputEventKey):
+		return false
+	var raw_key: int = event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode
+	return raw_key == KEY_ESCAPE
+
+
+func skip_hint_text() -> String:
+	# Not routed through TutorialKeycap.key_text's keyboard fallback: Escape is an
+	# InputMap action, not one of Settings' rebindable keys, so it has nothing to
+	# look up and would render as "?".
+	var label: String = TutorialKeycap.key_text(&"pause") if TutorialKeycap.is_using_pad() else "ESC"
+	return "HOLD %s TO SKIP" % label
 
 
 ## Enter on keyboard, Circle (JOY_BUTTON_B - the same positional right-face
@@ -403,6 +431,62 @@ func _end_skip_hold() -> void:
 	_skip_active = false
 	_skip_bar.visible = false
 	_skip_bar.value = 0.0
+
+
+## The tutorial's own copy of bomb_controller.gd's _poll_right_stick -
+## _pumped_minigame (this overlay's teach/practice preview) is a separate
+## instance from whatever _active_minigame a real match round would have, so
+## BombController's own right-stick polling never reaches it; every other
+## input path (keyboard, D-PAD) already does through _input() below, only the
+## analog stick was missing. Tutorial is always solo, so this always polls
+## whichever pad is connected rather than a specific locked-in device.
+const STICK_THRESHOLD: float = 0.5
+var _prev_stick_direction: String = ""
+
+
+func _poll_right_stick() -> void:
+	if _pumped_minigame == null or not is_instance_valid(_pumped_minigame):
+		_prev_stick_direction = ""
+		return
+	# CHANGED: was Input.get_connected_joypads()[0] - see PadState.active_device.
+	var device: int = PadState.active_device()
+	if device < 0:
+		_prev_stick_direction = ""
+		return
+	var stick_x: float = PadState.get_axis(device, JOY_AXIS_RIGHT_X)
+	var stick_y: float = PadState.get_axis(device, JOY_AXIS_RIGHT_Y)
+
+	var current_direction: String = ""
+	if abs(stick_x) > abs(stick_y):
+		if stick_x > STICK_THRESHOLD:
+			current_direction = "right"
+		elif stick_x < -STICK_THRESHOLD:
+			current_direction = "left"
+	else:
+		if stick_y > STICK_THRESHOLD:
+			current_direction = "down"
+		elif stick_y < -STICK_THRESHOLD:
+			current_direction = "up"
+
+	if current_direction != "" and current_direction != _prev_stick_direction:
+		_submit_stick_direction(current_direction, device)
+	_prev_stick_direction = current_direction
+
+
+func _submit_stick_direction(direction: String, source_device: int) -> void:
+	var button: JoyButton
+	match direction:
+		"up": button = JOY_BUTTON_DPAD_UP
+		"down": button = JOY_BUTTON_DPAD_DOWN
+		"left": button = JOY_BUTTON_DPAD_LEFT
+		"right": button = JOY_BUTTON_DPAD_RIGHT
+		_: return
+
+	var synthetic_event := InputEventJoypadButton.new()
+	synthetic_event.device = source_device
+	synthetic_event.button_index = button
+	synthetic_event.pressed = true
+	_pumped_minigame._handle_input(synthetic_event)
 
 
 func _pause_menu_open() -> bool:
@@ -429,6 +513,7 @@ func _process(delta: float) -> void:
 	if _dim.visible:
 		_update_holes()
 	_refresh_device_prompts()
+	_poll_right_stick()
 
 
 ## Rebuilds the currently-shown card's caps/hint in place the moment the
@@ -439,11 +524,19 @@ func _refresh_device_prompts() -> void:
 	if using_pad == _last_prompt_is_pad:
 		return
 	_last_prompt_is_pad = using_pad
-	if not _card.visible:
-		return
-	_set_caps(_current_caps)
-	if _showing_continue_hint:
-		_continue.text = continue_hint_text()
+	# Outside the _card.visible early-out below: the skip hint sits in its own
+	# corner and stays up whether or not a dialogue card is showing, so it has to
+	# follow a device switch either way.
+	if _skip_hint != null:
+		_skip_hint.text = skip_hint_text()
+	if _card.visible:
+		_set_caps(_current_caps)
+		if _showing_continue_hint:
+			_continue.text = continue_hint_text()
+	# "HOLD ESC TO SKIP" and "HOLD START TO SKIP" are different widths, and the
+	# skip hint is pinned to the right edge by its own measured size, so it needs
+	# re-placing after the swap or it drifts off the corner.
+	_layout()
 
 
 func _update_holes() -> void:
@@ -512,6 +605,12 @@ func _set_caps(caps: Array) -> void:
 
 
 func _layout() -> void:
+	# Every caller (show_card, set_objectives, host_minigame, the size_changed
+	# signal) can land here after the tutorial scene has started tearing down -
+	# leaving the tree is what makes get_viewport() null, not being freed, so
+	# this is reachable with the node otherwise perfectly valid.
+	if not is_inside_tree():
+		return
 	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
 
 	_card.reset_size()

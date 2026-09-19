@@ -6,29 +6,55 @@ const KEY_BORDER := Color(0.3216, 0.6392, 1.0, 0.55)
 const KEY_TEXT := Color(1.0, 0.8784, 0.5686)
 const LABEL_TEXT := Color(0.7686, 0.8392, 0.9216)
 
-## Godot's joypad button enum is positional/Xbox-named but describes every
-## controller layout the same way underneath - JOY_BUTTON_B is the right face
-## button on any pad, Circle on a PlayStation controller, matching the same
-## positional buttons player.gd/bomb_controller.gd already hardcode elsewhere
-## (jump -> JOY_BUTTON_A, dash -> JOY_BUTTON_X). There is no per-action joypad
-## rebinding anywhere in the project (Settings only ever stores keyboard keys -
-## see its own header comment on why), so these are fixed names rather than
-## something read out of a binding, same as those other hardcoded checks.
-const PAD_BUTTON_NAMES := {
-	&"jump": "A",
-	&"mash": "A",
-	&"dash": "X",
-	&"dash_alt": "X",
-	&"confirm": "CIRCLE",
-	&"confirm_alt": "CIRCLE",
-	&"mg_up": "D-PAD UP",
-	&"mg_down": "D-PAD DOWN",
-	&"mg_left": "D-PAD LEFT",
-	&"mg_right": "D-PAD RIGHT",
-	&"move_left": "L-STICK <",
-	&"move_right": "L-STICK >",
-	&"move_up": "L-STICK ^",
-	&"move_down": "L-STICK v",
+## Every action's button name has to come from the SAME controller family, or
+## the prompts end up an incoherent mix (this was the actual bug: mash showed
+## Xbox's "A" while confirm showed PlayStation's "CIRCLE" - two different
+## conventions on screen at once, and worse, mash's "A" didn't even match the
+## button mash_minigame.gd actually reads, which is JOY_BUTTON_Y). These two
+## tables are each internally consistent with what the game code actually
+## listens for: player.gd (jump -> JOY_BUTTON_A, dash -> JOY_BUTTON_X),
+## mash_minigame.gd (JOY_BUTTON_Y), tutorial_overlay.gd's own confirm check
+## (JOY_BUTTON_B), and the *_minigame.gd files' D-PAD checks. There is no
+## per-action joypad rebinding anywhere in the project (Settings only ever
+## stores keyboard keys - see its own header comment on why), so these are
+## fixed names rather than something read out of a binding.
+enum PadFamily { XBOX, PLAYSTATION }
+
+const PAD_BUTTON_NAMES_BY_FAMILY := {
+	PadFamily.XBOX: {
+		&"jump": "A",
+		&"mash": "Y",
+		&"dash": "X",
+		&"dash_alt": "X",
+		&"confirm": "B",
+		&"confirm_alt": "B",
+		&"pause": "START",
+		&"mg_up": "D-PAD UP",
+		&"mg_down": "D-PAD DOWN",
+		&"mg_left": "D-PAD LEFT",
+		&"mg_right": "D-PAD RIGHT",
+		&"move_left": "L-STICK <",
+		&"move_right": "L-STICK >",
+		&"move_up": "L-STICK ^",
+		&"move_down": "L-STICK v",
+	},
+	PadFamily.PLAYSTATION: {
+		&"jump": "CROSS",
+		&"mash": "TRIANGLE",
+		&"dash": "SQUARE",
+		&"dash_alt": "SQUARE",
+		&"confirm": "CIRCLE",
+		&"confirm_alt": "CIRCLE",
+		&"pause": "OPTIONS",
+		&"mg_up": "D-PAD UP",
+		&"mg_down": "D-PAD DOWN",
+		&"mg_left": "D-PAD LEFT",
+		&"mg_right": "D-PAD RIGHT",
+		&"move_left": "L-STICK <",
+		&"move_right": "L-STICK >",
+		&"move_up": "L-STICK ^",
+		&"move_down": "L-STICK v",
+	},
 }
 
 ## How hard a stick has to be pushed before it counts as "using a controller" -
@@ -43,6 +69,7 @@ const PAD_MOTION_DEADZONE := 0.5
 ## one real player in the tutorial/singleplayer contexts this is used in, so a
 ## single shared "which device last spoke" flag is all that's needed here.
 static var _last_input_is_pad: bool = false
+static var _last_pad_family: int = PadFamily.XBOX
 
 
 static func note_input(event: InputEvent) -> void:
@@ -50,12 +77,29 @@ static func note_input(event: InputEvent) -> void:
 		_last_input_is_pad = false
 	elif event is InputEventJoypadButton and event.pressed:
 		_last_input_is_pad = true
+		_last_pad_family = _detect_pad_family(event.device)
 	elif event is InputEventJoypadMotion and absf(event.axis_value) > PAD_MOTION_DEADZONE:
 		_last_input_is_pad = true
+		_last_pad_family = _detect_pad_family(event.device)
 
 
 static func is_using_pad() -> bool:
 	return _last_input_is_pad
+
+
+static func _detect_pad_family(device: int) -> int:
+	return _family_from_name(Input.get_joy_name(device))
+
+
+## Split out from _detect_pad_family so the string-matching itself is testable
+## without a real connected device (Input.get_joy_name only returns a real
+## name for an actual attached joypad).
+static func _family_from_name(joy_name: String) -> int:
+	var lname := joy_name.to_lower()
+	for keyword in ["sony", "playstation", "ps3", "ps4", "ps5", "dualshock", "dualsense"]:
+		if lname.find(keyword) != -1:
+			return PadFamily.PLAYSTATION
+	return PadFamily.XBOX
 
 
 static func style() -> StyleBoxFlat:
@@ -75,8 +119,10 @@ static func style() -> StyleBoxFlat:
 
 
 static func key_text(action: StringName) -> String:
-	if _last_input_is_pad and PAD_BUTTON_NAMES.has(action):
-		return PAD_BUTTON_NAMES[action]
+	if _last_input_is_pad:
+		var table: Dictionary = PAD_BUTTON_NAMES_BY_FAMILY[_last_pad_family]
+		if table.has(action):
+			return table[action]
 	var key: Key = Settings.get_key(action)
 	return "?" if key == KEY_NONE else OS.get_keycode_string(key)
 
