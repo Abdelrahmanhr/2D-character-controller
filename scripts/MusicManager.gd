@@ -50,10 +50,10 @@ const TRACKS := {
 const SILENT_DB := -80.0
 
 ## How loud the menu track runs under the intro cutscene, before it settles to the
-## track's own volume_db on the way into the menu. The cutscene used to play its
-## copy at 0 dB on Master; these players are on Music, which default_bus_layout
-## mixes +6 dB hotter, so -6 reproduces the loudness the cutscene always had.
-const CUTSCENE_DB := -6.0
+## track's own volume_db on the way into the menu. Matches TRACKS[&"menu"]'s own
+## volume_db exactly (-16.0) so the cutscene never plays louder than the menu
+## itself does once it hands off - keep these two in sync if either changes.
+const CUTSCENE_DB := -16.0
 
 @export var crossfade_duration: float = 1.2
 ## How long the hand-off out of the cutscene takes to settle to the menu level.
