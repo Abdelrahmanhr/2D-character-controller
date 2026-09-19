@@ -74,6 +74,13 @@ extends ArenaBase
 @export var lightning_electrify_density: float = 0.6
 @export var lightning_electrify_interval_min: float = 0.12
 @export var lightning_electrify_interval_max: float = 0.22
+## Shrinks the crackle's horizontal spread relative to the struck platform's
+## actual measured width (_lightning_platform_widths, also used for hit
+## detection, left untouched by this). 1.0 stretches it across the platform's
+## full real width, which reads as oversized for this effect on every
+## platform, not just the wider center one - this scales it down uniformly
+## instead of only capping the one outlier.
+@export_range(0.1, 1.0, 0.05) var lightning_electrify_visual_width_scale: float = 0.45
 const ELECTRIFY_SOUND := preload("res://resources/audio/Light Flicker.mp3")
 
 @export_group("Shield Pickup")
@@ -454,10 +461,11 @@ func _update_electrified_hazards() -> void:
 func _spawn_electrify_effect(idx: int) -> void:
 	var anchor: Marker2D = _lightning_platforms[idx]
 	var width: float = _lightning_platform_widths[idx]
+	var visual_width: float = width * lightning_electrify_visual_width_scale
 	var emitter := LightningEmitter.new()
 	emitter.rail_mode = true
-	emitter.rail_x_min = -width * 0.5
-	emitter.rail_x_max = width * 0.5
+	emitter.rail_x_min = -visual_width * 0.5
+	emitter.rail_x_max = visual_width * 0.5
 	emitter.rail_post_count = lightning_electrify_post_count
 	emitter.rail_density = lightning_electrify_density
 	emitter.interval_min = lightning_electrify_interval_min
