@@ -1,0 +1,104 @@
+[gd_scene format=3 uid="uid://djol111xuflpi"]
+[ext_resource type="Script" uid="uid://d11dx0mi6t8ke" path="res://scripts/local_lobby.gd" id="1_hngs2"]
+[ext_resource type="PackedScene" uid="uid://ba5h6cemm2cs7" path="res://scenes/player_slot.tscn" id="2_3apr2"]
+[ext_resource type="Theme" path="res://resources/themes/cyberpunk.tres" id="cyber_theme"]
+[node name="LocalLobby" type="Control" unique_id=75862373]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_hngs2")
+min_players_to_start = 1
+slot_scene = ExtResource("2_3apr2")
+theme = ExtResource("cyber_theme")
+texture_filter = 1
+[node name="SlotContainer" type="HBoxContainer" parent="." unique_id=219804431]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -235.0
+offset_top = 75.0
+offset_right = 235.0
+offset_bottom = 139.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+theme_override_constants/separation = 8
+[node name="StartHintLabel" type="Label" parent="." unique_id=1459092464]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = 52.0
+offset_right = 26.0
+offset_bottom = 75.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Start ?"
+[node name="StartHintLabel2" type="Label" parent="." unique_id=1867511027]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -45.0
+offset_top = 67.0
+offset_right = 48.0
+offset_bottom = 90.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Press to Join"
+[node name="BackButton" type="Button" parent="." unique_id=932631489]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = -347.0
+offset_right = 0.0
+offset_bottom = -307.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "BACK TO MAIN MENU"
+[node name="StartButton" type="Button" parent="." unique_id=1561034884]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = -400.0
+offset_right = 0.0
+offset_bottom = -360.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "START GAME"
+[node name="Title" type="Label" parent="." unique_id=322225641]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 128.0
+offset_bottom = 188.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.8, 0.886275, 0.882353, 1)
+theme_override_colors/font_outline_color = Color(0.133333, 0.164706, 0.360784, 1)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 0
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 40
+text = "LOCAL LOBBY"
+horizontal_alignment = 1

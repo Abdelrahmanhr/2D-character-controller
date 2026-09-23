@@ -1,23 +1,187 @@
 extends Control
 
-const EMPTY_LEVEL_SCENE := "res://scenes/empty_level.tscn"
-const END_SCENE := "res://scenes/end.tscn"
+const LOBBY_SCENE := "res://scenes/lobby.tscn"
+const ARENA_SELECT_SCENE := "res://scenes/arena_select.tscn"
+const LOCAL_LOBBY_SCENE := "res://scenes/local_lobby.tscn"
 const CREDITS_SCENE := "res://scenes/credits.tscn"
+const TUTORIAL_ARENA_SCENE := "res://scenes/tutorial_arena.tscn"
+const OPTIONS_MENU := preload("res://scenes/options_menu.tscn")
+const MODE_NOTICE := preload("res://scenes/mode_notice.tscn")
+
+var _joining := false
+var _options: Control
+
 
 func _ready() -> void:
-	$Menu/StartButton.pressed.connect(_on_start_pressed)
+	get_tree().paused = false
+	SceneTransition.boot_reveal()
+	MusicManager.play_id(&"menu")
+	$Menu/MultiplayerButton.pressed.connect(_on_multiplayer_pressed)
+	$Menu/LocalMultiplayerButton.pressed.connect(_on_local_multiplayer_pressed)
 	$Menu/CreditsButton.pressed.connect(_on_credits_pressed)
-	$Menu/EndButton.pressed.connect(_on_end_pressed)
 	$Menu/ExitButton.pressed.connect(_on_exit_pressed)
+	Networking.client_joined.connect(_on_client_joined)
+	Networking.join_pending.connect(_on_join_pending)
+	Networking.lobby_failed.connect(_on_lobby_failed)
+	_setup_singleplayer_button()
+	_setup_tutorial_button()
+	_setup_options()
+	if Networking.has_pending_join():
+		_on_join_pending()
 
-func _on_start_pressed() -> void:
-	get_tree().change_scene_to_file(EMPTY_LEVEL_SCENE)
+
+func _setup_singleplayer_button() -> void:
+	var button: Button = $Menu/CreditsButton.duplicate(Node.DUPLICATE_GROUPS | Node.DUPLICATE_SCRIPTS)
+	button.name = "SingleplayerButton"
+	button.text = "SINGLEPLAYER"
+	button.visible = true
+	button.custom_minimum_size.x = 220.0
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	$Menu.add_child(button)
+	$Menu.move_child(button, $Menu/MultiplayerButton.get_index() + 1)
+	button.pressed.connect(_on_singleplayer_pressed)
+
+
+## Singleplayer is not finished, so it shows a "not finished yet" notice first --
+## routing to the right destination is this callback's job, not ModeNotice's,
+## since the mode picked also changes the LocalPlayers setup its destination
+## needs (see _enter_singleplayer). The tutorial goes straight in.
+func _show_mode_notice(on_confirmed: Callable) -> void:
+	var notice := MODE_NOTICE.instantiate()
+	add_child(notice)
+	notice.confirmed.connect(on_confirmed)
+
+
+func _on_singleplayer_pressed() -> void:
+	_show_mode_notice(_enter_singleplayer)
+
+
+func _enter_singleplayer() -> void:
+	LocalPlayers.singleplayer = true
+	LocalPlayers.entering_arena_select_for_local = true
+	get_tree().change_scene_to_file(ARENA_SELECT_SCENE)
+
+
+func _setup_tutorial_button() -> void:
+	var button: Button = $Menu/CreditsButton.duplicate(Node.DUPLICATE_GROUPS | Node.DUPLICATE_SCRIPTS)
+	button.name = "TutorialButton"
+	button.text = "TUTORIAL"
+	button.visible = true
+	button.custom_minimum_size.x = 180.0
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	$Menu.add_child(button)
+	$Menu.move_child(button, $Menu/SingleplayerButton.get_index() + 1)
+	button.pressed.connect(_on_tutorial_pressed)
+
+
+func _on_tutorial_pressed() -> void:
+	_enter_tutorial()
+
+
+func _enter_tutorial() -> void:
+	LocalPlayers.reset()
+	LocalPlayers.singleplayer = true
+	LocalPlayers.tutorial_practice = false
+	LocalPlayers.try_join(LocalPlayers.KEYBOARD_DEVICE_ID)
+	LocalPlayers.add_bots(2)
+	SceneTransition.circle_to(TUTORIAL_ARENA_SCENE)
+
+
+func _setup_options() -> void:
+	_options = OPTIONS_MENU.instantiate()
+	add_child(_options)
+	_options.hide()
+	_options.back_pressed.connect(_close_options)
+	# There is no frame here the way there is in the pause menu, so the options
+	# draw their own and centre themselves per page.
+	_options.set_framed(true)
+
+	var button: Button = $Menu/CreditsButton.duplicate(Node.DUPLICATE_GROUPS | Node.DUPLICATE_SCRIPTS)
+	button.name = "OptionsButton"
+	button.text = "OPTIONS"
+	button.visible = true
+	# Narrower than the other menu buttons, same as ExitButton -- shrink-center
+	# instead of the fill flag it inherited from CreditsButton, or a smaller
+	# custom_minimum_size alone would still get stretched back to full width by
+	# the VBoxContainer.
+	button.custom_minimum_size.x = 140.0
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	$Menu.add_child(button)
+	$Menu.move_child(button, $Menu/CreditsButton.get_index() + 1)
+	button.pressed.connect(_open_options)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not _options.visible:
+		return
+	if event.is_action_pressed("ui_cancel"):
+		# The options scene owns its own page stack; only close once it says it
+		# has nothing left to back out of.
+		if not _options.handle_cancel():
+			_close_options()
+		get_viewport().set_input_as_handled()
+
+
+func _open_options() -> void:
+	$Menu.hide()
+	# The title sting occupies the upper half of the screen; the controls page is
+	# tall enough to run into it.
+	$Title.hide()
+	_options.open()
+
+
+func _close_options() -> void:
+	_options.hide()
+	$Title.show()
+	$Menu.show()
+	_cascade($Menu)
+
+
+## The options scene animates its own pages; this is only for the menu list
+## coming back after the options close.
+func _cascade(page: Control) -> void:
+	var elements: Array[Control] = []
+	for child in page.get_children():
+		if child is Control and child.visible:
+			elements.append(child)
+	UICascade.reset(elements)
+	await get_tree().process_frame
+	if is_inside_tree():
+		UICascade.play(elements, 0.0, 0.055)
+
+
+func _on_join_pending() -> void:
+	_joining = true
+	$Menu/MultiplayerButton.text = "Joining friend..."
+	$Menu/MultiplayerButton.disabled = true
+
+
+func _on_lobby_failed(_message: String) -> void:
+	_joining = false
+	$Menu/MultiplayerButton.text = "Multiplayer"
+	$Menu/MultiplayerButton.disabled = false
+
+
+func _on_client_joined() -> void:
+	get_tree().change_scene_to_file(LOBBY_SCENE)
+
 
 func _on_credits_pressed() -> void:
 	get_tree().change_scene_to_file(CREDITS_SCENE)
 
-func _on_end_pressed() -> void:
-	get_tree().change_scene_to_file(END_SCENE)
 
 func _on_exit_pressed() -> void:
+	Networking.leave_lobby()
 	get_tree().quit()
+
+func _on_local_multiplayer_pressed() -> void:
+	LocalPlayers.singleplayer = false
+	LocalPlayers.entering_arena_select_for_local = true  # NEW
+	get_tree().change_scene_to_file(ARENA_SELECT_SCENE)
+
+func _on_multiplayer_pressed() -> void:
+	if _joining:
+		return
+	LocalPlayers.singleplayer = false
+	LocalPlayers.entering_arena_select_for_local = false  # NEW
+	get_tree().change_scene_to_file(ARENA_SELECT_SCENE)

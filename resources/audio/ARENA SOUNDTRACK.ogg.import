@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://exn2grglunam"
+path="res://.godot/imported/ARENA SOUNDTRACK.ogg-dc580b49766c8877d9471e4d770d6017.oggvorbisstr"
+
+[deps]
+
+source_file="res://resources/audio/ARENA SOUNDTRACK.ogg"
+dest_files=["res://.godot/imported/ARENA SOUNDTRACK.ogg-dc580b49766c8877d9471e4d770d6017.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

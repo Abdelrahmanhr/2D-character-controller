@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://3suisp3wkvkg"]
+
+[ext_resource type="Script" uid="uid://cevfyxr4c2cgo" path="res://scripts/UISfx.gd" id="1_tkold"]
+[ext_resource type="AudioStream" uid="uid://dkqhlhb2y812y" path="res://resources/audio/PressMenuSound.wav" id="2_qp0dk"]
+
+[node name="UISfx" type="Node" unique_id=804231244]
+script = ExtResource("1_tkold")
+click_sound = ExtResource("2_qp0dk")
+click_pitch_variance = 0.25

@@ -1,0 +1,7 @@
+[gd_scene format=4]
+
+[ext_resource type="Script" path="res://scripts/lightning_bolt.gd" id="1_bolt"]
+
+[node name="LightningBolt" type="Line2D"]
+width = 3.0
+script = ExtResource("1_bolt")

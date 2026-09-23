@@ -1,0 +1,75 @@
+[gd_scene format=3 uid="uid://bfp8yuwl46p72"]
+
+[ext_resource type="Script" uid="uid://bklcjgbpkt6mk" path="res://scripts/math_minigame.gd" id="1_q5oua"]
+[ext_resource type="Texture2D" uid="uid://db85c0hdh1a2m" path="res://resources/Menu_ui.ux.png" id="2_qyy11"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_521p4"]
+atlas = ExtResource("2_qyy11")
+region = Rect2(2303.3926, 170.62485, 256.98926, 37.677063)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_cbdxn"]
+texture = SubResource("AtlasTexture_521p4")
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hsxyc"]
+atlas = ExtResource("2_qyy11")
+region = Rect2(2307.5361, 215.98572, 248.92847, 27.990463)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_yrkki"]
+texture = SubResource("AtlasTexture_hsxyc")
+
+[node name="MathMinigame" type="Control" unique_id=280554269]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_q5oua")
+bonus_per_correct = 3.0
+penalty_per_wrong = 4.0
+metadata/_edit_use_anchors_ = true
+
+[node name="EquationLabel" type="Label" parent="." unique_id=2038325209]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.004340278
+anchor_top = 0.013888889
+anchor_right = 0.004340278
+anchor_bottom = 0.013888889
+offset_left = 20.0
+offset_top = 16.0
+offset_right = 252.0
+offset_bottom = 48.0
+theme_override_font_sizes/font_size = 28
+text = "0 # 0 "
+horizontal_alignment = 1
+metadata/_edit_use_anchors_ = true
+
+[node name="OptionLeft" type="Label" parent="." unique_id=2130160142]
+layout_mode = 0
+offset_left = 60.0
+offset_top = 66.0
+offset_right = 132.0
+offset_bottom = 94.0
+theme_override_font_sizes/font_size = 24
+text = "0"
+horizontal_alignment = 1
+
+[node name="OptionRight" type="Label" parent="." unique_id=550104764]
+layout_mode = 0
+offset_left = 140.0
+offset_top = 68.0
+offset_right = 212.0
+offset_bottom = 96.0
+theme_override_font_sizes/font_size = 24
+text = "0"
+horizontal_alignment = 1
+
+[node name="TimeBar" type="ProgressBar" parent="." unique_id=430495410]
+layout_mode = 0
+offset_left = 32.0
+offset_top = 116.0
+offset_right = 248.0
+offset_bottom = 132.0
+theme_override_styles/background = SubResource("StyleBoxTexture_cbdxn")
+theme_override_styles/fill = SubResource("StyleBoxTexture_yrkki")

@@ -1,0 +1,76 @@
+[gd_scene format=3 uid="uid://lbttvpcp1bs"]
+[ext_resource type="Script" uid="uid://s36kcrsaeiax" path="res://scripts/lobby.gd" id="1_lobby"]
+[ext_resource type="Theme" path="res://resources/themes/cyberpunk.tres" id="cyber_theme"]
+[node name="Lobby" type="Control" unique_id=345892580]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("cyber_theme")
+script = ExtResource("1_lobby")
+texture_filter = 1
+[node name="Title" type="Label" parent="." unique_id=59721015]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 128.0
+offset_bottom = 188.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.8, 0.886275, 0.882353, 1)
+theme_override_colors/font_outline_color = Color(0.133333, 0.164706, 0.360784, 1)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 0
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 40
+text = "ONLINE LOBBY"
+horizontal_alignment = 1
+[node name="Panel" type="VBoxContainer" parent="." unique_id=926333968]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -140.0
+offset_top = -54.0
+offset_right = 140.0
+offset_bottom = 94.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+[node name="HostButton" type="Button" parent="Panel" unique_id=1922592912]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "HOST LOBBY"
+size_flags_horizontal = 4
+[node name="StartButton" type="Button" parent="Panel" unique_id=54477301]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "START GAME"
+size_flags_horizontal = 4
+[node name="Status" type="Label" parent="Panel" unique_id=2107142425]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.545098, 0.670588, 0.74902, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.6)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 15
+text = "Create a lobby to begin."
+horizontal_alignment = 1
+[node name="BackButton" type="Button" parent="." unique_id=1872234920]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = -179.0
+offset_right = 0.0
+offset_bottom = -139.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "BACK TO MAIN MENU"
